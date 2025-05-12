@@ -53,7 +53,7 @@
                     <form action="{{ route('login') }}" method="POST">
                         @csrf
                         <div class="form-group">
-                            <input type="email" class="form-control" placeholder="Email" name="email" required value="{{ old('email') }}">
+                            <input type="text"  class="form-control"  placeholder="Username" name="name" required />
                             <i class="ik ik-user"></i>
                         </div>
                         <div class="form-group">
