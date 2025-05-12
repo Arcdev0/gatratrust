@@ -10,24 +10,25 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        return view('login.login'); // buat file resources/views/auth/login.blade.php
+        return view('login.login'); // Sesuaikan view jika perlu
     }
 
     public function login(Request $request)
     {
+        // Validasi menggunakan 'name' dan 'password'
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'name' => ['required', 'string'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('dashboard'); 
+            return redirect()->intended('dashboard');
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->onlyInput('email');
+            'name' => 'Nama pengguna atau password salah.',
+        ])->onlyInput('name');
     }
 
     public function logout(Request $request)
@@ -38,4 +39,3 @@ class LoginController extends Controller
         return redirect('/login');
     }
 }
-
