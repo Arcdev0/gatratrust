@@ -25,7 +25,7 @@ class UserAndRoleSeeder extends Seeder
             ['email' => 'admin@example.com'],
             [
                 'name' => 'admin',
-                'password' => Hash::make('passsword'),
+                'password' => Hash::make('password'),
                 'role_id' => $adminRole->id,
                 'company' => 'PT. Gatra Perdana Trustrue',
             ]
