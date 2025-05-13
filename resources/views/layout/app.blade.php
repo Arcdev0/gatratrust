@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="{{ asset('template/plugins/perfect-scrollbar/css/perfect-scrollbar.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/weather-icons/css/weather-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/dist/css/theme.min.css') }}">
-    <script src="template/src/js/vendor/modernizr-2.8.3.min.js"></script>
+    <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
 
     @yield('css')
 
@@ -44,26 +44,6 @@
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.min.js') }}"></script>
 
-
-    <style>
-        body {
-            padding-top: 70px;
-            /* Sesuaikan dengan navbar */
-        }
-
-        .modal-header {
-            background-color:rgb(0, 0, 0);
-            color: white;
-        }
-
-        .modal-title {
-            font-weight: bold;
-        }
-
-        .form-group label {
-            font-weight: 500;
-        }
-    </style>
     <!-- Google Analytics -->
     <script>
         (function (b, o, i, l, e, r) {
