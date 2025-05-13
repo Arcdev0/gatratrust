@@ -1,4 +1,4 @@
-  <header class="header-top" header-theme="light">
+<header class="header-top" header-theme="light">
       <div class="container-fluid">
           <div class="d-flex justify-content-between">
               <div class="top-menu d-flex align-items-center">
@@ -125,7 +125,7 @@
                   <div class="logo-img">
                       <img src="src/img/brand-white.svg" class="header-brand-img" alt="lavalite">
                   </div>
-                  <span class="text">ThemeKit</span>
+                  <span class="text"></span>
               </a>
               <button type="button" class="nav-toggle"><i data-toggle="expanded"
                       class="ik ik-toggle-right toggle-icon"></i></button>
@@ -135,9 +135,18 @@
           <div class="sidebar-content">
               <div class="nav-container">
                   <nav id="main-menu-navigation" class="navigation-main">
-                    <div class="nav-lavel">Pages</div>
+                      <div class="nav-lavel">Main Menu</div>
                       <div class="nav-item">
-                          <a href="javascript:void(0)"><i class="ik ik-award"></i><span>Sample Page</span></a>
+                          <a href="{{ route('dashboard') }}"><i class="ik ik-home"></i><span>Dashboard</span></a>
+                      </div>
+                      <div class="nav-item">
+                          <a href="{{ route('projects.tampilan') }}"><i class="ik ik-briefcase"></i><span>Project</span></a>
+                      </div>
+                        <div class="nav-item">
+                            <a href="{{ route('user.tampilan') }}"><i class="ik ik-clipboard"></i><span>User</span></a>
+                      <div class="nav-lavel">Lainnya</div>
+                      <div class="nav-item">
+                          <a href="#"><i class="ik ik-settings"></i><span>Pengaturan</span></a>
                       </div>
                   </nav>
               </div>

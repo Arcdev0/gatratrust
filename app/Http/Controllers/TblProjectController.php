@@ -1,0 +1,86 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Models\ProjectTbl;
+use App\Models\User;
+use App\Models\Kerjaan;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class TblProjectController extends Controller
+{
+    public function index()
+    {
+        $projects = ProjectTbl::with(['client', 'kerjaan', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('projects.tampilan', compact('projects'));
+    }
+
+    public function create()
+    {
+        $clients = User::where('role', 'client')->get();
+        $kerjaans = Kerjaan::all();
+        
+        return view('projects.create', compact('clients', 'kerjaans'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_project' => 'required|string|max:100',
+            'no_project' => 'required|string|unique:projects',
+            'client_id' => 'required|exists:users,id',
+            'kerjaan_id' => 'required|exists:kerjaans,id',
+            'deskripsi' => 'nullable|string',
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start'
+        ]);
+
+        $validated['created_by'] = Auth::id();
+
+        ProjectTbl::create($validated);
+
+        return redirect()->route('projects.tampilan')
+            ->with('success', 'Project berhasil ditambahkan');
+    }
+
+    public function show(ProjectTbl $project)
+    {
+        return view('projects.show', compact('project'));
+    }
+
+    public function edit(ProjectTbl $project)
+    {
+        $clients = User::where('role', 'client')->get();
+        $kerjaans = Kerjaan::all();
+        
+        return view('projects.edit', compact('project', 'clients', 'kerjaans'));
+    }
+
+    public function update(Request $request, ProjectTbl $project)
+    {
+        $validated = $request->validate([
+            'nama_project' => 'required|string|max:100',
+            'no_project' => 'required|string|unique:projects,no_project,'.$project->id,
+            'client_id' => 'required|exists:users,id',
+            'kerjaan_id' => 'required|exists:kerjaans,id',
+            'deskripsi' => 'nullable|string',
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start'
+        ]);
+
+        $project->update($validated);
+
+        return redirect()->route('projects.tampilan')
+            ->with('success', 'Project berhasil diperbarui');
+    }
+
+    public function destroy(ProjectTbl $project)
+    {
+        $project->delete();
+        
+        return redirect()->route('projects.tampilan')
+            ->with('success', 'Project berhasil dihapus');
+    }
+}

@@ -2,81 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
         public function index()
     {
-        // Ambil semua user beserta relasi role
         $users = User::with('role')->get();
-        // Ambil semua role untuk dropdown
         $roles = Role::all();
-        return view('user.indexuser', compact('users', 'roles'));
+        $clients = User::whereHas('role', function($query) {
+            $query->where('name', 'client');
+        })->get();
+
+        return view('user.tampilan', compact('users', 'roles', 'clients'));
     }
 
     public function store(Request $request)
     {
-        // Validasi data yang diterima
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed', // Validasi konfirmasi password
+            'name' => 'required|unique:users',
+            'email' => 'required|email',
+            'password' => 'required|min:6',
             'role_id' => 'required|exists:roles,id',
+            'company' => 'nullable|string'
         ]);
 
-        try {
-            // Buat user baru menggunakan model
-            User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => bcrypt($request->password),
-                'role_id' => $request->role_id,
-            ]);
-
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menambahkan user!'], 500);
-        }
-    }
-
-    public function edit($id)
-    {
-        // Ambil user berdasarkan ID
-        $user = User::findOrFail($id);
-        return view('user.edituser', compact('user'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'password' => 'nullable|min:6|confirmed', // Validasi konfirmasi password
-            'role_id' => 'required|exists:roles,id',
-        ]);
-    
-        $user = User::findOrFail($id);
-        $user->update([
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => $request->password ? bcrypt($request->password) : $user->password,
+            'password' => bcrypt($request->password),
             'role_id' => $request->role_id,
+            'company' => $request->company
         ]);
-    
-        return response()->json(['success' => true]);
+
+        return redirect()->route('user.tampilan')->with('success', 'User berhasil ditambahkan');
     }
 
-    public function destroy($id)
+    public function update(Request $request, User $user)
     {
-        try {
-            // Cari user berdasarkan ID dan hapus
-            $user = User::findOrFail($id);
-            $user->delete();
+        $request->validate([
+            'name' => 'required|unique:users,name,'.$user->id,
+            'email' => 'required|email',
+            'password' => 'nullable|min:6',
+            'role_id' => 'required|exists:roles,id',
+            'company' => 'nullable|string'
+        ]);
 
-            return response()->json(['message' => 'User berhasil dihapus!'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menghapus user!'], 500);
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'role_id' => $request->role_id,
+            'company' => $request->company
+        ];
+
+        if ($request->password) {
+            $data['password'] = bcrypt($request->password);
         }
+
+        $user->update($data);
+
+        return redirect()->route('user.tampilan')->with('success', 'User berhasil diperbarui');
+    }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+        return redirect()->route('user.tampilan')->with('success', 'User berhasil dihapus');
     }
 }

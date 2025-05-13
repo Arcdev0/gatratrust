@@ -32,8 +32,6 @@
         @include('layout.main')
     </div>
 
-
-
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script>
@@ -46,11 +44,31 @@
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.min.js') }}"></script>
 
+
+    <style>
+        body {
+            padding-top: 70px;
+            /* Sesuaikan dengan navbar */
+        }
+
+        .modal-header {
+            background-color:rgb(0, 0, 0);
+            color: white;
+        }
+
+        .modal-title {
+            font-weight: bold;
+        }
+
+        .form-group label {
+            font-weight: 500;
+        }
+    </style>
     <!-- Google Analytics -->
     <script>
-        (function(b, o, i, l, e, r) {
+        (function (b, o, i, l, e, r) {
             b.GoogleAnalyticsObject = l;
-            b[l] || (b[l] = function() {
+            b[l] || (b[l] = function () {
                 (b[l].q = b[l].q || []).push(arguments)
             });
             b[l].l = +new Date;

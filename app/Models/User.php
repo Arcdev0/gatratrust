@@ -18,7 +18,7 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-     protected $fillable = [
+    protected $fillable = [
         'name',
         'email',
         'password',
@@ -53,4 +53,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function projects()
+    {
+        return $this->hasMany(ProjectTbl::class, 'client_id');
+    }
+
 }
