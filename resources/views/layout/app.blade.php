@@ -43,7 +43,8 @@
     <script src="{{ asset('template/plugins/perfect-scrollbar/dist/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.min.js') }}"></script>
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
         body {
@@ -52,7 +53,7 @@
         }
 
         .modal-header {
-            background-color:rgb(0, 0, 0);
+            background-color: rgb(0, 0, 0);
             color: white;
         }
 

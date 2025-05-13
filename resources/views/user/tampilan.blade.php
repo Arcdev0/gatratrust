@@ -10,8 +10,8 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
-                <thead>
+            <table class="table table-hover">
+                <thead class="thead-light">
                     <tr>
                         <th>No</th>
                         <th>Name</th>
@@ -28,7 +28,8 @@
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->role->name }}</td>
-                            <td>{{ $user->company ?? '-' }}</td>
+                            <td>{{ $user->company}}</td>
+                            
                             <td>
                                 <button class="btn btn-sm btn-info edit-user" data-id="{{ $user->id }}"
                                     data-name="{{ $user->name }}" data-email="{{ $user->email }}"
@@ -203,20 +204,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
             </div>
-            <style>
-                .modal-header {
-                    background-color: #4e73df;
-                    color: white;
-                }
-
-                .modal-title {
-                    font-weight: bold;
-                }
-
-                .form-group label {
-                    font-weight: 500;
-                }
-            </style>
         </div>
     </div>
 </div>

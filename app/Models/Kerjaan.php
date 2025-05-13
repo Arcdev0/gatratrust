@@ -11,6 +11,4 @@ class Kerjaan extends Model
 
     protected $fillable = ['nama_kerjaan'];
 
-    
-
 }
