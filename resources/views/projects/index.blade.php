@@ -129,6 +129,7 @@
         </div>
 @endsection
 
+@section('script')
     <script>
         $(function () {
             // Submit form via AJAX
@@ -156,3 +157,4 @@
             });
         });
     </script>
+@endsection

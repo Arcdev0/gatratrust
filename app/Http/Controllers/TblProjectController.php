@@ -19,50 +19,34 @@ class TblProjectController extends Controller
         return view('projects.index', compact('projects', 'listclient', 'listkerjaan'));
     }
 
-    public function create()
-    {
-        $clients = User::where('role', 'client')->get();
-        $kerjaans = Kerjaan::all();
-
-        return view('projects.create', compact('clients', 'kerjaans'));
-    }
-
     public function store(Request $request)
-    {
-        dd($request->all());
-        $validated = $request->validate([
-            'nama_project' => 'required|string|max:100',
-            'no_project' => 'required|string|unique:projects',
-            'client_id' => 'required|exists:users,id',
-            'kerjaan_id' => 'required|exists:kerjaans,id',
-            'deskripsi' => 'nullable|string',
-            'start' => 'nullable|date',
-            'end' => 'nullable|date|after_or_equal:start'
-        ]);
+{
+    $validated = $request->validate([
+        'nama_project' => 'required|string|max:100',
+        'no_project' => 'required|string|unique:projects',
+        'client_id' => 'required|exists:users,id',
+        'kerjaan_id' => 'required|exists:kerjaans,id',
+        'deskripsi' => 'nullable|string',
+        'start' => 'nullable|date',
+        'end' => 'nullable|date|after_or_equal:start'
+    ]);
 
-        $validated['created_by'] = Auth::id();
+    $validated['created_by'] = Auth::id();
 
-        ProjectTbl::create($validated);
+    ProjectTbl::create($validated);
 
-        if ($request->ajax()) {
-            return response()->json(['success' => true]);
-        }
-
-        return redirect()->route('projects.tampilan')
-            ->with('success', 'Project berhasil ditambahkan');
+    if ($request->ajax()) {
+        return response()->json(['success' => true]);
     }
+
+    return redirect()->route('projects.tampilan')
+        ->with('success', 'Project berhasil ditambahkan');
+}
 
     public function show(ProjectTbl $project)
     {
         return view('projects.show', compact('project'));
-    }
-
-    public function edit(ProjectTbl $project)
-    {
-        $clients = User::where('role', 'client')->get();
-        $kerjaans = Kerjaan::all();
-
-        return view('projects.edit', compact('project', 'clients', 'kerjaans'));
+ 
     }
 
     public function update(Request $request, ProjectTbl $project)
@@ -78,6 +62,10 @@ class TblProjectController extends Controller
         ]);
 
         $project->update($validated);
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil diperbarui');
