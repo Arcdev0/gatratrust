@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('list_proses_files', function (Blueprint $table) {
             $table->id();
             $table->foreignId('list_proses_id')->constrained('list_proses')->onDelete('cascade');
-            $table->string('nama_file'); // Contoh: "Sertifikat", "Dokumentasi", "Laporan Hasil"
+            $table->string('nama_file');
             $table->timestamps();
         });
     }

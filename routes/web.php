@@ -22,7 +22,7 @@ Route::controller(LoginController::class)->group(function () {
 Route::middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Projects Resource
     route::get('/projects', [TblProjectController::class, 'index'])->name('projects.tampilan');
     route::get('/projects/create', [TblProjectController::class, 'create'])->name('projects.create');
