@@ -11,9 +11,9 @@
         /* Desktop Timeline (Horizontal) */
         .timeline-horizontal {
             display: flex;
-            position: relative;
-            padding: 30px 0;
+            align-items: center;
             overflow-x: auto;
+            padding: 30px 0px;
         }
 
         .timeline-step {
@@ -65,13 +65,20 @@
         }
 
         /* Arrow Connectors */
+        .arrow-connector {
+            position: relative;
+            width: 50px;
+            /* bisa disesuaikan */
+            height: 50px;
+            flex-shrink: 0;
+        }
+
         .arrow-line {
-            position: absolute;
-            top: 20px;
-            left: calc(50% + 20px);
-            width: calc(100% - 40px);
+            width: 95%;
             height: 2px;
             background-color: #e0e0e0;
+            position: absolute;
+            left: 0;
             z-index: 1;
         }
 
@@ -81,14 +88,14 @@
 
         .arrow-head {
             position: absolute;
-            top: 18px;
-            right: -6px;
+            right: 0;
+            margin-top: 1px;
+            transform: translateY(-50%);
             width: 0;
             height: 0;
             border-top: 5px solid transparent;
             border-bottom: 5px solid transparent;
             border-left: 8px solid #e0e0e0;
-            z-index: 1;
         }
 
         .arrow-head.done {
@@ -187,39 +194,29 @@
                             <div class="timeline-container">
                                 <!-- Desktop Version -->
                                 <div class="timeline-horizontal">
-                                    @php
-                                        $steps = [
-                                            'Quotation',
-                                            'Persetujuan Harga',
-                                            // 'Invoice DP',
-                                            // 'Permohonan ke Third Party',
-                                            // 'Pembuatan Dokumen',
-                                            // 'Proses Pengujian',
-                                            // 'Pembuatan Dokumen',
-                                            // 'Invoice Lunas',
-                                            // 'Berita Acara',
-                                        ];
-                                    @endphp
-
                                     @foreach ($steps as $index => $step)
                                         @php
-                                            $isDone = $index < 1; // dummy data
-                                            $prevDone = $index > 0 && $isDone;
+                                            $status = $stepStatuses[$index];
                                         @endphp
+
                                         <div class="timeline-step">
-                                            <div class="circle {{ $isDone ? 'done' : 'pending' }}"
-                                                data-step="{{ $step }}"
-                                                onclick="showStepModal('{{ $step }}')">
+                                            <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
+                                                onclick="showStepModal('{{ $step }}')"
+                                                data-step="{{ $step }}">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
-                                            @if ($index < count($steps) - 1)
-                                                <div class="arrow-line {{ $isDone ? 'done' : '' }}"></div>
-                                                <div class="arrow-head {{ $isDone ? 'done' : '' }}"></div>
-                                            @endif
                                         </div>
+
+                                        @if ($index < count($steps) - 1)
+                                            <div class="arrow-connector">
+                                                <div class="arrow-line {{ $status == 'done' ? 'done' : '' }}"></div>
+                                                <div class="arrow-head {{ $status == 'done' ? 'done' : '' }}"></div>
+                                            </div>
+                                        @endif
                                     @endforeach
                                 </div>
+
 
                                 <!-- Mobile Version -->
                                 <div class="timeline-vertical">

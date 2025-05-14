@@ -11,4 +11,10 @@ class Kerjaan extends Model
 
     protected $fillable = ['nama_kerjaan'];
 
+
+     public function prosesList() {
+        return $this->belongsToMany(ListProses::class, 'kerjaan_list_proses')
+                    ->withPivot('urutan')
+                    ->orderBy('kerjaan_list_proses.urutan');
+    }
 }
