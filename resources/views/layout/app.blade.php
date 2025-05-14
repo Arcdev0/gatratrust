@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ asset('template//favicon.ico') }}">
 
     <link src="https://fonts.googleapis.com/css?family=Nunito+Sans:300,400,600,700,800" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="{{ asset('template/plugins/bootstrap/dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/ionicons/dist/css/ionicons.min.css') }}">
@@ -38,6 +38,7 @@
         window.jQuery || document.write(
             '<script src="{{ asset('template/src/js/vendor/jquery-3.3.1.min.js') }}"><\/script>');
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('template/plugins/popper.js/dist/umd/popper.min.js') }}"></script>
     <script src="{{ asset('template/plugins/bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('template/plugins/perfect-scrollbar/dist/perfect-scrollbar.min.js') }}"></script>

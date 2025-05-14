@@ -24,13 +24,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Projects Resource
-    route::get('/projects', [TblProjectController::class, 'index'])->name('projects.tampilan');
-    route::get('/projects/create', [TblProjectController::class, 'create'])->name('projects.create');
-    route::post('/projects', [TblProjectController::class, 'store'])->name('projects.store');
-    route::get('/projects/{project}', [TblProjectController::class, 'show'])->name('projects.show');
-    route::get('/projects/{project}/edit', [TblProjectController::class, 'edit'])->name('projects.edit');
-    route::put('/projects/{project}', [TblProjectController::class, 'update'])->name('projects.update');
-    route::delete('/projects/{project}', [TblProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::get('/projects', [TblProjectController::class, 'index'])->name('projects.tampilan');
+    Route::post('/projects/store', [TblProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects/show/{project}', [TblProjectController::class, 'show'])->name('projects.show');
+    Route::post('/projects/update/{project}', [TblProjectController::class, 'update'])->name('projects.update');
+    Route::delete('/projects/delete/{project}', [TblProjectController::class, 'destroy'])->name('projects.destroy');
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');
