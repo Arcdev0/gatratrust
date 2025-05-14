@@ -53,10 +53,32 @@ class TblProjectController extends Controller
             ->with('success', 'Project berhasil ditambahkan');
     }
 
-    public function show(ProjectTbl $project)
-    {
-        return view('projects.show', compact('project'));
-    }
+ public function show(ProjectTbl $project)
+        {
+            $kerjaanId = $project->kerjaan_id;
+            $projectId = $project->id;
+
+            $processes = DB::table('kerjaan_list_proses as klp')
+                ->join('list_proses as lp', 'lp.id', '=', 'klp.list_proses_id')
+                ->leftJoin('project_details as pd', function ($join) use ($projectId) {
+                    $join->on('pd.kerjaan_list_proses_id', '=', 'klp.id')
+                        ->where('pd.project_id', '=', $projectId);
+                })
+                ->where('klp.kerjaan_id', $kerjaanId)
+                ->select('lp.nama_proses', 'pd.status')
+                ->orderBy('klp.urutan')
+                ->get();
+
+            $steps = [];
+            $stepStatuses = [];
+
+            foreach ($processes as $process) {
+                $steps[] = $process->nama_proses;
+                $stepStatuses[] = $process->status ?? 'pending';
+            }
+
+            return view('projects.show', compact('project', 'steps', 'stepStatuses'));
+        }
 
     public function edit(ProjectTbl $project)
     {
