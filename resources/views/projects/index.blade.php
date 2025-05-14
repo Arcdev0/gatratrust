@@ -6,7 +6,7 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="text-primary font-weight-bold">Daftar Project</h3>
-                    <button id="tbhProject" class="btn btn-success">
+                    <button id="tbhProject" class="btn btn-success" data-toggle="modal" data-target="#exampleModalCenter">
                         <i class="fas fa-user-plus"></i> Tambah Project
                     </button>
                 </div>
@@ -44,7 +44,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a class="btn btn-sm btn-info">
+                                        <a class="btn btn-sm btn-info" href="{{ route('projects.show', $project) }}">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a class="btn btn-sm btn-warning">

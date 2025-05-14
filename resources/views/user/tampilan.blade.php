@@ -6,8 +6,8 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="text-primary font-weight-bold">Manajemen User</h3>
-                    <button id="addUserBtn" class="btn btn-success">
-                        <i class="fas fa-user-plus"></i> Tambah User
+                    <button id="addUserBtn" class="btn btn-success" data-toggle="modal" data-target="#addUserModal">
+                        <i class="fas fa-user-plus" ></i> Tambah User
                     </button>
                 </div>
                 <div class="card">

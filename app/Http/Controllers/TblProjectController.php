@@ -71,14 +71,6 @@ class TblProjectController extends Controller
             return view('projects.show', compact('project', 'steps', 'stepStatuses'));
         }
 
-    public function edit(ProjectTbl $project)
-    {
-        $clients = User::where('role', 'client')->get();
-        $kerjaans = Kerjaan::all();
-
-        return view('projects.edit', compact('project', 'clients', 'kerjaans'));
-    }
-
     public function update(Request $request, ProjectTbl $project)
     {
         $validated = $request->validate([
