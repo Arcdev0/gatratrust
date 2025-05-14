@@ -14,19 +14,22 @@ class TblProjectController extends Controller
         $projects = ProjectTbl::with(['client', 'kerjaan', 'creator'])
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('projects.tampilan', compact('projects'));
+        $listclient = User::where('role_id', 2)->get();
+        $listkerjaan = Kerjaan::select('id', 'nama_kerjaan')->get();
+        return view('projects.index', compact('projects', 'listclient', 'listkerjaan'));
     }
 
     public function create()
     {
         $clients = User::where('role', 'client')->get();
         $kerjaans = Kerjaan::all();
-        
+
         return view('projects.create', compact('clients', 'kerjaans'));
     }
 
     public function store(Request $request)
     {
+        dd($request->all());
         $validated = $request->validate([
             'nama_project' => 'required|string|max:100',
             'no_project' => 'required|string|unique:projects',
@@ -41,6 +44,10 @@ class TblProjectController extends Controller
 
         ProjectTbl::create($validated);
 
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil ditambahkan');
     }
@@ -54,7 +61,7 @@ class TblProjectController extends Controller
     {
         $clients = User::where('role', 'client')->get();
         $kerjaans = Kerjaan::all();
-        
+
         return view('projects.edit', compact('project', 'clients', 'kerjaans'));
     }
 
@@ -62,7 +69,7 @@ class TblProjectController extends Controller
     {
         $validated = $request->validate([
             'nama_project' => 'required|string|max:100',
-            'no_project' => 'required|string|unique:projects,no_project,'.$project->id,
+            'no_project' => 'required|string|unique:projects,no_project,' . $project->id,
             'client_id' => 'required|exists:users,id',
             'kerjaan_id' => 'required|exists:kerjaans,id',
             'deskripsi' => 'nullable|string',
@@ -79,7 +86,7 @@ class TblProjectController extends Controller
     public function destroy(ProjectTbl $project)
     {
         $project->delete();
-        
+
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil dihapus');
     }

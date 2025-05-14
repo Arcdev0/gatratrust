@@ -22,12 +22,13 @@ class ProjectTbl extends Model
         'created_by'
     ];
 
-    protected $dates = [
-        'start',
-        'end',
+    protected $casts = [
+        'start' => 'datetime',
+        'end' => 'datetime',
         'created_at',
         'updated_at'
     ];
+
 
     public function client()
     {

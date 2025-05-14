@@ -26,7 +26,9 @@ class UserController extends Controller
             'email' => 'required|email',
             'password' => 'required|min:6',
             'role_id' => 'required|exists:roles,id',
-            'company' => 'nullable|string'
+            'company' => 'nullable|string',
+            'is_active' => 'boolean'
+
         ]);
 
         User::create([
@@ -34,7 +36,8 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'role_id' => $request->role_id,
-            'company' => $request->company
+            'company' => $request->company,
+            'is_active' => $request->is_active
         ]);
 
         return redirect()->route('user.tampilan')->with('success', 'User berhasil ditambahkan');
@@ -47,14 +50,16 @@ class UserController extends Controller
             'email' => 'required|email',
             'password' => 'nullable|min:6',
             'role_id' => 'required|exists:roles,id',
-            'company' => 'nullable|string'
+            'company' => 'nullable|string',
+            'is_active' => 'boolean'
         ]);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
             'role_id' => $request->role_id,
-            'company' => $request->company
+            'company' => $request->company,
+            'is_active' => $request->is_active
         ];
 
         if ($request->password) {
