@@ -21,7 +21,7 @@ class TblProjectController extends Controller
     {
         $clients = User::where('role', 'client')->get();
         $kerjaans = Kerjaan::all();
-        
+
         return view('projects.create', compact('clients', 'kerjaans'));
     }
 
@@ -54,7 +54,7 @@ class TblProjectController extends Controller
     {
         $clients = User::where('role', 'client')->get();
         $kerjaans = Kerjaan::all();
-        
+
         return view('projects.edit', compact('project', 'clients', 'kerjaans'));
     }
 
@@ -79,7 +79,7 @@ class TblProjectController extends Controller
     public function destroy(ProjectTbl $project)
     {
         $project->delete();
-        
+
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil dihapus');
     }

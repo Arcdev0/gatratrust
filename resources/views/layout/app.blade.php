@@ -44,6 +44,8 @@
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.min.js') }}"></script>
 
+    @yield('script')
+
     <!-- Google Analytics -->
     <script>
         (function (b, o, i, l, e, r) {
