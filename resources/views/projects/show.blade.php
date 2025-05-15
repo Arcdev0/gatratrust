@@ -262,6 +262,7 @@
                                     <div class="modal-footer">
                                         <button class="btn btn-secondary" data-dismiss="modal">Tutup</button>
                                         <button class="btn btn-primary">Simpan</button>
+                                        <button class="btn btn-success" id="markAsDoneBtn">Tandai Selesai</button>
                                     </div>
                                 </div>
                             </div>
@@ -277,6 +278,14 @@
 @section('script')
     <script>
         let fileInputCounter = 0;
+
+        function showStepModal(stepName) {
+            $('#modalStepName').text(stepName);
+            $('#fileInputContainer').empty(); // reset input
+            fileInputCounter = 0;
+            $('#timelineModal').modal('show');
+        }
+
         $(document).ready(function() {
             $('.circle').click(function() {
                 var step = $(this).data('step');
@@ -289,22 +298,13 @@
 
                 const inputGroup = $(`
                 <div class="form-group">
-                    <label for="fileLabel${ }">Judul File</label>
-                    <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Masukkan nama label">
-
+                    <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Contoh : Sertifikat">
                     <input type="file" class="form-control mb-3" name="fileInput[]">
                 </div>
             `);
 
                 $('#fileInputContainer').append(inputGroup);
             });
-
-            function showStepModal(stepName) {
-                $('#modalStepName').text(stepName);
-                $('#fileInputContainer').empty(); // reset input
-                fileInputCounter = 0;
-                $('#timelineModal').modal('show');
-            }
         });
     </script>
 @endsection
