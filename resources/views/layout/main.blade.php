@@ -122,10 +122,10 @@
       <div class="app-sidebar colored">
           <div class="sidebar-header">
               <a class="header-brand" href="index.html">
-                  <div class="logo-img">
+                  {{-- <div class="logo-img">
                       <img src="src/img/brand-white.svg" class="header-brand-img" alt="lavalite">
-                  </div>
-                  <span class="text"></span>
+                  </div> --}}
+                  <span class="text">Gatratrust</span>
               </a>
               <button type="button" class="nav-toggle"><i data-toggle="expanded"
                       class="ik ik-toggle-right toggle-icon"></i></button>
@@ -135,19 +135,19 @@
           <div class="sidebar-content">
               <div class="nav-container">
                   <nav id="main-menu-navigation" class="navigation-main">
-                      <div class="nav-lavel">Main Menu</div>
-                      <div class="nav-item">
+                      <div class="nav-lavel">Pages</div>
+                      {{-- <div class="nav-item">
                           <a href="{{ route('dashboard') }}"><i class="ik ik-home"></i><span>Dashboard</span></a>
-                      </div>
+                      </div> --}}
                       <div class="nav-item">
-                          <a href="{{ route('projects.tampilan') }}"><i class="ik ik-briefcase"></i><span>Project</span></a>
+                          <a href="{{ route('projects.tampilan') }}"><i class="ik ik-folder"></i><span>Project</span></a>
                       </div>
                         <div class="nav-item">
-                            <a href="{{ route('user.tampilan') }}"><i class="ik ik-clipboard"></i><span>User</span></a>
-                      <div class="nav-lavel">Lainnya</div>
+                            <a href="{{ route('user.tampilan') }}"><i class="ik ik-user"></i><span>User</span></a>
+                      {{-- <div class="nav-lavel">Lainnya</div>
                       <div class="nav-item">
                           <a href="#"><i class="ik ik-settings"></i><span>Pengaturan</span></a>
-                      </div>
+                      </div> --}}
                   </nav>
               </div>
           </div>
