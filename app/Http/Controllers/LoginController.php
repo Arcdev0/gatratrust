@@ -21,9 +21,9 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
+       if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('projects.tampilan');
+            return redirect()->intended(route('projects.tampilan'));
         }
 
         return back()->withErrors([
