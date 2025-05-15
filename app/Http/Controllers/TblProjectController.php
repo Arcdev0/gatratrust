@@ -44,7 +44,7 @@ class TblProjectController extends Controller
         ->with('success', 'Project berhasil ditambahkan');
 }
 
- public function show(ProjectTbl $project)
+    public function show(ProjectTbl $project)
         {
             $kerjaanId = $project->kerjaan_id;
             $projectId = $project->id;

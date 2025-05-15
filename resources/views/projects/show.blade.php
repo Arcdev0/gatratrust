@@ -222,17 +222,17 @@
                                 <div class="timeline-vertical">
                                     @foreach ($steps as $index => $step)
                                         @php
-                                            $isDone = $index < 4; // dummy data
+                                            $status = $stepStatuses[$index];
                                         @endphp
                                         <div class="timeline-step">
-                                            <div class="circle {{ $isDone ? 'done' : 'pending' }}"
+                                            <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
                                                 data-step="{{ $step }}"
                                                 onclick="showStepModal('{{ $step }}')">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
                                             @if ($index < count($steps) - 1)
-                                                <div class="arrow-line {{ $isDone ? 'done' : '' }}"></div>
+                                                <div class="arrow-line {{ $status == 'done' ? 'done' : '' }}"></div>
                                             @endif
                                         </div>
                                     @endforeach
@@ -246,13 +246,18 @@
                             <div class="modal-dialog modal-dialog-centered" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Detail Proses</h5>
+                                        <h5 class="modal-title">Detail Proses <strong id="modalStepName"></strong></h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        Kamu mengklik langkah: <strong id="modalStepName"></strong>
+                                        <div id="fileInputContainer">
+                                            <!-- Input akan ditambahkan di sini -->
+                                        </div>
+                                        <button type="button" id="addFileBtn" class="btn btn-sm btn-outline-primary mt-2">
+                                            + Tambah File
+                                        </button>
                                     </div>
                                     <div class="modal-footer">
                                         <button class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -271,12 +276,35 @@
 
 @section('script')
     <script>
+        let fileInputCounter = 0;
         $(document).ready(function() {
             $('.circle').click(function() {
                 var step = $(this).data('step');
                 $('#modalStepName').text(step);
                 $('#timelineModal').modal('show');
             });
+
+            $('#addFileBtn').on('click', function() {
+                fileInputCounter++;
+
+                const inputGroup = $(`
+                <div class="form-group">
+                    <label for="fileLabel${ }">Judul File</label>
+                    <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Masukkan nama label">
+
+                    <input type="file" class="form-control mb-3" name="fileInput[]">
+                </div>
+            `);
+
+                $('#fileInputContainer').append(inputGroup);
+            });
+
+            function showStepModal(stepName) {
+                $('#modalStepName').text(stepName);
+                $('#fileInputContainer').empty(); // reset input
+                fileInputCounter = 0;
+                $('#timelineModal').modal('show');
+            }
         });
     </script>
 @endsection
