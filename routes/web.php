@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/show/{project}', [TblProjectController::class, 'show'])->name('projects.show');
     Route::post('/projects/update/{project}', [TblProjectController::class, 'update'])->name('projects.update');
     Route::delete('/projects/delete/{project}', [TblProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::post('/projects/upload-step-files', [TblProjectController::class, 'uploadFiles']);
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');

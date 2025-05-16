@@ -202,7 +202,7 @@
                                         <div class="timeline-step">
                                             <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
                                                 onclick="showStepModal('{{ $step }}')"
-                                                data-step="{{ $step }}">
+                                                data-step="{{ $step }}" data-id="">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
@@ -261,7 +261,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                                        <button class="btn btn-primary">Simpan</button>
+                                        <button class="btn btn-primary" id="saveFile">Simpan</button>
                                         <button class="btn btn-success" id="markAsDoneBtn">Tandai Selesai</button>
                                     </div>
                                 </div>
@@ -277,12 +277,10 @@
 
 @section('script')
     <script>
-        let fileInputCounter = 0;
-
         function showStepModal(stepName) {
+            currentStep = stepName;
             $('#modalStepName').text(stepName);
             $('#fileInputContainer').empty(); // reset input
-            fileInputCounter = 0;
             $('#timelineModal').modal('show');
         }
 
@@ -294,8 +292,6 @@
             });
 
             $('#addFileBtn').on('click', function() {
-                fileInputCounter++;
-
                 const inputGroup = $(`
                 <div class="form-group">
                     <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Contoh : Sertifikat">
@@ -305,6 +301,43 @@
 
                 $('#fileInputContainer').append(inputGroup);
             });
+
+            $('#saveFile').on('click', function() {
+                const formData = new FormData();
+
+                // Ambil semua input label dan file
+                $('#fileInputContainer .form-group').each(function(index, element) {
+                    const label = $(element).find('input[type="text"]').val();
+                    const file = $(element).find('input[type="file"]')[0].files[0];
+
+                    formData.append(`fileLabel[${index}]`, label);
+                    formData.append(`fileInput[${index}]`, file);
+                });
+
+                // Tambahkan step saat ini
+                formData.append('step', currentStep);
+                formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+                console.log(formData);
+
+
+                // Kirim ke server via AJAX
+                $.ajax({
+                    url: '/projects/upload-step-files', // Ganti dengan route yang kamu buat
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        alert('File berhasil disimpan');
+                        $('#timelineModal').modal('hide');
+                    },
+                    error: function() {
+                        alert('Terjadi kesalahan saat mengunggah file');
+                    }
+                });
+            });
+
         });
     </script>
 @endsection

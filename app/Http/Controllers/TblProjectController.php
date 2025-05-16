@@ -100,4 +100,17 @@ class TblProjectController extends Controller
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil dihapus');
     }
+
+    public function uploadFiles(Request $request)
+    {
+        $step = $request->input('step');
+        $labels = $request->input('fileLabel');
+        $files = $request->file('fileInput');
+
+        dd($step,$labels,$files);
+
+    }
+
+
+
 }
