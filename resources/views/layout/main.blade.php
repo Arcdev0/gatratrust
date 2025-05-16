@@ -2,8 +2,8 @@
       <div class="container-fluid">
           <div class="d-flex justify-content-between">
               <div class="top-menu d-flex align-items-center">
-                  {{-- <button type="button" class="btn-icon mobile-nav-toggle d-lg-none"><span></span></button>
-                  <div class="header-search">
+                  <button type="button" class="btn-icon mobile-nav-toggle d-lg-none"><span></span></button>
+                  {{-- <div class="header-search">
                       <div class="input-group">
                           <span class="input-group-addon search-close"><i class="ik ik-x"></i></span>
                           <input type="text" class="form-control">
@@ -305,9 +305,9 @@
       <footer class="footer">
           <div class="w-100 clearfix">
               <span class="text-center text-sm-left d-md-inline-block">Gatra Perdana Trustrue</span>
-              <span class="float-none float-sm-right mt-1 mt-sm-0 text-center">Crafted with <i
+              {{-- <span class="float-none float-sm-right mt-1 mt-sm-0 text-center">Crafted with <i
                       class="fa fa-heart text-danger"></i> by <a href="http://lavalite.org/" class="text-dark"
-                      target="_blank">Lavalite</a></span>
+                      target="_blank">Lavalite</a></span> --}}
           </div>
       </footer>
 
