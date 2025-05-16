@@ -243,7 +243,8 @@
                         <!-- Modal -->
                         <div class="modal fade" id="timelineModal" tabindex="-1" role="dialog"
                             aria-labelledby="timelineModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                                <!-- ganti jadi modal-lg -->
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title">Detail Proses <strong id="modalStepName"></strong></h5>
@@ -252,12 +253,27 @@
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <div id="fileInputContainer">
-                                            <!-- Input akan ditambahkan di sini -->
+                                        <div class="row">
+                                            <!-- Kolom Kiri: Data File yang sudah diupload -->
+                                            <div class="col-md-6 border-end">
+                                                <h6>Data Terunggah</h6>
+                                                <div id="dataFile">
+                                                    <p class="text-muted">Belum ada data yang di-upload</p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Kolom Kanan: Form upload -->
+                                            <div class="col-md-6">
+                                                <h6>Upload File Baru</h6>
+                                                <div id="fileInputContainer">
+                                                    <!-- Input akan ditambahkan di sini -->
+                                                </div>
+                                                <button type="button" id="addFileBtn"
+                                                    class="btn btn-sm btn-outline-primary mt-2">
+                                                    + Tambah File
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button type="button" id="addFileBtn" class="btn btn-sm btn-outline-primary mt-2">
-                                            + Tambah File
-                                        </button>
                                     </div>
                                     <div class="modal-footer">
                                         <button class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -267,7 +283,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -293,14 +308,24 @@
 
             $('#addFileBtn').on('click', function() {
                 const inputGroup = $(`
-                <div class="form-group">
-                    <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Contoh : Sertifikat">
-                    <input type="file" class="form-control mb-3" name="fileInput[]">
-                </div>
-            `);
+        <div class="form-group position-relative border rounded p-3 mb-2 bg-light">
+             <button type="button" class="btn btn-sm btn-danger float-right mb-2 remove-file-btn">
+                &times;
+            </button>
+            <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Contoh : Sertifikat">
+            <input type="file" class="form-control mb-2" name="fileInput[]">
+        </div>
+
+    `);
 
                 $('#fileInputContainer').append(inputGroup);
             });
+
+            // Event delegasi untuk hapus input file
+            $('#fileInputContainer').on('click', '.remove-file-btn', function() {
+                $(this).closest('.form-group').remove();
+            });
+
 
             $('#saveFile').on('click', function() {
                 const formData = new FormData();
