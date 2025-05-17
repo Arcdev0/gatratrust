@@ -205,6 +205,16 @@
 
 @section('script')
     <script>
+          $(document).ready(function () {
+            $('#projectTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false
+            });
+
         $(function () {
             // Tambah Project
             $('#formTambahProject').on('submit', function (e) {
