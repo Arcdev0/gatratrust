@@ -202,7 +202,7 @@
 
                                         <div class="timeline-step">
                                             <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
-                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}')"
+                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}', '{{ $status }}')"
                                                 data-step="{{ $step }}" data-id="{{ $listProsesId }}">
                                                 <i class="fas fa-check"></i>
                                             </div>
@@ -229,7 +229,7 @@
                                         <div class="timeline-step">
                                             <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
                                                 data-step="{{ $step }}" data-id="{{ $listProsesId }}"
-                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}')">
+                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}', '{{ $status }}')">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
@@ -258,7 +258,8 @@
                                         <input type="hidden" id="modalListProsesId" />
                                         <div class="row">
                                             <!-- Kolom Kiri: Data File yang sudah diupload -->
-                                            <div class="col-md-6 border-end">
+
+                                            <div class="@if(Auth::user()->role_id == 1) col-md-6 border-end @else col-md-12 @endif">
                                                 <h6>Data Terunggah</h6>
                                                 <div id="dataFile">
                                                     <p class="text-muted">Belum ada data yang di-upload</p>
@@ -266,22 +267,30 @@
                                             </div>
 
                                             <!-- Kolom Kanan: Form upload -->
-                                            <div class="col-md-6">
-                                                <h6>Upload File Baru</h6>
-                                                <div id="fileInputContainer">
-                                                    <!-- Input akan ditambahkan di sini -->
+                                            @if (Auth::user()->role_id == 1)
+                                                <div class="col-md-6">
+                                                    <h6>Upload File Baru</h6>
+                                                    <div id="fileInputContainer">
+                                                        <!-- Input akan ditambahkan di sini -->
+                                                    </div>
+                                                    <button type="button" id="addFileBtn"
+                                                        class="btn btn-sm btn-outline-primary mt-2">
+                                                        + Tambah File
+                                                    </button>
+
                                                 </div>
-                                                <button type="button" id="addFileBtn"
-                                                    class="btn btn-sm btn-outline-primary mt-2">
-                                                    + Tambah File
-                                                </button>
-                                            </div>
+                                            @endif
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                                        <button class="btn btn-primary" id="saveFile">Simpan</button>
-                                        <button class="btn btn-success" id="markAsDoneBtn">Tandai Selesai</button>
+                                        <div class="modal-footer">
+                                            @if (Auth::user()->role_id == 1)
+                                                <button class="btn btn-primary" id="saveFile">Simpan</button>
+                                                <button class="btn btn-success" id="markAsDoneBtn">Tandai Selesai</button>
+                                                <button class="btn btn-secondary" id="unmarkAsDoneBtn">Cabut Tanda
+                                                    Selesai</button>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -295,14 +304,41 @@
 
 @section('script')
     <script>
-        function showStepModal(step, prosesId) {
+        function showStepModal(step, prosesId, status) {
             $('#modalStepName').text(step);
-            $('#modalListProsesId').val(prosesId); // contoh: jika ingin menaruh di input hidden
+            $('#modalListProsesId').val(prosesId);
             $('#fileInputContainer').empty(); // reset input
+
+            const userRoleId = {{ Auth::user()->role_id }};
+
+            console.log(status);
+
+
+            if (status === 'done') {
+                $('#markAsDoneBtn').hide();
+                $('#unmarkAsDoneBtn').show();
+            } else {
+                $('#markAsDoneBtn').show();
+                $('#unmarkAsDoneBtn').hide();
+            }
+
+            if (userRoleId !== 1) {
+                $('#saveFile').hide();
+                $('#markAsDoneBtn').hide();
+                $('#unmarkAsDoneBtn').hide();
+                $('#addFileBtn').hide();
+                $('#fileInputContainer').addClass('d-none');
+            } else {
+                $('#saveFile').show();
+                $('#markAsDoneBtn').show();
+                $('#unmarkAsDoneBtn').show();
+                $('#addFileBtn').show();
+                $('#fileInputContainer').removeClass('d-none');
+            }
         }
 
         $(document).ready(function() {
-            const path = window.location.pathname; // "/projects/show/1"
+            const path = window.location.pathname;
             const match = path.match(/\/(\d+)$/);
             const id = match ? match[1] : null;
 
@@ -335,23 +371,33 @@
                                     timeStyle: 'short'
                                 });
 
+                                const userRoleId = {{ Auth::user()->role_id }};
+                                const isAdmin = userRoleId === 1;
+
                                 html += `
-                <li class="list-group-item d-flex justify-content-between align-items-start flex-column">
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <span>
-                            <strong>${file.name}</strong>
-                        </span>
-                        <div>
-                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary me-2" title="Lihat File">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <button class="btn btn-sm btn-outline-danger btn-delete-file" data-id="${file.id}" title="Hapus File">
-                                 <i class="fas fa-trash"></i>
-                            </button>
+                    <li class="list-group-item d-flex justify-content-between align-items-start flex-column">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <span>
+                                <strong>${file.name}</strong>
+                            </span>
+                            <div>
+                                <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary me-2" title="Lihat File">
+                                    <i class="fas fa-eye"></i>
+                                </a>`;
+
+
+                                if (isAdmin) {
+                                    html += `
+                                <button class="btn btn-sm btn-outline-danger btn-delete-file" data-id="${file.id}" title="Hapus File">
+                                    <i class="fas fa-trash"></i>
+                                </button>`;
+                                }
+
+                                html += `
+                            </div>
                         </div>
-                    </div>
-                    <small class="text-muted">Diunggah pada: ${formattedDate}</small>
-                </li>`;
+                        <small class="text-muted">Diunggah pada: ${formattedDate}</small>
+                    </li>`;
                             });
                             html += '</ul>';
                             $('#dataFile').html(html);
@@ -489,6 +535,127 @@
                     }
                 });
             });
+
+            $(document).on('click', '#markAsDoneBtn', function() {
+                let projectId = id;
+                let list_proses_id = $('#modalListProsesId').val();
+
+                // Tampilkan konfirmasi sebelum mengubah status
+                Swal.fire({
+                    title: 'Konfirmasi',
+                    text: 'Apakah Anda yakin ingin menandai proses ini sudah selesai?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Tandai Selesai',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Kirim request AJAX
+                        $.ajax({
+                            url: '/project/' + projectId + '/mark-step-done',
+                            type: 'POST',
+                            data: {
+                                list_proses_id: list_proses_id,
+                                _token: $('meta[name="csrf-token"]').attr(
+                                    'content') // CSRF token untuk Laravel
+                            },
+                            beforeSend: function() {
+                                // Tampilkan loading indicator
+                                $('#markAsDoneBtn').prop('disabled', true).html(
+                                    '<i class="fas fa-spinner fa-spin"></i> Memproses...'
+                                );
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'Status step berhasil diubah menjadi selesai',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        // Refresh halaman atau update UI
+                                        location
+                                            .reload(); // Opsi 1: Refresh halaman
+
+                                        // Opsi 2: Update UI tanpa refresh (jika prefer)
+                                        // $('.circle[data-id="' + list_proses_id + '"]').removeClass('pending').addClass('done');
+                                        // $('#timelineModal').modal('hide');
+                                    });
+                                } else {
+                                    Swal.fire('Gagal', response.message ||
+                                        'Terjadi kesalahan', 'error');
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Error',
+                                    'Terjadi kesalahan saat mengubah status',
+                                    'error');
+                            },
+                            complete: function() {
+                                $('#markAsDoneBtn').prop('disabled', false).html(
+                                    'Tandai Selesai');
+                            }
+                        });
+                    }
+                });
+            });
+
+            $(document).on('click', '#unmarkAsDoneBtn', function() {
+                let projectId = id;
+                let list_proses_id = $('#modalListProsesId').val();
+
+                Swal.fire({
+                    title: 'Konfirmasi',
+                    text: 'Apakah Anda yakin ingin membatalkan status selesai pada proses ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Batalkan Selesai',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/project/' + projectId + '/unmark-step-done',
+                            type: 'POST',
+                            data: {
+                                kerjaan_list_proses_id: list_proses_id,
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            beforeSend: function() {
+                                $('#unmarkAsDoneBtn').prop('disabled', true).html(
+                                    '<i class="fas fa-spinner fa-spin"></i> Memproses...'
+                                );
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'Status step berhasil dibatalkan dari selesai',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Gagal', response.message ||
+                                        'Terjadi kesalahan', 'error');
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Error',
+                                    'Terjadi kesalahan saat membatalkan status',
+                                    'error');
+                            },
+                            complete: function() {
+                                $('#unmarkAsDoneBtn').prop('disabled', false).html(
+                                    'Batalkan Selesai');
+                            }
+                        });
+                    }
+                });
+            });
+
 
         });
     </script>

@@ -32,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects/upload-step-files', [TblProjectController::class, 'uploadFiles']);
     Route::get('/project/{id}/uploaded-files', [TblProjectController::class, 'getUploadedFiles']);
     Route::delete('/project/delete-file/{id}', [TblProjectController::class, 'deleteFile']);
+    Route::post('/project/{id}/mark-step-done', [TblProjectController::class, 'markStepDone']);
+    Route::post('/project/{id}/unmark-step-done', [TblProjectController::class, 'unmarkStepDone']);
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');

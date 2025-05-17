@@ -268,4 +268,68 @@ class TblProjectController extends Controller
 
 
 
+  public function markStepDone($id, Request $request)
+    {
+        $project_id = $id;
+        $validated = $request->validate([
+            'list_proses_id' => 'required'
+        ]);
+
+        try {
+
+            DB::table('project_details')
+                ->where('project_id', $project_id)
+                ->where('kerjaan_list_proses_id', $validated['list_proses_id'])
+                ->update([
+                    'status' => 'done',
+                    'updated_at' => now()
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status berhasil diubah menjadi selesai'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function unmarkStepDone($id, Request $request)
+    {
+        $project_id = $id;
+
+        // Validasi input kerjaan_list_proses_id
+        $validated = $request->validate([
+            'kerjaan_list_proses_id' => 'required|integer'
+        ]);
+
+        try {
+            // Update status jadi in_progress
+            DB::table('project_details')
+                ->where('project_id', $project_id)
+                ->where('kerjaan_list_proses_id', $validated['kerjaan_list_proses_id'])
+                ->update([
+                    'status' => 'in_progress',
+                    'updated_at' => now()
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status berhasil dibatalkan dari selesai'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+
 }
