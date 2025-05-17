@@ -197,12 +197,13 @@
                                     @foreach ($steps as $index => $step)
                                         @php
                                             $status = $stepStatuses[$index];
+                                            $listProsesId = $stepProcessIds[$index];
                                         @endphp
 
                                         <div class="timeline-step">
                                             <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
-                                                onclick="showStepModal('{{ $step }}')"
-                                                data-step="{{ $step }}" data-id="">
+                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}')"
+                                                data-step="{{ $step }}" data-id="{{ $listProsesId }}">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
@@ -223,11 +224,12 @@
                                     @foreach ($steps as $index => $step)
                                         @php
                                             $status = $stepStatuses[$index];
+                                            $listProsesId = $stepProcessIds[$index];
                                         @endphp
                                         <div class="timeline-step">
                                             <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
-                                                data-step="{{ $step }}"
-                                                onclick="showStepModal('{{ $step }}')">
+                                                data-step="{{ $step }}" data-id="{{ $listProsesId }}"
+                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}')">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
@@ -253,6 +255,7 @@
                                         </button>
                                     </div>
                                     <div class="modal-body">
+                                        <input type="hidden" id="modalListProsesId" />
                                         <div class="row">
                                             <!-- Kolom Kiri: Data File yang sudah diupload -->
                                             <div class="col-md-6 border-end">
@@ -292,17 +295,74 @@
 
 @section('script')
     <script>
-        function showStepModal(stepName) {
-            currentStep = stepName;
-            $('#modalStepName').text(stepName);
+        function showStepModal(step, prosesId) {
+            $('#modalStepName').text(step);
+            $('#modalListProsesId').val(prosesId); // contoh: jika ingin menaruh di input hidden
             $('#fileInputContainer').empty(); // reset input
-            $('#timelineModal').modal('show');
         }
 
         $(document).ready(function() {
+            const path = window.location.pathname; // "/projects/show/1"
+            const match = path.match(/\/(\d+)$/);
+            const id = match ? match[1] : null;
+
+            let currentStep = null;
+
             $('.circle').click(function() {
                 var step = $(this).data('step');
                 $('#modalStepName').text(step);
+                currentStep = $(this).data('step');
+
+                let projectId = id;
+                let list_proses_id = $('#modalListProsesId').val();
+
+                $.ajax({
+                    url: '/project/' + projectId + '/uploaded-files',
+                    type: 'GET',
+                    data: {
+                        list_proses_id: list_proses_id
+                    },
+                    success: function(response) {
+                        if (response.length === 0) {
+                            $('#dataFile').html(
+                                '<p class="text-muted">Belum ada data yang di-upload</p>');
+                        } else {
+                            let html = '<ul class="list-group">';
+                            response.forEach(function(file) {
+                                let uploadedAt = new Date(file.uploaded_at);
+                                let formattedDate = uploadedAt.toLocaleString('id-ID', {
+                                    dateStyle: 'medium',
+                                    timeStyle: 'short'
+                                });
+
+                                html += `
+                <li class="list-group-item d-flex justify-content-between align-items-start flex-column">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <span>
+                            <strong>${file.name}</strong>
+                        </span>
+                        <div>
+                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary me-2" title="Lihat File">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-file" data-id="${file.id}" title="Hapus File">
+                                 <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">Diunggah pada: ${formattedDate}</small>
+                </li>`;
+                            });
+                            html += '</ul>';
+                            $('#dataFile').html(html);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#dataFile').html(
+                            '<p class="text-danger">Gagal memuat data file.</p>');
+                    }
+                });
+
                 $('#timelineModal').modal('show');
             });
 
@@ -340,25 +400,92 @@
                 });
 
                 // Tambahkan step saat ini
-                formData.append('step', currentStep);
+                formData.append('step_name', currentStep);
+                formData.append('project_id', id);
                 formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-
-                console.log(formData);
-
 
                 // Kirim ke server via AJAX
                 $.ajax({
-                    url: '/projects/upload-step-files', // Ganti dengan route yang kamu buat
+                    url: '/projects/upload-step-files',
                     type: 'POST',
                     data: formData,
                     processData: false,
                     contentType: false,
+                    beforeSend: function() {
+                        // Tampilkan loading sebelum request dimulai
+                        Swal.fire({
+                            title: 'Mengunggah...',
+                            text: 'Mohon tunggu sementara file diunggah.',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
                     success: function(response) {
-                        alert('File berhasil disimpan');
-                        $('#timelineModal').modal('hide');
+                        // Tampilkan alert sukses
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'File berhasil disimpan',
+                        }).then(() => {
+                            $('#timelineModal').modal('hide');
+                        });
                     },
                     error: function() {
-                        alert('Terjadi kesalahan saat mengunggah file');
+                        // Tampilkan alert error
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Terjadi kesalahan saat mengunggah file',
+                        });
+                    }
+                });
+
+            });
+
+
+            $(document).on('click', '.btn-delete-file', function() {
+                let fileId = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "File yang dihapus tidak dapat dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/project/delete-file/' + fileId,
+                            type: 'DELETE',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: 'File berhasil dihapus!',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+
+                                // Refresh data (klik ulang step)
+                                $('.circle[data-step="' + $('#modalStepName').text() +
+                                    '"]').click();
+                            },
+                            error: function(err) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: 'Terjadi kesalahan saat menghapus file.',
+                                });
+                            }
+                        });
                     }
                 });
             });

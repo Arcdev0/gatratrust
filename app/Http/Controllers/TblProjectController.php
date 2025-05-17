@@ -7,6 +7,7 @@ use App\Models\Kerjaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class TblProjectController extends Controller
 {
@@ -49,26 +50,30 @@ class TblProjectController extends Controller
             $kerjaanId = $project->kerjaan_id;
             $projectId = $project->id;
 
-            $processes = DB::table('kerjaan_list_proses as klp')
-                ->join('list_proses as lp', 'lp.id', '=', 'klp.list_proses_id')
-                ->leftJoin('project_details as pd', function ($join) use ($projectId) {
-                    $join->on('pd.kerjaan_list_proses_id', '=', 'klp.id')
-                        ->where('pd.project_id', '=', $projectId);
-                })
-                ->where('klp.kerjaan_id', $kerjaanId)
-                ->select('lp.nama_proses', 'pd.status')
-                ->orderBy('klp.urutan')
-                ->get();
+            $q = "SELECT
+                        a.urutan,
+                        a.list_proses_id,
+                        b.nama_proses,
+                        c.`status`
+                    FROM kerjaan_list_proses a
+                    JOIN list_proses b ON a.list_proses_id = b.id
+                    LEFT JOIN project_details c ON b.id = c.kerjaan_list_proses_id
+                    WHERE a.kerjaan_id = '$kerjaanId'
+                    ";
+
+           $processes = DB::select($q);
 
             $steps = [];
             $stepStatuses = [];
+            $stepProcessIds = [];
 
             foreach ($processes as $process) {
                 $steps[] = $process->nama_proses;
                 $stepStatuses[] = $process->status ?? 'pending';
+                $stepProcessIds[] = $process->list_proses_id;
             }
 
-            return view('projects.show', compact('project', 'steps', 'stepStatuses'));
+            return view('projects.show', compact('project', 'steps', 'stepStatuses', 'stepProcessIds'));
         }
 
     public function update(Request $request, ProjectTbl $project)
@@ -101,14 +106,164 @@ class TblProjectController extends Controller
             ->with('success', 'Project berhasil dihapus');
     }
 
+
     public function uploadFiles(Request $request)
     {
-        $step = $request->input('step');
-        $labels = $request->input('fileLabel');
-        $files = $request->file('fileInput');
 
-        dd($step,$labels,$files);
+        // dd($request->all());
+        $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'step_name' => 'required|string',
+            'fileLabel' => 'required|array',
+            'fileLabel.*' => 'required|string',
+            'fileInput' => 'required|array',
+            'fileInput.*' => 'required|file|mimes:pdf,jpg,png|max:5120',
+        ]);
 
+        DB::beginTransaction();
+
+        try {
+            // 1. Ambil atau buat list_proses
+            $listProses = DB::table('list_proses')
+                ->where('nama_proses', $request->step_name)
+                ->first();
+
+            if (!$listProses) {
+                $listProsesId = DB::table('list_proses')->insertGetId([
+                    'nama_proses' => $request->step_name,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $listProsesId = $listProses->id;
+            }
+
+            // 2. Ambil atau buat project_detail
+            $projectDetail = DB::table('project_details')
+                ->where('project_id', $request->project_id)
+                ->where('kerjaan_list_proses_id', $listProsesId)
+                ->first();
+
+            if (!$projectDetail) {
+                $projectDetailId = DB::table('project_details')->insertGetId([
+                    'project_id' => $request->project_id,
+                    'kerjaan_list_proses_id' => $listProsesId,
+                    'status' => 'in_progress',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $projectDetailId = $projectDetail->id;
+            }
+
+            // 3. Proses file yang diunggah
+            foreach ($request->file('fileInput') as $index => $file) {
+                $namaFile = $request->fileLabel[$index] ?? 'Unnamed File';
+
+                // 3a. Ambil atau buat list_proses_file
+                $listProsesFile = DB::table('list_proses_files')
+                    ->where('list_proses_id', $listProsesId)
+                    ->where('nama_file', $namaFile)
+                    ->first();
+
+                if (!$listProsesFile) {
+                    $listProsesFileId = DB::table('list_proses_files')->insertGetId([
+                        'list_proses_id' => $listProsesId,
+                        'nama_file' => $namaFile,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $listProsesFileId = $listProsesFile->id;
+                }
+
+                // 3b. Simpan file ke storage
+                $directory = 'uploads/projects/' . $request->project_id;
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $file->move(public_path($directory), $fileName);
+                $publicPath = $directory . '/' . $fileName;
+
+                // 3c. Simpan data ke project_progress_files
+                DB::table('project_progress_files')->insert([
+                    'project_detail_id' => $projectDetailId,
+                    'list_proses_file_id' => $listProsesFileId,
+                    'file_path' => $publicPath,
+                    'keterangan' => $namaFile,
+                    'uploaded_by' => auth()->id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'File berhasil diunggah.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+  public function getUploadedFiles($projectId, Request $request)
+    {
+        $listProsesId = $request->input('list_proses_id');
+
+        $query = DB::table('project_progress_files')
+            ->join('project_details', 'project_progress_files.project_detail_id', '=', 'project_details.id')
+            ->join('list_proses_files', 'project_progress_files.list_proses_file_id', '=', 'list_proses_files.id')
+            ->where('project_details.project_id', $projectId);
+
+        // Tambahkan filter jika list_proses_id tersedia
+        if ($listProsesId) {
+            $query->where('project_details.kerjaan_list_proses_id', $listProsesId);
+        }
+
+        $files = $query->select([
+                'project_progress_files.id',
+                'list_proses_files.nama_file as name',
+                'project_progress_files.file_path',
+                'project_progress_files.keterangan',
+                'project_progress_files.created_at',
+                'project_progress_files.uploaded_by'
+            ])
+            ->get()
+            ->map(function ($file) {
+                return [
+                    'id' => $file->id,
+                    'name' => $file->name,
+                    'url' => asset($file->file_path),
+                    'description' => $file->keterangan,
+                    'uploaded_at' => $file->created_at,
+                    'uploaded_by' => $file->uploaded_by
+                ];
+            });
+
+        return response()->json($files);
+    }
+
+
+    public function deleteFile($id)
+    {
+        // Ambil data file
+        $file = DB::table('project_progress_files')->where('id', $id)->first();
+
+        if (!$file) {
+            return response()->json(['message' => 'File tidak ditemukan.'], 404);
+        }
+
+        // Hapus file dari sistem file jika ada
+        if (File::exists(public_path($file->file_path))) {
+            File::delete(public_path($file->file_path));
+        }
+
+        // Hapus data dari database
+        DB::table('project_progress_files')->where('id', $id)->delete();
+
+        return response()->json(['message' => 'File berhasil dihapus.']);
     }
 
 
