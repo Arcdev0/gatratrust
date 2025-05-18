@@ -43,15 +43,9 @@
                                                     data-status="{{ $user->is_active }}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <form method="POST" action="{{ route('user.destroy', $user->id) }}"
-                                                    class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger"
-                                                        onclick="return confirm('Apakah Anda yakin?')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-sm btn-danger btnDeleteUser">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -259,6 +253,25 @@
                     },
                     error: function (xhr) {
                         alert('Gagal mengedit user. Pastikan data valid.');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btnDeleteUser', function (e) {
+                e.preventDefault();
+                var form = $(this).closest('form');
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "User akan dihapus secara permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
                     }
                 });
             });
