@@ -105,8 +105,6 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <form id="formEditProject">
-                    @csrf
-
                     <div class="modal-header">
                         <h5 class="modal-title" id="editModalLabel">Edit Project</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -116,15 +114,15 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>No. Project</label>
-                            <input type="text" name="no_project" class="form-control" required>
+                            <input type="text" name="no_project_edit" class="form-control" id="edit_no_project" required>
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
-                            <input type="text" name="nama_project" class="form-control" required>
+                            <input type="text" name="nama_project" class="form-control" id="edit_nama_project" required>
                         </div>
                         <div class="form-group">
                             <label>Client</label>
-                            <select name="client_id" class="form-control" required>
+                            <select name="client_id" class="form-control" id="edit_client_id" required>
                                 <option value="">Pilih Client</option>
                                 @foreach ($listclient as $client)
                                     <option value="{{ $client->id }}">
@@ -135,7 +133,7 @@
                         </div>
                         <div class="form-group">
                             <label>Jenis Kerjaan</label>
-                            <select name="kerjaan_id" class="form-control" required>
+                            <select name="kerjaan_id" class="form-control" id="edit_kerjaan_id" required>
                                 <option value="">Pilih Kerjaan</option>
                                 @foreach ($listkerjaan as $kerjaan)
                                     <option value="{{ $kerjaan->id }}">{{ $kerjaan->nama_kerjaan }}</option>
@@ -144,20 +142,20 @@
                         </div>
                         <div class="form-group">
                             <label>Deskripsi</label>
-                            <textarea name="deskripsi" class="form-control"></textarea>
+                            <textarea name="deskripsi" class="form-control" id="edit_deskripsi"></textarea>
                         </div>
                         <div class="form-group">
                             <label>Mulai</label>
-                            <input type="date" name="start" class="form-control">
+                            <input type="date" name="start" class="form-control" id="edit_start">
                         </div>
                         <div class="form-group">
                             <label>Selesai</label>
-                            <input type="date" name="end" class="form-control">
+                            <input type="date" name="end" class="form-control" id="edit_end">
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="submit" class="btn btn-primary">Update</button>
                     </div>
                 </form>
             </div>
@@ -222,100 +220,100 @@
         });
 
 
-        $(function () {
-            // Tambah Project
-            $('#formTambahProject').on('submit', function (e) {
-                e.preventDefault();
-                var form = $(this);
-                var btn = form.find('button[type="submit"]');
-                btn.prop('disabled', true).text('Menyimpan...');
 
-                $.ajax({
-                    url: "{{ route('projects.store') }}",
-                    method: "POST",
-                    data: form.serialize(),
-                    success: function (res) {
-                        $('#exampleModalCenter').modal('hide'); // Fixed modal ID
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: 'Project berhasil ditambahkan!',
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            location.reload(); // reload halaman
-                        });
-                    },
-                    error: function (xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: 'Gagal menambah project. Pastikan data sudah benar.'
-                        });
-                    },
-                    complete: function () {
-                        btn.prop('disabled', false).text('Simpan');
-                    }
-                });
+        // Tambah Project
+        $('#formTambahProject').on('submit', function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var btn = form.find('button[type="submit"]');
+            btn.prop('disabled', true).text('Menyimpan...');
+
+            $.ajax({
+                url: "{{ route('projects.store') }}",
+                method: "POST",
+                data: form.serialize(),
+                success: function (res) {
+                    $('#exampleModalCenter').modal('hide'); // Fixed modal ID
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: 'Project berhasil ditambahkan!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload(); // reload halaman
+                    });
+                },
+                error: function (xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal menambah project. Pastikan data sudah benar.'
+                    });
+                },
+                complete: function () {
+                    btn.prop('disabled', false).text('Simpan');
+                }
             });
+        });
 
-            // Edit Project - Set Data
-            $('.btn-edit-project').on('click', function () {
-                let btn = $(this);
-                let form = $('#formEditProject');
-                let projectId = btn.data('id');
+        $(document).on('click', '.btn-edit-project', function () {
+            // Ambil data dari tombol yang diklik
+            var no = $(this).data('no');
+            var nama = $(this).data('nama');
+            var client = $(this).data('client');
+            var kerjaan = $(this).data('kerjaan');
+            var deskripsi = $(this).data('deskripsi');
+            var start = $(this).data('start');
+            var end = $(this).data('end');
 
-                // Set form action URL
-                form.attr('action', `/projects/update/${projectId}`);
+            // Isi form dalam modal dengan data
+            $('#edit_no_project').val(no);
+            $('#edit_nama_project').val(nama);
+            $('#edit_client_id').val(client);
+            $('#edit_kerjaan_id').val(kerjaan);
+            $('#edit_deskripsi').val(deskripsi);
+            $('#edit_start').val(start);
+            $('#edit_end').val(end);
+        });
 
-                // Fill form with project data
-                form.find('input[name="no_project"]').val(btn.data('no'));
-                form.find('input[name="nama_project"]').val(btn.data('nama'));
-                form.find('select[name="client_id"]').val(btn.data('client'));
-                form.find('select[name="kerjaan_id"]').val(btn.data('kerjaan'));
-                form.find('textarea[name="deskripsi"]').val(btn.data('deskripsi'));
-                form.find('input[name="start"]').val(btn.data('start'));
-                form.find('input[name="end"]').val(btn.data('end'));
-            });
+        // Edit Project - Submit
+        $('#formEditProject').on('submit', function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var btn = form.find('button[type="submit"]');
+            var actionUrl = form.attr('action');
 
-            // Edit Project - Submit
-            $('#formEditProject').on('submit', function (e) {
-                e.preventDefault();
-                var form = $(this);
-                var btn = form.find('button[type="submit"]');
-                var actionUrl = form.attr('action');
+            btn.prop('disabled', true).text('Menyimpan...');
+            const formData = $(this).serializeArray();
 
-                btn.prop('disabled', true).text('Menyimpan...');
-                const formData = $(this).serializeArray();
-
-                $.ajax({
-                    url: actionUrl,
-                    method: "POST",
-                    data: form.serialize(),
-                    success: function (res) {
-                        $('#EditProjectModal').modal('hide');
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: 'Project berhasil diperbarui!',
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function (xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: 'Gagal mengedit project. ' + (xhr.responseJSON
-                                ?.message || '')
-                        });
-                    },
-                    complete: function () {
-                        btn.prop('disabled', false).text('Simpan');
-                    }
-                });
+            $.ajax({
+                url: actionUrl,
+                method: "POST",
+                data: form.serialize(),
+                success: function (res) {
+                    $('#EditProjectModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: 'Project berhasil diperbarui!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function (xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal mengedit project. ' + (xhr.responseJSON
+                            ?.message || '')
+                    });
+                },
+                complete: function () {
+                    btn.prop('disabled', false).text('Simpan');
+                }
             });
         });
     </script>
