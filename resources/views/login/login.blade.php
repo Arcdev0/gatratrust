@@ -6,7 +6,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>Gatra Trust</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon" />
+    <link rel="icon" href="{{ asset('template/img/Logo_gatra.png') }}" type="image/x-icon" />
     <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,400,600,700,800" rel="stylesheet">
 
     {{-- CSS Files --}}
@@ -35,7 +35,7 @@
                         style="background: #fff; max-width: 370px;">
                         <div class="logo-centered mb-3">
                             <a href="{{ url('/') }}">
-                                <img src="{{ asset('img/26585b26-8704-499c-a3f1-3b56af4ab2de.png') }}" alt="Logo"
+                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
                                     style="width: 80px;">
                             </a>
                         </div>

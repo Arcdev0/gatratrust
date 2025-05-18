@@ -122,10 +122,10 @@
     <div class="app-sidebar colored">
         <div class="sidebar-header">
             <a class="header-brand" href="index.html">
-                {{-- <div class="logo-img">
-                      <img src="src/img/brand-white.svg" class="header-brand-img" alt="lavalite">
-                  </div> --}}
-                <span class="text">Gatratrust</span>
+                <span class="text">Gatratrust
+                    <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
+                        style="width: 50px; height: 50px; margin-left: 10px;">
+                </span>
             </a>
             <button type="button" class="nav-toggle"><i data-toggle="expanded"
                     class="ik ik-toggle-right toggle-icon"></i></button>
