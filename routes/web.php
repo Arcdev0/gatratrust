@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TblProjectController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::controller(LoginController::class)->group(function () {
     Route::get('/', 'showLoginForm')->name('login.form');
     Route::post('/login', 'login')->name('login');
-    Route::post('/logout', 'logout')->name('logout');
+
 });
 
 // Authenticated Routes
@@ -42,4 +43,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/user/update/{user}', [UserController::class, 'update'])->name('user.update');
     Route::delete('/user/delete/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password');
+
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

@@ -61,14 +61,14 @@
                             @csrf
                             <div class="form-group mb-3 position-relative">
                                 <i class="ik ik-user position-absolute"
-                                    style="left: 15px; top: 50%; transform: translateY(-50%); color: #4e54c8;"></i>
+                                    style="left: 15px; top: 50%; transform: translateY(-50%); color: #1da34b;"></i>
                                 <input type="text" class="form-control rounded-pill" placeholder="Username" name="name"
                                     required style="padding-left: 40px;">
                             </div>
 
                             <div class="form-group mb-3 position-relative">
                                 <i class="ik ik-lock position-absolute"
-                                    style="left: 15px; top: 50%; transform: translateY(-50%); color: #4e54c8;"></i>
+                                    style="left: 15px; top: 50%; transform: translateY(-50%); color: #1da34b;"></i>
                                 <input type="password" class="form-control rounded-pill" placeholder="Password"
                                     name="password" required style="padding-left: 40px;">
                             </div>
