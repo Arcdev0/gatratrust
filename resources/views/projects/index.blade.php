@@ -328,7 +328,8 @@
                 orderable: false,
                 searchable: false
             },
-            ]
+            ],
+             "autoWidth": false
         });
 
 
