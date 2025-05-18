@@ -8,14 +8,14 @@ use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 // Authentication Routes
 Route::controller(LoginController::class)->group(function () {
-    Route::get('/', 'showLoginForm')->name('login.form');
-    Route::post('/login', 'login')->name('login');
+    Route::post('/auth', 'login')->name('login.auth');
+    Route::get('/login', 'showLoginForm')->name('login');
 
 });
 

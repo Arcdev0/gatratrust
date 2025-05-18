@@ -57,7 +57,7 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('login') }}" method="POST">
+                        <form action="{{ route('login.auth') }}" method="POST">
                             @csrf
                             <div class="form-group mb-3 position-relative">
                                 <i class="ik ik-user position-absolute"
@@ -116,7 +116,7 @@
             confirmButtonText: 'OK'
         });
     });
-   
+
 </script>
 
 </body>
