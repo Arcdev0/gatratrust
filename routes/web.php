@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
 
     // Projects Resource
     Route::get('/projects', [TblProjectController::class, 'index'])->name('projects.tampilan');
+    Route::get('/projects/list', [TblProjectController::class, 'getListProject'])->name('projects.list');
     Route::post('/projects/store', [TblProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/show/{project}', [TblProjectController::class, 'show'])->name('projects.show');
     Route::post('/projects/update/{project}', [TblProjectController::class, 'update'])->name('projects.update');

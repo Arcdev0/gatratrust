@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Yajra\DataTables\DataTables;
 
 class TblProjectController extends Controller
 {
@@ -20,6 +21,72 @@ class TblProjectController extends Controller
         $listkerjaan = Kerjaan::select('id', 'nama_kerjaan')->get();
         return view('projects.index', compact('projects', 'listclient', 'listkerjaan'));
     }
+
+public function getListProject(Request $request)
+{
+    if ($request->ajax()) {
+        $query = ProjectTbl::with(['client', 'kerjaan'])->select('projects.*');
+
+        // Jika user adalah client, filter hanya project miliknya
+        if (auth()->user()->role_id == 2) {
+            $query->where('client_id', auth()->id());
+        }
+
+        return DataTables::of($query)
+            ->addColumn('client', function ($project) {
+                return $project->client->name ?? '-';
+            })
+            ->addColumn('kerjaan', function ($project) {
+                return $project->kerjaan->nama_kerjaan ?? '-';
+            })
+            ->addColumn('periode', function ($project) {
+                if ($project->start && $project->end) {
+                    return '
+                        <small class="d-block">Mulai: ' . $project->start->format('d M Y') . '</small>
+                        <small class="d-block">Selesai: ' . $project->end->format('d M Y') . '</small>
+                    ';
+                }
+                return '<span class="text-muted">Belum ditentukan</span>';
+            })
+            ->addColumn('aksi', function ($project) {
+                $viewBtn = '
+                    <a class="btn btn-sm btn-info" href="' . route('projects.show', $project->id) . '">
+                        <i class="fas fa-eye"></i>
+                    </a>';
+
+                if (auth()->user()->role_id == 1) {
+                    $editBtn = '
+                        <button type="button" class="btn btn-sm btn-secondary btn-edit-project"
+                            data-toggle="modal" data-target="#EditProjectModal"
+                            data-id="' . $project->id . '"
+                            data-no="' . $project->no_project . '"
+                            data-nama="' . $project->nama_project . '"
+                            data-client="' . $project->client_id . '"
+                            data-kerjaan="' . $project->kerjaan_id . '"
+                            data-deskripsi="' . $project->deskripsi . '"
+                            data-start="' . optional($project->start)->format('Y-m-d') . '"
+                            data-end="' . optional($project->end)->format('Y-m-d') . '">
+                            <i class="fas fa-edit"></i>
+                        </button>';
+
+                    $deleteBtn = '
+                        <form method="POST" action="' . route('projects.destroy', $project->id) . '" class="d-inline">
+                            ' . csrf_field() . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Apakah Anda yakin?\')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>';
+
+                    return $viewBtn . ' ' . $editBtn . ' ' . $deleteBtn;
+                }
+
+                return $viewBtn;
+            })
+            ->rawColumns(['periode', 'aksi'])
+            ->make(true);
+    }
+}
+
 
     public function store(Request $request)
 {

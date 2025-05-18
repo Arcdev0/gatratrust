@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="{{ asset('template/plugins/icon-kit/dist/css/iconkit.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/perfect-scrollbar/css/perfect-scrollbar.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/weather-icons/css/weather-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('template/plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }} ">
     <link rel="stylesheet" href="{{ asset('template/dist/css/theme.min.css') }}">
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
 
@@ -44,15 +45,17 @@
     <script src="{{ asset('template/plugins/bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('template/plugins/perfect-scrollbar/dist/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
+    <script src="{{ asset('template/plugins/datatables.net/js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('template/plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.min.js') }}"></script>
 
     @yield('script')
 
     <!-- Google Analytics -->
     <script>
-        (function (b, o, i, l, e, r) {
+        (function(b, o, i, l, e, r) {
             b.GoogleAnalyticsObject = l;
-            b[l] || (b[l] = function () {
+            b[l] || (b[l] = function() {
                 (b[l].q = b[l].q || []).push(arguments)
             });
             b[l].l = +new Date;

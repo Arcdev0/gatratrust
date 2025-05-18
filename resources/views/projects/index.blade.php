@@ -6,20 +6,21 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="text-primary font-weight-bold">Daftar Project</h3>
-                    <button id="tbhProject" class="btn btn-success" data-toggle="modal" data-target="#exampleModalCenter">
-                        <i class="fas fa-user-plus"></i> Tambah Project
-                    </button>
+                    @if (Auth::user()->role_id == 1)
+                        <button id="tbhProject" class="btn btn-success" data-toggle="modal" data-target="#exampleModalCenter">
+                            <i class="fas fa-user-plus"></i> Tambah Project
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
     <div class="card">
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="projectTable">
+            <div class="container">
+                <table class="table" id="projectTable">
                     <thead>
                         <tr>
-                            <th>No</th>
                             <th>No. Project</th>
                             <th>Nama Project</th>
                             <th>Client</th>
@@ -28,47 +29,6 @@
                             <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($projects as $project)
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $project->no_project }}</td>
-                                <td>{{ $project->nama_project }}</td>
-                                <td>{{ $project->client->name }}</td>
-                                <td>{{ $project->kerjaan->nama_kerjaan }}</td>
-                                <td>
-                                    @if($project->start && $project->end)
-                                        <small class="d-block">Mulai: {{ $project->start?->format('d M Y') }}</small>
-                                        <small class="d-block">Selesai: {{ $project->end?->format('d M Y') }}</small>
-                                    @else
-                                        <span class="text-muted">Belum ditentukan</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <a class="btn btn-sm btn-info" href="{{ route('projects.show', $project->id) }}">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-warning btn-edit-project" data-toggle="modal"
-                                        data-target="#EditProjectModal" data-id="{{ $project->id }}"
-                                        data-no="{{ $project->no_project }}" data-nama="{{ $project->nama_project }}"
-                                        data-client="{{ $project->client_id }}" data-kerjaan="{{ $project->kerjaan_id }}"
-                                        data-deskripsi="{{ $project->deskripsi }}"
-                                        data-start="{{ $project->start?->format('Y-m-d') }}"
-                                        data-end="{{ $project->end?->format('Y-m-d') }}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <form method="POST" action="{{ route('projects.destroy', $project->id) }}" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger"
-                                            onclick="return confirm('Apakah Anda yakin?')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
                 </table>
             </div>
         </div>
@@ -99,9 +59,9 @@
                         <div class="form-group">
                             <label>Client</label>
                             <select name="client_id" class="form-control" required>
-                                <option value="">Pilih Client</option>
-                                @foreach($listclient as $client)
-                                    <option value="{{ $client->id }}">{{ $client->name }}- {{ $client->company ?? ''}}
+                                <option value="" selected disabled>Pilih Client</option>
+                                @foreach ($listclient as $client)
+                                    <option value="{{ $client->id }}">{{ $client->name }}- {{ $client->company ?? '' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -110,7 +70,7 @@
                             <label>Jenis Kerjaan</label>
                             <select name="kerjaan_id" class="form-control" required>
                                 <option value="">Pilih Kerjaan</option>
-                                @foreach($listkerjaan as $kerjaan)
+                                @foreach ($listkerjaan as $kerjaan)
                                     <option value="{{ $kerjaan->id }}">{{ $kerjaan->nama_kerjaan }}</option>
                                 @endforeach
                             </select>
@@ -164,9 +124,9 @@
                             <label>Client</label>
                             <select name="client_id" class="form-control" required>
                                 <option value="">Pilih Client</option>
-                                @foreach($listclient as $client)
+                                @foreach ($listclient as $client)
                                     <option value="{{ $client->id }}">
-                                        {{ $client->name }}- {{ $client->company ?? ''}}
+                                        {{ $client->name }}- {{ $client->company ?? '' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -175,7 +135,7 @@
                             <label>Jenis Kerjaan</label>
                             <select name="kerjaan_id" class="form-control" required>
                                 <option value="">Pilih Kerjaan</option>
-                                @foreach($listkerjaan as $kerjaan)
+                                @foreach ($listkerjaan as $kerjaan)
                                     <option value="{{ $kerjaan->id }}">{{ $kerjaan->nama_kerjaan }}</option>
                                 @endforeach
                             </select>
@@ -205,9 +165,45 @@
 
 @section('script')
     <script>
-        $(function () {
+        $('#projectTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: '{{ route('projects.list') }}',
+            columns: [{
+                    data: 'no_project',
+                    name: 'no_project'
+                },
+                {
+                    data: 'nama_project',
+                    name: 'nama_project'
+                },
+                {
+                    data: 'client',
+                    name: 'client.name'
+                },
+                {
+                    data: 'kerjaan',
+                    name: 'kerjaan.nama_kerjaan'
+                },
+                {
+                    data: 'periode',
+                    name: 'periode',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'aksi',
+                    name: 'aksi',
+                    orderable: false,
+                    searchable: false
+                },
+            ]
+        });
+
+
+        $(function() {
             // Tambah Project
-            $('#formTambahProject').on('submit', function (e) {
+            $('#formTambahProject').on('submit', function(e) {
                 e.preventDefault();
                 var form = $(this);
                 var btn = form.find('button[type="submit"]');
@@ -217,7 +213,7 @@
                     url: "{{ route('projects.store') }}",
                     method: "POST",
                     data: form.serialize(),
-                    success: function (res) {
+                    success: function(res) {
                         $('#exampleModalCenter').modal('hide'); // Fixed modal ID
                         Swal.fire({
                             icon: 'success',
@@ -229,21 +225,21 @@
                             location.reload(); // reload halaman
                         });
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
                             text: 'Gagal menambah project. Pastikan data sudah benar.'
                         });
                     },
-                    complete: function () {
+                    complete: function() {
                         btn.prop('disabled', false).text('Simpan');
                     }
                 });
             });
 
             // Edit Project - Set Data
-            $('.btn-edit-project').on('click', function () {
+            $('.btn-edit-project').on('click', function() {
                 let btn = $(this);
                 let form = $('#formEditProject');
                 let projectId = btn.data('id');
@@ -262,7 +258,7 @@
             });
 
             // Edit Project - Submit
-            $('#formEditProject').on('submit', function (e) {
+            $('#formEditProject').on('submit', function(e) {
                 e.preventDefault();
                 var form = $(this);
                 var btn = form.find('button[type="submit"]');
@@ -275,7 +271,7 @@
                     url: actionUrl,
                     method: "POST",
                     data: form.serialize(),
-                    success: function (res) {
+                    success: function(res) {
                         $('#EditProjectModal').modal('hide');
                         Swal.fire({
                             icon: 'success',
@@ -287,14 +283,15 @@
                             location.reload();
                         });
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
-                            text: 'Gagal mengedit project. ' + (xhr.responseJSON?.message || '')
+                            text: 'Gagal mengedit project. ' + (xhr.responseJSON
+                                ?.message || '')
                         });
                     },
-                    complete: function () {
+                    complete: function() {
                         btn.prop('disabled', false).text('Simpan');
                     }
                 });
