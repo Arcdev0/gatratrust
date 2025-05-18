@@ -115,16 +115,16 @@ public function getListProject(Request $request)
             $kerjaanId = $project->kerjaan_id;
             $projectId = $project->id;
 
-            $q = "SELECT
-                        a.urutan,
-                        a.list_proses_id,
-                        b.nama_proses,
-                        c.`status`
-                    FROM kerjaan_list_proses a
-                    JOIN list_proses b ON a.list_proses_id = b.id
-                    LEFT JOIN project_details c ON b.id = c.kerjaan_list_proses_id
-                    WHERE a.kerjaan_id = '$kerjaanId'
-                    ";
+           $q = "SELECT
+                    a.urutan,
+                    a.list_proses_id,
+                    b.nama_proses,
+                    c.`status`
+                FROM kerjaan_list_proses a
+                JOIN list_proses b ON a.list_proses_id = b.id
+                LEFT JOIN project_details c
+                    ON b.id = c.kerjaan_list_proses_id AND c.project_id = '$projectId'
+                WHERE a.kerjaan_id = '$kerjaanId'";
 
            $processes = DB::select($q);
 
