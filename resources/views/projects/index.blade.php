@@ -272,6 +272,10 @@
         });
 
 
+        $('#exampleModalCenter').on('hidden.bs.modal', function() {
+            $(this).find('form')[0].reset();
+        });
+
 
         // Tambah Project
         $('#formTambahProject').on('submit', function(e) {

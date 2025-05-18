@@ -10,6 +10,10 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
+        if (Auth::check()) {
+        // Jika user sudah login, redirect ke dashboard (atau halaman tujuanmu)
+            return redirect()->route('projects.tampilan');
+        }
         return view('login.login'); // Sesuaikan view jika perlu
     }
 
