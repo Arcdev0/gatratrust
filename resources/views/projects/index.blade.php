@@ -1,5 +1,7 @@
 @extends('layout.app')
 
+@section('title', 'Project')
+
 @section('content')
     <div class="container-fluid">
         <div class="row">
@@ -104,7 +106,8 @@
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
-                <form id="formEditProject">
+                <form id="formEditProject" method="POST">
+                    @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="editModalLabel">Edit Project</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -114,7 +117,7 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>No. Project</label>
-                            <input type="text" name="no_project_edit" class="form-control" id="edit_no_project" required>
+                            <input type="text" name="no_project" class="form-control" id="edit_no_project" required>
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
@@ -184,7 +187,7 @@
             }
         });
 
-        $('#projectTable').DataTable({
+       let table = $('#projectTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: '{{ route('projects.list') }}',
@@ -241,7 +244,9 @@
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload(); // reload halaman
+                        table.ajax.reload();
+                        $('#formTambahProject')[0].reset(); // Reset form
+                        $('#exampleModalCenter').modal('hide');
                     });
                 },
                 error: function (xhr) {
@@ -259,6 +264,7 @@
 
         $(document).on('click', '.btn-edit-project', function () {
             // Ambil data dari tombol yang diklik
+            var projectId = $(this).data('id'); // pastikan tombol punya data-id
             var no = $(this).data('no');
             var nama = $(this).data('nama');
             var client = $(this).data('client');
@@ -275,6 +281,10 @@
             $('#edit_deskripsi').val(deskripsi);
             $('#edit_start').val(start);
             $('#edit_end').val(end);
+
+            // Set form action ke URL update dan simpan projectId di data form
+            // $('#formEditProject').attr('action', '/projects/update/' + projectId);
+            $('#formEditProject').data('project-id', projectId);
         });
 
         // Edit Project - Submit
@@ -282,17 +292,16 @@
             e.preventDefault();
             var form = $(this);
             var btn = form.find('button[type="submit"]');
-            var actionUrl = form.attr('action');
-
+            var projectId = form.data('project-id'); // ambil projectId dari data form
+            var actionUrl = '/projects/update/' + projectId;
             btn.prop('disabled', true).text('Menyimpan...');
-            const formData = $(this).serializeArray();
 
             $.ajax({
                 url: actionUrl,
                 method: "POST",
                 data: form.serialize(),
                 success: function (res) {
-                    $('#EditProjectModal').modal('hide');
+                   
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
@@ -300,15 +309,15 @@
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload();
+                        table.ajax.reload();
+                        $('#EditProjectModal').modal('hide');
                     });
                 },
                 error: function (xhr) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
-                        text: 'Gagal mengedit project. ' + (xhr.responseJSON
-                            ?.message || '')
+                        text: 'Gagal mengedit project. ' + (xhr.responseJSON?.message || '')
                     });
                 },
                 complete: function () {
