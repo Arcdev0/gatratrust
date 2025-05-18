@@ -50,11 +50,13 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>No. Project</label>
-                            <input type="text" name="no_project" class="form-control" required>
+                            <input type="text" name="no_project" placeholder="Masukkan No. Project" class="form-control"
+                                required>
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
-                            <input type="text" name="nama_project" class="form-control" required>
+                            <input type="text" name="nama_project" placeholder="Masukkan Nama Project" class="form-control"
+                                required>
                         </div>
                         <div class="form-group">
                             <label>Client</label>
@@ -69,7 +71,7 @@
                         <div class="form-group">
                             <label>Jenis Kerjaan</label>
                             <select name="kerjaan_id" class="form-control" required>
-                                <option value="">Pilih Kerjaan</option>
+                                <option value="" selected disabled>Pilih Kerjaan</option>
                                 @foreach ($listkerjaan as $kerjaan)
                                     <option value="{{ $kerjaan->id }}">{{ $kerjaan->nama_kerjaan }}</option>
                                 @endforeach
@@ -77,15 +79,15 @@
                         </div>
                         <div class="form-group">
                             <label>Deskripsi</label>
-                            <textarea name="deskripsi" class="form-control"></textarea>
+                            <textarea name="deskripsi" placeholder="Masukkan deskripsi" class="form-control"></textarea>
                         </div>
                         <div class="form-group">
                             <label>Mulai</label>
-                            <input type="date" name="start" class="form-control">
+                            <input type="date" name="start" class="form-control" id="start" required>
                         </div>
                         <div class="form-group">
                             <label>Selesai</label>
-                            <input type="date" name="end" class="form-control">
+                            <input type="date" name="end" class="form-control" id="end" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -165,45 +167,64 @@
 
 @section('script')
     <script>
+        let today = new Date().toISOString().split('T')[0];
+        $('input[name="start"], input[name="end"]').attr('min', today);
+
+        // Jika ingin end tidak boleh sebelum start
+        $('input[name="start"]').on('change', function () {
+            let startDate = $(this).val();
+            $('input[name="end"]').attr('min', startDate);
+        });
+
+        // Reset min end saat modal dibuka
+        $('#exampleModalCenter, #EditProjectModal').on('show.bs.modal', function () {
+            let startVal = $(this).find('input[name="start"]').val();
+            if (startVal) {
+                $(this).find('input[name="end"]').attr('min', startVal);
+            } else {
+                $(this).find('input[name="end"]').attr('min', today);
+            }
+        });
+
         $('#projectTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: '{{ route('projects.list') }}',
             columns: [{
-                    data: 'no_project',
-                    name: 'no_project'
-                },
-                {
-                    data: 'nama_project',
-                    name: 'nama_project'
-                },
-                {
-                    data: 'client',
-                    name: 'client.name'
-                },
-                {
-                    data: 'kerjaan',
-                    name: 'kerjaan.nama_kerjaan'
-                },
-                {
-                    data: 'periode',
-                    name: 'periode',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'aksi',
-                    name: 'aksi',
-                    orderable: false,
-                    searchable: false
-                },
+                data: 'no_project',
+                name: 'no_project'
+            },
+            {
+                data: 'nama_project',
+                name: 'nama_project'
+            },
+            {
+                data: 'client',
+                name: 'client.name'
+            },
+            {
+                data: 'kerjaan',
+                name: 'kerjaan.nama_kerjaan'
+            },
+            {
+                data: 'periode',
+                name: 'periode',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'aksi',
+                name: 'aksi',
+                orderable: false,
+                searchable: false
+            },
             ]
         });
 
 
-        $(function() {
+        $(function () {
             // Tambah Project
-            $('#formTambahProject').on('submit', function(e) {
+            $('#formTambahProject').on('submit', function (e) {
                 e.preventDefault();
                 var form = $(this);
                 var btn = form.find('button[type="submit"]');
@@ -213,7 +234,7 @@
                     url: "{{ route('projects.store') }}",
                     method: "POST",
                     data: form.serialize(),
-                    success: function(res) {
+                    success: function (res) {
                         $('#exampleModalCenter').modal('hide'); // Fixed modal ID
                         Swal.fire({
                             icon: 'success',
@@ -225,21 +246,21 @@
                             location.reload(); // reload halaman
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
                             text: 'Gagal menambah project. Pastikan data sudah benar.'
                         });
                     },
-                    complete: function() {
+                    complete: function () {
                         btn.prop('disabled', false).text('Simpan');
                     }
                 });
             });
 
             // Edit Project - Set Data
-            $('.btn-edit-project').on('click', function() {
+            $('.btn-edit-project').on('click', function () {
                 let btn = $(this);
                 let form = $('#formEditProject');
                 let projectId = btn.data('id');
@@ -258,7 +279,7 @@
             });
 
             // Edit Project - Submit
-            $('#formEditProject').on('submit', function(e) {
+            $('#formEditProject').on('submit', function (e) {
                 e.preventDefault();
                 var form = $(this);
                 var btn = form.find('button[type="submit"]');
@@ -271,7 +292,7 @@
                     url: actionUrl,
                     method: "POST",
                     data: form.serialize(),
-                    success: function(res) {
+                    success: function (res) {
                         $('#EditProjectModal').modal('hide');
                         Swal.fire({
                             icon: 'success',
@@ -283,7 +304,7 @@
                             location.reload();
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
@@ -291,7 +312,7 @@
                                 ?.message || '')
                         });
                     },
-                    complete: function() {
+                    complete: function () {
                         btn.prop('disabled', false).text('Simpan');
                     }
                 });
