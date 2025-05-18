@@ -169,7 +169,7 @@
 @section('script')
     <script>
         let today = new Date().toISOString().split('T')[0];
-        $('input[name="start"], input[name="end"]').attr('min', today);
+        $('input[name="start"], input[name="end"]');
 
         // Jika ingin end tidak boleh sebelum start
         $('input[name="start"]').on('change', function () {
@@ -301,7 +301,7 @@
                 method: "POST",
                 data: form.serialize(),
                 success: function (res) {
-                   
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',

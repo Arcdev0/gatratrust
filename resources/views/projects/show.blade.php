@@ -157,6 +157,9 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="font-weight-bold">Detail Project</h3>
+                    <a href="{{ route('projects.tampilan') }}" class="btn btn-primary">
+                     Back to Project
+                    </a>
                 </div>
                 <div class="card">
                     <div class="card-body">
@@ -259,7 +262,8 @@
                                         <div class="row">
                                             <!-- Kolom Kiri: Data File yang sudah diupload -->
 
-                                            <div class="@if(Auth::user()->role_id == 1) col-md-6 border-end @else col-md-12 @endif">
+                                            <div
+                                                class="@if (Auth::user()->role_id == 1) col-md-6 border-end @else col-md-12 @endif">
                                                 <h6>Data Terunggah</h6>
                                                 <div id="dataFile">
                                                     <p class="text-muted">Belum ada data yang di-upload</p>
