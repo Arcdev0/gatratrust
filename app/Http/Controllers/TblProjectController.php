@@ -70,12 +70,10 @@ public function getListProject(Request $request)
                         </button>';
 
                     $deleteBtn = '
-                        <form method="POST" action="' . route('projects.destroy', $project->id) . '" class="d-inline">
-                            ' . csrf_field() . method_field('DELETE') . '
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Apakah Anda yakin?\')">
+                            <button modal type="button" class="btn btn-sm btn-danger btnDeletProject"
+                                data-id="' . $project->id . '">
                                 <i class="fas fa-trash"></i>
-                            </button>
-                        </form>';
+                            </button>';
 
                     return $viewBtn . ' ' . $editBtn . ' ' . $deleteBtn;
                 }
@@ -117,17 +115,16 @@ public function getListProject(Request $request)
             $kerjaanId = $project->kerjaan_id;
             $projectId = $project->id;
 
-           $q = "SELECT
-                    a.urutan,
-                    a.list_proses_id,
-                    b.nama_proses,
-                    c.`status`
-                FROM kerjaan_list_proses a
-                JOIN list_proses b ON a.list_proses_id = b.id
-                LEFT JOIN project_details c
-                    ON b.id = c.kerjaan_list_proses_id AND c.project_id = '$projectId'
-                WHERE a.kerjaan_id = '$kerjaanId'";
-
+            $q = "SELECT
+                        a.urutan,
+                        a.list_proses_id,
+                        b.nama_proses,
+                        c.`status`
+                    FROM kerjaan_list_proses a
+                    JOIN list_proses b ON a.list_proses_id = b.id
+                    LEFT JOIN project_details c ON b.id = c.kerjaan_list_proses_id
+                    WHERE a.kerjaan_id = '$kerjaanId'
+                    ";
 
            $processes = DB::select($q);
 
@@ -166,14 +163,23 @@ public function getListProject(Request $request)
             ->with('success', 'Project berhasil diperbarui');
     }
 
-    public function destroy(ProjectTbl $project)
+    public function destroy(ProjectTbl $project, Request $request)
     {
-        $project->delete();
+        try {
+            $project->delete();
 
-        return redirect()->route('projects.tampilan')
-            ->with('success', 'Project berhasil dihapus');
+            return response()->json([
+                'success' => true,
+                'message' => 'Project berhasil dihapus.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus project.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
 
     public function uploadFiles(Request $request)
     {
@@ -185,7 +191,7 @@ public function getListProject(Request $request)
             'fileLabel' => 'required|array',
             'fileLabel.*' => 'required|string',
             'fileInput' => 'required|array',
-            'fileInput.*' => 'required|file|mimes:pdf,jpg,png',
+            'fileInput.*' => 'required|file|mimes:pdf,jpg,png|max:5120',
         ]);
 
         DB::beginTransaction();

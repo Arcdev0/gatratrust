@@ -4,120 +4,124 @@
             <div class="top-menu d-flex align-items-center">
                 <button type="button" class="btn-icon mobile-nav-toggle d-lg-none"><span></span></button>
                 {{-- <div class="header-search">
-                      <div class="input-group">
-                          <span class="input-group-addon search-close"><i class="ik ik-x"></i></span>
-                          <input type="text" class="form-control">
-                          <span class="input-group-addon search-btn"><i class="ik ik-search"></i></span>
-                      </div>
-                  </div> --}}
+                    <div class="input-group">
+                        <span class="input-group-addon search-close"><i class="ik ik-x"></i></span>
+                        <input type="text" class="form-control">
+                        <span class="input-group-addon search-btn"><i class="ik ik-search"></i></span>
+                    </div>
+                </div> --}}
                 <button type="button" id="navbar-fullscreen" class="nav-link"><i class="ik ik-maximize"></i></button>
             </div>
             <div class="top-menu d-flex align-items-center">
                 {{-- <div class="dropdown">
-                      <a class="nav-link dropdown-toggle" href="#" id="notiDropdown" role="button"
-                          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
-                              class="ik ik-bell"></i><span class="badge bg-danger">3</span></a>
-                      <div class="dropdown-menu dropdown-menu-right notification-dropdown"
-                          aria-labelledby="notiDropdown">
-                          <h4 class="header">Notifications</h4>
-                          <div class="notifications-wrap">
-                              <a href="#" class="media">
-                                  <span class="d-flex">
-                                      <i class="ik ik-check"></i>
-                                  </span>
-                                  <span class="media-body">
-                                      <span class="heading-font-family media-heading">Invitation accepted</span>
-                                      <span class="media-content">Your have been Invited ...</span>
-                                  </span>
-                              </a>
-                              <a href="#" class="media">
-                                  <span class="d-flex">
-                                      <img src="img/users/1.jpg" class="rounded-circle" alt="">
-                                  </span>
-                                  <span class="media-body">
-                                      <span class="heading-font-family media-heading">Steve Smith</span>
-                                      <span class="media-content">I slowly updated projects</span>
-                                  </span>
-                              </a>
-                              <a href="#" class="media">
-                                  <span class="d-flex">
-                                      <i class="ik ik-calendar"></i>
-                                  </span>
-                                  <span class="media-body">
-                                      <span class="heading-font-family media-heading">To Do</span>
-                                      <span class="media-content">Meeting with Nathan on Friday 8 AM ...</span>
-                                  </span>
-                              </a>
-                          </div>
-                          <div class="footer"><a href="javascript:void(0);">See all activity</a></div>
-                      </div>
-                  </div> --}}
+                    <a class="nav-link dropdown-toggle" href="#" id="notiDropdown" role="button" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false"><i class="ik ik-bell"></i><span
+                            class="badge bg-danger">3</span></a>
+                    <div class="dropdown-menu dropdown-menu-right notification-dropdown" aria-labelledby="notiDropdown">
+                        <h4 class="header">Notifications</h4>
+                        <div class="notifications-wrap">
+                            <a href="#" class="media">
+                                <span class="d-flex">
+                                    <i class="ik ik-check"></i>
+                                </span>
+                                <span class="media-body">
+                                    <span class="heading-font-family media-heading">Invitation accepted</span>
+                                    <span class="media-content">Your have been Invited ...</span>
+                                </span>
+                            </a>
+                            <a href="#" class="media">
+                                <span class="d-flex">
+                                    <img src="img/users/1.jpg" class="rounded-circle" alt="">
+                                </span>
+                                <span class="media-body">
+                                    <span class="heading-font-family media-heading">Steve Smith</span>
+                                    <span class="media-content">I slowly updated projects</span>
+                                </span>
+                            </a>
+                            <a href="#" class="media">
+                                <span class="d-flex">
+                                    <i class="ik ik-calendar"></i>
+                                </span>
+                                <span class="media-body">
+                                    <span class="heading-font-family media-heading">To Do</span>
+                                    <span class="media-content">Meeting with Nathan on Friday 8 AM ...</span>
+                                </span>
+                            </a>
+                        </div>
+                        <div class="footer"><a href="javascript:void(0);">See all activity</a></div>
+                    </div>
+                </div> --}}
                 {{-- <button type="button" class="nav-link ml-10 right-sidebar-toggle"><i
-                          class="ik ik-message-square"></i><span class="badge bg-success">3</span></button>
-                  <div class="dropdown">
-                      <a class="nav-link dropdown-toggle" href="#" id="menuDropdown" role="button"
-                          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
-                              class="ik ik-plus"></i></a>
-                      <div class="dropdown-menu dropdown-menu-right menu-grid" aria-labelledby="menuDropdown">
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Dashboard"><i class="ik ik-bar-chart-2"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Message"><i class="ik ik-mail"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Accounts"><i class="ik ik-users"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Sales"><i class="ik ik-shopping-cart"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Purchase"><i class="ik ik-briefcase"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Pages"><i class="ik ik-clipboard"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Chats"><i class="ik ik-message-square"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Contacts"><i class="ik ik-map-pin"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Blocks"><i class="ik ik-inbox"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Events"><i class="ik ik-calendar"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="Notifications"><i class="ik ik-bell"></i></a>
-                          <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
-                              title="More"><i class="ik ik-more-horizontal"></i></a>
-                      </div>
-                  </div> --}}
+                        class="ik ik-message-square"></i><span class="badge bg-success">3</span></button>
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="menuDropdown" role="button" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false"><i class="ik ik-plus"></i></a>
+                    <div class="dropdown-menu dropdown-menu-right menu-grid" aria-labelledby="menuDropdown">
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
+                            title="Dashboard"><i class="ik ik-bar-chart-2"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Message"><i
+                                class="ik ik-mail"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Accounts"><i
+                                class="ik ik-users"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Sales"><i
+                                class="ik ik-shopping-cart"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Purchase"><i
+                                class="ik ik-briefcase"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Pages"><i
+                                class="ik ik-clipboard"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Chats"><i
+                                class="ik ik-message-square"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Contacts"><i
+                                class="ik ik-map-pin"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Blocks"><i
+                                class="ik ik-inbox"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="Events"><i
+                                class="ik ik-calendar"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top"
+                            title="Notifications"><i class="ik ik-bell"></i></a>
+                        <a class="dropdown-item" href="#" data-toggle="tooltip" data-placement="top" title="More"><i
+                                class="ik ik-more-horizontal"></i></a>
+                    </div>
+                </div> --}}
                 {{-- <button type="button" class="nav-link ml-10" id="apps_modal_btn" data-toggle="modal"
-                      data-target="#appsModal"><i class="ik ik-grid"></i></button> --}}
+                    data-target="#appsModal"><i class="ik ik-grid"></i></button> --}}
+
                 <div class="dropdown">
                     <a class="dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false"><img class="avatar" src="{{  asset('template/img/user_main.jpg') }}"
-                            alt=""></a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                        <a class="dropdown-item" href="{{ route('profile.index') }}"><i class="ik ik-user dropdown-icon"></i>
-                            Profile</a>
+                        aria-haspopup="true" aria-expanded="false"><img class="avatar"
+                            src="{{  asset('template/img/user_main.jpg') }}" alt=""></a>
+                    <div class="d-flex align-items-center">
+                        <div class="text-right mr-2">
+                            <span class="font-weight-bold">{{ Auth::user()->name }}</span>
+                        </div>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                            <a class="dropdown-item" href="{{ route('profile.index') }}"><i
+                                    class="ik ik-user dropdown-icon"></i>
+                                Profile</a>
 
 
-                        {{-- <a class="dropdown-item" href="#"><i class="ik ik-settings dropdown-icon"></i>
-                              Settings</a>
-                          <a class="dropdown-item" href="#"><span class="float-right"><span
-                                      class="badge badge-primary">6</span></span><i
-                                  class="ik ik-mail dropdown-icon"></i> Inbox</a>
-                          <a class="dropdown-item" href="#"><i class="ik ik-navigation dropdown-icon"></i>
-                              Message</a> --}}
-                        <a class="dropdown-item" href="#"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="ik ik-power dropdown-icon"></i> Logout
-                        </a>
+                            {{-- <a class="dropdown-item" href="#"><i class="ik ik-settings dropdown-icon"></i>
+                                Settings</a>
+                            <a class="dropdown-item" href="#"><span class="float-right"><span
+                                        class="badge badge-primary">6</span></span><i
+                                    class="ik ik-mail dropdown-icon"></i> Inbox</a>
+                            <a class="dropdown-item" href="#"><i class="ik ik-navigation dropdown-icon"></i>
+                                Message</a> --}}
+                            <a class="dropdown-item" href="#"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="ik ik-power dropdown-icon"></i> Logout
+                            </a>
 
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                            @csrf
-                        </form>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                @csrf
+                            </form>
 
+                        </div>
                     </div>
-                </div>
 
+                </div>
             </div>
         </div>
-    </div>
 </header>
 
 <div class="page-wrap">
@@ -139,8 +143,8 @@
                 <nav id="main-menu-navigation" class="navigation-main">
                     <div class="nav-lavel">Pages</div>
                     {{-- <div class="nav-item">
-                          <a href="{{ route('dashboard') }}"><i class="ik ik-home"></i><span>Dashboard</span></a>
-                      </div> --}}
+                        <a href="{{ route('dashboard') }}"><i class="ik ik-home"></i><span>Dashboard</span></a>
+                    </div> --}}
                     <div class="nav-item {{ request()->routeIs('projects.tampilan') ? 'active' : '' }}">
                         <a href="{{ route('projects.tampilan') }}">
                             <i class="ik ik-folder"></i><span>Project</span>
@@ -152,9 +156,9 @@
                         </a>
                     </div>
                     {{-- <div class="nav-lavel">Lainnya</div>
-                      <div class="nav-item">
-                          <a href="#"><i class="ik ik-settings"></i><span>Pengaturan</span></a>
-                      </div> --}}
+                    <div class="nav-item">
+                        <a href="#"><i class="ik ik-settings"></i><span>Pengaturan</span></a>
+                    </div> --}}
                 </nav>
             </div>
         </div>
@@ -179,8 +183,8 @@
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Gene Newman">
                         <figure class="user--online">
                             <img src="img/users/1.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Gene Newman</span> <span
-                                class="username">@gene_newman</span> </span>
+                        </figure><span><span class="name">Gene Newman</span> <span class="username">@gene_newman</span>
+                        </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Billy Black">
                         <figure class="user--online">
@@ -203,14 +207,14 @@
                     <a href="javascript:void(0)" class="list-group-item active" data-chat-user="Marsha Hoffman">
                         <figure class="user--busy">
                             <img src="img/users/5.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Marsha Hoffman</span> <span
-                                class="username">@m_hoffman</span> </span>
+                        </figure><span><span class="name">Marsha Hoffman</span> <span class="username">@m_hoffman</span>
+                        </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Mason Grant">
                         <figure class="user--offline">
                             <img src="img/users/1.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Mason Grant</span> <span
-                                class="username">@masongrant</span> </span>
+                        </figure><span><span class="name">Mason Grant</span> <span class="username">@masongrant</span>
+                        </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Shelly Sullivan">
                         <figure class="user--offline">
@@ -301,8 +305,7 @@
             <form action="javascript:void(0)" class="card-footer" method="post">
                 <div class="d-flex justify-content-end">
                     <textarea class="border-0 flex-1" rows="1" placeholder="Type your message here"></textarea>
-                    <button class="btn btn-icon" type="submit"><i
-                            class="ik ik-arrow-right text-success"></i></button>
+                    <button class="btn btn-icon" type="submit"><i class="ik ik-arrow-right text-success"></i></button>
                 </div>
             </form>
         </div>
@@ -312,8 +315,8 @@
         <div class="w-100 clearfix">
             <span class="text-center text-sm-left d-md-inline-block">Gatra Perdana Trustrue</span>
             {{-- <span class="float-none float-sm-right mt-1 mt-sm-0 text-center">Crafted with <i
-                      class="fa fa-heart text-danger"></i> by <a href="http://lavalite.org/" class="text-dark"
-                      target="_blank">Lavalite</a></span> --}}
+                    class="fa fa-heart text-danger"></i> by <a href="http://lavalite.org/" class="text-dark"
+                    target="_blank">Lavalite</a></span> --}}
         </div>
     </footer>
 
