@@ -185,7 +185,7 @@ public function getListProject(Request $request)
             'fileLabel' => 'required|array',
             'fileLabel.*' => 'required|string',
             'fileInput' => 'required|array',
-            'fileInput.*' => 'required|file|mimes:pdf,jpg,png|max:5120',
+            'fileInput.*' => 'required|file|mimes:pdf,jpg,png',
         ]);
 
         DB::beginTransaction();

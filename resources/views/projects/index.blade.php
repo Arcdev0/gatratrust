@@ -3,6 +3,54 @@
 @section('title', 'Project')
 
 @section('content')
+    <style>
+        #projectContainer {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        #projectTable {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+            /* Agar tetap terbaca di layar kecil */
+        }
+
+        #projectTable th,
+        #projectTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        #projectTable th {
+            background-color: #f2f2f2;
+        }
+
+        @media screen and (max-width: 768px) {
+            #projectContainer {
+                padding: 0 10px;
+            }
+
+            #projectTable th,
+            #projectTable td {
+                font-size: 14px;
+                padding: 6px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            #projectTable {
+                font-size: 12px;
+            }
+
+            #projectTable th,
+            #projectTable td {
+                padding: 4px;
+            }
+        }
+    </style>
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -19,7 +67,7 @@
     </div>
     <div class="card">
         <div class="card-body">
-            <div class="container">
+            <div class="container" id="projectContainer">
                 <table class="table" id="projectTable">
                     <thead>
                         <tr>
@@ -57,8 +105,8 @@
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
-                            <input type="text" name="nama_project" placeholder="Masukkan Nama Project" class="form-control"
-                                required>
+                            <input type="text" name="nama_project" placeholder="Masukkan Nama Project"
+                                class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>Client</label>
@@ -121,7 +169,8 @@
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
-                            <input type="text" name="nama_project" class="form-control" id="edit_nama_project" required>
+                            <input type="text" name="nama_project" class="form-control" id="edit_nama_project"
+                                required>
                         </div>
                         <div class="form-group">
                             <label>Client</label>
@@ -172,13 +221,13 @@
         $('input[name="start"], input[name="end"]');
 
         // Jika ingin end tidak boleh sebelum start
-        $('input[name="start"]').on('change', function () {
+        $('input[name="start"]').on('change', function() {
             let startDate = $(this).val();
             $('input[name="end"]').attr('min', startDate);
         });
 
         // Reset min end saat modal dibuka
-        $('#exampleModalCenter, #EditProjectModal').on('show.bs.modal', function () {
+        $('#exampleModalCenter, #EditProjectModal').on('show.bs.modal', function() {
             let startVal = $(this).find('input[name="start"]').val();
             if (startVal) {
                 $(this).find('input[name="end"]').attr('min', startVal);
@@ -187,45 +236,45 @@
             }
         });
 
-       let table = $('#projectTable').DataTable({
+        let table = $('#projectTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: '{{ route('projects.list') }}',
             columns: [{
-                data: 'no_project',
-                name: 'no_project'
-            },
-            {
-                data: 'nama_project',
-                name: 'nama_project'
-            },
-            {
-                data: 'client',
-                name: 'client.name'
-            },
-            {
-                data: 'kerjaan',
-                name: 'kerjaan.nama_kerjaan'
-            },
-            {
-                data: 'periode',
-                name: 'periode',
-                orderable: false,
-                searchable: false
-            },
-            {
-                data: 'aksi',
-                name: 'aksi',
-                orderable: false,
-                searchable: false
-            },
+                    data: 'no_project',
+                    name: 'no_project'
+                },
+                {
+                    data: 'nama_project',
+                    name: 'nama_project'
+                },
+                {
+                    data: 'client',
+                    name: 'client.name'
+                },
+                {
+                    data: 'kerjaan',
+                    name: 'kerjaan.nama_kerjaan'
+                },
+                {
+                    data: 'periode',
+                    name: 'periode',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'aksi',
+                    name: 'aksi',
+                    orderable: false,
+                    searchable: false
+                },
             ]
         });
 
 
 
         // Tambah Project
-        $('#formTambahProject').on('submit', function (e) {
+        $('#formTambahProject').on('submit', function(e) {
             e.preventDefault();
             var form = $(this);
             var btn = form.find('button[type="submit"]');
@@ -235,7 +284,7 @@
                 url: "{{ route('projects.store') }}",
                 method: "POST",
                 data: form.serialize(),
-                success: function (res) {
+                success: function(res) {
                     $('#exampleModalCenter').modal('hide'); // Fixed modal ID
                     Swal.fire({
                         icon: 'success',
@@ -249,20 +298,20 @@
                         $('#exampleModalCenter').modal('hide');
                     });
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
                         text: 'Gagal menambah project. Pastikan data sudah benar.'
                     });
                 },
-                complete: function () {
+                complete: function() {
                     btn.prop('disabled', false).text('Simpan');
                 }
             });
         });
 
-        $(document).on('click', '.btn-edit-project', function () {
+        $(document).on('click', '.btn-edit-project', function() {
             // Ambil data dari tombol yang diklik
             var projectId = $(this).data('id'); // pastikan tombol punya data-id
             var no = $(this).data('no');
@@ -288,7 +337,7 @@
         });
 
         // Edit Project - Submit
-        $('#formEditProject').on('submit', function (e) {
+        $('#formEditProject').on('submit', function(e) {
             e.preventDefault();
             var form = $(this);
             var btn = form.find('button[type="submit"]');
@@ -300,7 +349,7 @@
                 url: actionUrl,
                 method: "POST",
                 data: form.serialize(),
-                success: function (res) {
+                success: function(res) {
 
                     Swal.fire({
                         icon: 'success',
@@ -313,14 +362,14 @@
                         $('#EditProjectModal').modal('hide');
                     });
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
                         text: 'Gagal mengedit project. ' + (xhr.responseJSON?.message || '')
                     });
                 },
-                complete: function () {
+                complete: function() {
                     btn.prop('disabled', false).text('Simpan');
                 }
             });
