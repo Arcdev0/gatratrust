@@ -38,8 +38,8 @@ Route::middleware('auth')->group(function () {
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');
-    Route::post('/user', [UserController::class, 'store'])->name('user.store');
-    Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
-    Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+    Route::post('/user/store', [UserController::class, 'store'])->name('user.store');
+    Route::post('/user/{user}', [UserController::class, 'update'])->name('user.update');
+    Route::delete('/user/delete/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 
 });

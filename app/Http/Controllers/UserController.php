@@ -10,7 +10,10 @@ class UserController extends Controller
 {
         public function index()
     {
-        $users = User::with('role')->get();
+        $users = User::with('role')->get()->map(function($user) {
+            $user->status = $user->is_active ? 'Active' : 'Non Active';
+            return $user;
+        });
         $roles = Role::all();
         $clients = User::whereHas('role', function($query) {
             $query->where('name', 'client');
@@ -76,4 +79,5 @@ class UserController extends Controller
         $user->delete();
         return redirect()->route('user.tampilan')->with('success', 'User berhasil dihapus');
     }
+
 }

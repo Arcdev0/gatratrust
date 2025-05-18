@@ -7,21 +7,22 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="text-primary font-weight-bold">Manajemen User</h3>
                     <button id="addUserBtn" class="btn btn-success" data-toggle="modal" data-target="#addUserModal">
-                        <i class="fas fa-user-plus" ></i> Tambah User
+                        <i class="fas fa-user-plus"></i> Tambah User
                     </button>
                 </div>
                 <div class="card">
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-bordered" id="usersTable">
-                                <thead>
+                                <thead style="background-color: #f2f2f2;">
                                     <tr>
                                         <th>No</th>
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Role</th>
+                                        <th>Status </th>
                                         <th>Company</th>
-                                        <th>Actions</th>
+                                        <th> Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -31,21 +32,26 @@
                                             <td>{{ $user->name }}</td>
                                             <td>{{ $user->email }}</td>
                                             <td>{{ $user->role->name }}</td>
+                                            <td>{{ $user->status}}</td>
                                             <td>{{ $user->company ?? '-' }}</td>
                                             <td>
-                                                <button class="btn btn-sm btn-info edit-user" data-id="{{ $user->id }}"
-                                                    data-name="{{ $user->name }}" data-email="{{ $user->email }}"
-                                                    data-role="{{ $user->role_id }}" data-company="{{ $user->company }}">
+                                                <button class="btn btn-sm btn-primary edit-user" data-user='@json($user)'>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger delete-user"
-                                                    data-id="{{ $user->id }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                                                <form method="POST" action="{{ route('user.destroy', $user->id) }}"
+                                                    class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger"
+                                                        onclick="return confirm('Apakah Anda yakin?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    </button>
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
+                            </table>
                             </table>
                         </div>
                     </div>
@@ -92,6 +98,13 @@
                             <label>Perusahaan (opsional)</label>
                             <input type="text" name="company" class="form-control">
                         </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="is_active" class="form-control" required>
+                                <option value="1">Active</option>
+                                <option value="0">Non Active</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -113,8 +126,6 @@
                     </button>
                 </div>
                 <form id="editUserForm" method="POST">
-                    @csrf
-                    @method('PUT')
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Nama</label>
@@ -140,6 +151,13 @@
                             <label>Perusahaan (opsional)</label>
                             <input type="text" name="company" id="editCompany" class="form-control">
                         </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="is_active" id="editIsActive" class="form-control" required>
+                                <option value="1">Active</option>
+                                <option value="0">Non Active</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -149,83 +167,34 @@
             </div>
         </div>
     </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Konfirmasi Hapus User</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <form id="deleteUserForm" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <div class="modal-body">
-                        <p>Apakah Anda yakin ingin menghapus user ini?</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-danger">Hapus</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Clients List Modal -->
-    <div class="modal fade" id="clientsModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Daftar Client</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Nama</th>
-                                <th>Email</th>
-                                <th>Perusahaan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($clients as $client)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $client->name }}</td>
-                                    <td>{{ $client->email }}</td>
-                                    <td>{{ $client->company ?? '-' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @section('scripts')
     <script>
-        $(document).ready(function() {
+          $(document).ready(function () {
+            $('#usersTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false
+            });
 
+            
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        $(document).ready(function () {
             // Tampilkan Modal Tambah User
-            $('#addUserBtn').click(function() {
+            $('#addUserBtn').click(function () {
                 $('#addUserModal').modal('show');
             });
 
             // Submit Form Tambah User
-            $('#addUserForm').submit(function(e) {
+            $('#addUserForm').submit(function (e) {
                 e.preventDefault();
                 var form = $(this);
                 var url = form.attr('action');
@@ -235,20 +204,50 @@
                     type: "POST",
                     url: url,
                     data: data,
-                    success: function(response) {
+                    success: function (response) {
                         $('#addUserModal').modal('hide');
                         form[0].reset();
-                        // Refresh tabel (lebih baik pakai DataTables AJAX untuk full versi)
-                        location
-                            .reload(); // Atau gunakan metode lain untuk menampilkan data baru
+                        location.reload();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         alert('Gagal menambahkan user. Pastikan data valid.');
                     }
                 });
             });
 
-            // Script edit dan delete tetap seperti sebelumnya
+            // Tampilkan Modal Edit User dan isi data
+            $('.edit-user').click(function () {
+                var user = $(this).data('user');
+                $('#editName').val(user.name);
+                $('#editEmail').val(user.email);
+                $('#editRole').val(user.role_id);
+                $('#editCompany').val(user.company);
+                $('#editIsActive').val(user.is_active ? 1 : 0);
+                $('#editUserForm').attr('action', '/user/' + user.id);
+                $('#editUserModal').modal('show');
+            });
+
+            // Submit Form Edit User
+            $('#editUserForm').submit(function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var url = form.attr('action');
+                var data = form.serialize();
+
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: data,
+                    success: function (response) {
+                        $('#editUserModal').modal('hide');
+                        form[0].reset();
+                        location.reload();
+                    },
+                    error: function (xhr) {
+                        alert('Gagal mengedit user. Pastikan data valid.');
+                        console.log(xhr.responseText); 
+                });
+            });
         });
     </script>
 @endsection
