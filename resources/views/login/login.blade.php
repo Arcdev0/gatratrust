@@ -20,8 +20,7 @@
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
 </head>
 
-<body style="background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%); min-height: 100vh;">
-
+<body>
     <div class="auth-wrapper">
         <div class="container-fluid h-100">
             <div class="row flex-row h-100 bg-white">
