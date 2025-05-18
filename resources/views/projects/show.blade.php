@@ -1,5 +1,7 @@
 @extends('layout.app')
 
+@section('title', 'Detail Project')
+
 @section('content')
     <style>
         /* Base Styles */
