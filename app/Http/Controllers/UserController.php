@@ -8,14 +8,14 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-        public function index()
+    public function index()
     {
-        $users = User::with('role')->get()->map(function($user) {
+        $users = User::with('role')->get()->map(function ($user) {
             $user->status = $user->is_active ? 'Active' : 'Non Active';
             return $user;
         });
         $roles = Role::all();
-        $clients = User::whereHas('role', function($query) {
+        $clients = User::whereHas('role', function ($query) {
             $query->where('name', 'client');
         })->get();
 
@@ -49,7 +49,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name' => 'required|unique:users,name,'.$user->id,
+            'name' => 'required|unique:users,name,' . $user->id,
             'email' => 'required|email',
             'password' => 'nullable|min:6',
             'role_id' => 'required|exists:roles,id',
@@ -76,8 +76,12 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $user->delete();
-        return redirect()->route('user.tampilan')->with('success', 'User berhasil dihapus');
+        try {
+            $user->delete();
+            return redirect()->route('user.tampilan')->with('success', 'User berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('user.tampilan')->with('error', 'User tidak dapat dihapus karena masih digunakan di data lain.');
+        }
     }
 
 }

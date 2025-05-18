@@ -12,7 +12,7 @@
                 </div>
                 <div class="card">
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="container">
                             <table class="table table-bordered" id="usersTable">
                                 <thead style="background-color: #f2f2f2;">
                                     <tr>
@@ -22,7 +22,7 @@
                                         <th>Role</th>
                                         <th>Status </th>
                                         <th>Company</th>
-                                        <th> Actions</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -35,7 +35,11 @@
                                             <td>{{ $user->status}}</td>
                                             <td>{{ $user->company ?? '-' }}</td>
                                             <td>
-                                                <button class="btn btn-sm btn-primary edit-user" data-user='@json($user)'>
+                                                <button type="button" class="btn btn-sm btn-secondary btnEditUser"
+                                                    data-toggle="modal" data-target="#editUserModal" data-id="{{ $user->id }}"
+                                                    data-name="{{ $user->name }}" data-email="{{ $user->email }}"
+                                                    data-role="{{ $user->role_id }}" data-company="{{ $user->company ?? '' }}"
+                                                    data-status="{{ $user->is_active }}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <form method="POST" action="{{ route('user.destroy', $user->id) }}"
@@ -46,12 +50,11 @@
                                                         onclick="return confirm('Apakah Anda yakin?')">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
-                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
-                            </table>
                             </table>
                         </div>
                     </div>
@@ -76,19 +79,21 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Nama</label>
-                            <input type="text" name="name" class="form-control" required>
+                            <input type="text" name="name" placeholder="Masukkan nama" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" name="email" class="form-control" required>
+                            <input type="email" name="email" placeholder="Masukkan email" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>Password</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <input type="password" name="password" placeholder="Masukkan password" class="form-control"
+                                required>
                         </div>
                         <div class="form-group">
                             <label>Role</label>
                             <select name="role_id" class="form-control" required>
+                                <option value="" selected disabled>Pilih Role</option>
                                 @foreach ($roles as $role)
                                     <option value="{{ $role->id }}">{{ $role->name }}</option>
                                 @endforeach
@@ -96,11 +101,12 @@
                         </div>
                         <div class="form-group">
                             <label>Perusahaan (opsional)</label>
-                            <input type="text" name="company" class="form-control">
+                            <input type="text" name="company" placeholder="Masukkan perusahaan" class="form-control">
                         </div>
                         <div class="form-group">
                             <label>Status</label>
                             <select name="is_active" class="form-control" required>
+                                <option value="" selected disabled>Pilih Status</option>
                                 <option value="1">Active</option>
                                 <option value="0">Non Active</option>
                             </select>
@@ -125,7 +131,7 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form id="editUserForm" method="POST">
+                <form id="editUserForm">
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Nama</label>
@@ -161,7 +167,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <button type="submit" class="btn btn-primary">Update</button>
                     </div>
                 </form>
             </div>
@@ -169,9 +175,9 @@
     </div>
 @endsection
 
-@section('scripts')
+@section('script')
     <script>
-          $(document).ready(function () {
+        $(document).ready(function () {
             $('#usersTable').DataTable({
                 "paging": true,
                 "lengthChange": true,
@@ -180,8 +186,9 @@
                 "info": true,
                 "autoWidth": false
             });
+        });
 
-            
+
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -214,17 +221,23 @@
                     }
                 });
             });
+            // Tampilkan Modal Edit User
+            $('.btnEditUser').click(function () {
+                var userId = $(this).data('id');
+                var name = $(this).data('name');
+                var email = $(this).data('email');
+                var role = $(this).data('role');
+                var company = $(this).data('company');
+                var status = $(this).data('status');
 
-            // Tampilkan Modal Edit User dan isi data
-            $('.edit-user').click(function () {
-                var user = $(this).data('user');
-                $('#editName').val(user.name);
-                $('#editEmail').val(user.email);
-                $('#editRole').val(user.role_id);
-                $('#editCompany').val(user.company);
-                $('#editIsActive').val(user.is_active ? 1 : 0);
-                $('#editUserForm').attr('action', '/user/' + user.id);
-                $('#editUserModal').modal('show');
+                $('#editName').val(name);
+                $('#editEmail').val(email);
+                $('#editRole').val(role);
+                $('#editCompany').val(company);
+                $('#editIsActive').val(status);
+
+                // Set action form edit
+                $('#editUserForm').attr('action', `/user/update/${userId}`);
             });
 
             // Submit Form Edit User
@@ -245,7 +258,7 @@
                     },
                     error: function (xhr) {
                         alert('Gagal mengedit user. Pastikan data valid.');
-                        console.log(xhr.responseText); 
+                    }
                 });
             });
         });
