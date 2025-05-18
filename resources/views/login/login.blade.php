@@ -26,8 +26,11 @@
         <div class="container-fluid h-100">
             <div class="row flex-row h-100 bg-white">
                 <div class="col-xl-8 col-lg-6 col-md-5 p-0 d-md-block d-lg-block d-sm-none d-none">
-                    <div class="lavalite-bg" style="background-image: url('{{ asset('img/auth/login-bg.jpg') }}')">
-                        <div class="lavalite-overlay"></div>
+                    <div class="lavalite-bg"
+                        style="background-image: url('{{ asset('template/img/auth/login-bg.jpg') }}')">
+                        <div class="lavalite-overlay"
+                            style="background: linear-gradient(135deg, rgba(46, 52, 81, 0.4) 0%, rgba(8, 97, 69, 0.8) 100%);">
+                        </div>
                     </div>
                 </div>
                 <div class="col-xl-4 col-lg-6 col-md-7 my-auto p-0">
@@ -35,11 +38,10 @@
                         style="background: #fff; max-width: 370px;">
                         <div class="logo-centered mb-3">
                             <a href="{{ url('/') }}">
-                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
-                                    style="width: 80px;">
+                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo" style="width: 80px;">
                             </a>
                         </div>
-                        <h3 class="text-center mb-2" style="font-weight: 700; color: #4e54c8;">Gatra Trust</h3>
+                        <h3 class="text-center mb-2" style="font-weight: 700; color:  #1da34b;">Gatra Trust</h3>
                         <p class="text-center mb-4" style="color: #888;">Welcome To Gatra Trust</p>
                         {{-- Alert Error --}}
                         @if(session('status'))
@@ -80,7 +82,7 @@
                             </div>
                             <div class="sign-btn text-center">
                                 <button class="btn btn-theme btn-block rounded-pill" type="submit"
-                                    style="background: #4e54c8; color: #fff; font-weight: 600; transition: background 0.2s;">Sign
+                                    style="background: #1da34b; color: #fff; font-weight: 600; transition: background 0.2s;">Sign
                                     In</button>
                             </div>
                         </form>
