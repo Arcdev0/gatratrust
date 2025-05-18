@@ -98,8 +98,6 @@
                         <a class="dropdown-item" href="{{ route('profile.index') }}">
                             <i class="ik ik-user dropdown-icon"></i> Profile
                         </a>
-                        <a class="dropdown-item" href="#"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                             {{-- <a class="dropdown-item" href="#"><i class="ik ik-settings dropdown-icon"></i>
                                 Settings</a>
                             <a class="dropdown-item" href="#"><span class="float-right"><span
@@ -324,4 +322,7 @@
     $('.nav-toggle').on('click', function() {
         $('.app-sidebar').toggleClass('collapsed');
     });
+
+
+    
 </script>

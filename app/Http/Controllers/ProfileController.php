@@ -13,34 +13,29 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        // Validate and update the user's profile
         $request->validate([
-            'name' => 'required|string|max:255',
+            'company' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
-            // Add other validation rules as needed
-        ]);
-
-        $user = auth()->user();
-        $user->update($request->only('name', 'email'));
-
-        return redirect()->route('profile.index')->with('success', 'Profile updated successfully.');
-    }
-    public function changePassword(Request $request)
-    {
-        // Validate and change the user's password
-        $request->validate([
-            'current_password' => 'required|string',
-            'new_password' => 'required|string|min:8|confirmed',
+            'current_password' => 'nullable|required_with:new_password|string',
+            'new_password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $user = auth()->user();
 
-        if (!password_verify($request->current_password, $user->password)) {
-            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        // Update profile
+        $user->company = $request->company;
+        $user->email = $request->email;
+
+        // Jika ada permintaan ganti password
+        if ($request->filled('new_password')) {
+            if (!\Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Password lama salah.']);
+            }
+            $user->password = \Hash::make($request->new_password);
         }
 
-        $user->update(['password' => bcrypt($request->new_password)]);
+        $user->save();
 
-        return redirect()->route('profile.index')->with('success', 'Password changed successfully.');
+        return redirect()->route('profile.index')->with('success', 'Profile updated successfully.');
     }
 }
