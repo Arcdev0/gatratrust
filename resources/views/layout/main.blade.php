@@ -86,20 +86,20 @@
                 {{-- <button type="button" class="nav-link ml-10" id="apps_modal_btn" data-toggle="modal"
                     data-target="#appsModal"><i class="ik ik-grid"></i></button> --}}
 
-                <div class="dropdown">
+                <div class="dropdown d-flex align-items-center">
+                    <div class="text-right mr-2">
+                        <span class="font-weight-bold">{{ Auth::user()->name }}</span>
+                    </div>
                     <a class="dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false"><img class="avatar"
-                            src="{{  asset('template/img/user_main.jpg') }}" alt=""></a>
-                    <div class="d-flex align-items-center">
-                        <div class="text-right mr-2">
-                            <span class="font-weight-bold">{{ Auth::user()->name }}</span>
-                        </div>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                            <a class="dropdown-item" href="{{ route('profile.index') }}"><i
-                                    class="ik ik-user dropdown-icon"></i>
-                                Profile</a>
-
-
+                        aria-haspopup="true" aria-expanded="false">
+                        <img class="avatar" src="{{ asset('template/img/user_main.jpg') }}" alt="">
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                        <a class="dropdown-item" href="{{ route('profile.index') }}">
+                            <i class="ik ik-user dropdown-icon"></i> Profile
+                        </a>
+                        <a class="dropdown-item" href="#"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                             {{-- <a class="dropdown-item" href="#"><i class="ik ik-settings dropdown-icon"></i>
                                 Settings</a>
                             <a class="dropdown-item" href="#"><span class="float-right"><span
@@ -125,12 +125,17 @@
 </header>
 
 <div class="page-wrap">
-    <div class="app-sidebar colored">
+    <div class="app-sidebar colored collapsed">
         <div class="sidebar-header">
             <a class="header-brand" href="index.html">
-                <span class="text">Gatratrust
+                <span class="text logo-full">
+                    Gatratrust
                     <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
                         style="width: 50px; height: 50px; margin-left: 10px;">
+                </span>
+                <span class="logo-mini" style="display:none;">
+                    <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo" style="width: 50px; height: 50px;">
+                    <span class="text">Gatratrust</span>
                 </span>
             </a>
             <button type="button" class="nav-toggle"><i data-toggle="expanded"
@@ -142,9 +147,6 @@
             <div class="nav-container">
                 <nav id="main-menu-navigation" class="navigation-main">
                     <div class="nav-lavel">Pages</div>
-                    {{-- <div class="nav-item">
-                        <a href="{{ route('dashboard') }}"><i class="ik ik-home"></i><span>Dashboard</span></a>
-                    </div> --}}
                     <div class="nav-item {{ request()->routeIs('projects.tampilan') ? 'active' : '' }}">
                         <a href="{{ route('projects.tampilan') }}">
                             <i class="ik ik-folder"></i><span>Project</span>
@@ -155,10 +157,6 @@
                             <i class="ik ik-user"></i><span>User</span>
                         </a>
                     </div>
-                    {{-- <div class="nav-lavel">Lainnya</div>
-                    <div class="nav-item">
-                        <a href="#"><i class="ik ik-settings"></i><span>Pengaturan</span></a>
-                    </div> --}}
                 </nav>
             </div>
         </div>
@@ -321,3 +319,9 @@
     </footer>
 
 </div>
+
+<script>
+    $('.nav-toggle').on('click', function() {
+        $('.app-sidebar').toggleClass('collapsed');
+    });
+</script>

@@ -24,7 +24,24 @@
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
 
     @yield('css')
+    <style>
+        .logo-mini {
+            display: none;
+            vertical-align: middle;
+        }
 
+        .logo-full {
+            display: inline-block;
+        }
+
+        .app-sidebar.collapsed .logo-full {
+            display: none !important;
+        }
+
+        .app-sidebar.collapsed .logo-mini {
+            display: inline-block !important;
+        }
+    </style>
 
 </head>
 
@@ -53,9 +70,9 @@
 
     <!-- Google Analytics -->
     <script>
-        (function(b, o, i, l, e, r) {
+        (function (b, o, i, l, e, r) {
             b.GoogleAnalyticsObject = l;
-            b[l] || (b[l] = function() {
+            b[l] || (b[l] = function () {
                 (b[l].q = b[l].q || []).push(arguments)
             });
             b[l].l = +new Date;
