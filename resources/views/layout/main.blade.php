@@ -98,28 +98,27 @@
                         <a class="dropdown-item" href="{{ route('profile.index') }}">
                             <i class="ik ik-user dropdown-icon"></i> Profile
                         </a>
-                            {{-- <a class="dropdown-item" href="#"><i class="ik ik-settings dropdown-icon"></i>
-                                Settings</a>
-                            <a class="dropdown-item" href="#"><span class="float-right"><span
-                                        class="badge badge-primary">6</span></span><i
-                                    class="ik ik-mail dropdown-icon"></i> Inbox</a>
-                            <a class="dropdown-item" href="#"><i class="ik ik-navigation dropdown-icon"></i>
-                                Message</a> --}}
-                            <a class="dropdown-item" href="#"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                <i class="ik ik-power dropdown-icon"></i> Logout
-                            </a>
+                        {{-- <a class="dropdown-item" href="#"><i class="ik ik-settings dropdown-icon"></i>
+                            Settings</a>
+                        <a class="dropdown-item" href="#"><span class="float-right"><span
+                                    class="badge badge-primary">6</span></span><i class="ik ik-mail dropdown-icon"></i>
+                            Inbox</a>
+                        <a class="dropdown-item" href="#"><i class="ik ik-navigation dropdown-icon"></i>
+                            Message</a> --}}
+                        <a href="#" onclick="confirmLogout()" class="dropdown-item">
+                            <i class="ik ik-power dropdown-icon"></i> Logout
+                        </a>
 
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
 
-                        </div>
                     </div>
-
                 </div>
+
             </div>
         </div>
+    </div>
 </header>
 
 <div class="page-wrap">
@@ -321,10 +320,27 @@
 </div>
 
 <script>
-    $('.nav-toggle').on('click', function() {
+    $('.nav-toggle').on('click', function () {
         $('.app-sidebar').toggleClass('collapsed');
     });
 
 
-    
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Yakin ingin logout?',
+            text: "Anda akan keluar dari sistem.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Logout',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        });
+    }
+
+
 </script>

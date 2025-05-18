@@ -75,8 +75,9 @@
                             <div class="row mb-3">
                                 <div class="col text-left">
                                     <label class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" name="remember">
-                                        <span class="custom-control-label">&nbsp;Remember Me</span>
+                                        <!-- <input type="checkbox" class="custom-control-input" name="remember">
+                                        <span class="custom-control-label">&nbsp;Remember Me</span> -->
+                                        <a id="register-link" href="">Kamu Belum Punya Accounts ?</a>
                                     </label>
                                 </div>
                             </div>
@@ -98,12 +99,27 @@
         window.jQuery || document.write(
             '<script src="{{ asset('template/src/js/vendor/jquery-3.3.1.min.js') }}"><\/script>')
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('template/plugins/popper.js/dist/umd/popper.min.js') }}"></script>
     <script src="{{ asset('template/plugins/bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('template/plugins/perfect-scrollbar/dist/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.js') }}"></script>
 
+<script>
+   $('#register-link').on('click', function (e) {
+        e.preventDefault(); // Prevent the default action of the link
+        Swal.fire({
+            title: 'Pendaftaran',
+            text: "Silahkan Hubungi Admin Untuk Pendaftaran Akun Baru.",
+            icon: 'info',
+            confirmButtonText: 'OK'
+        });
+    });
+   
+</script>
+
 </body>
+
 
 </html>

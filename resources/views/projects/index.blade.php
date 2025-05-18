@@ -3,54 +3,7 @@
 @section('title', 'Project')
 
 @section('content')
-    <style>
-        #projectContainer {
-            width: 100%;
-            overflow-x: auto;
-        }
 
-        #projectTable {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px;
-            /* Agar tetap terbaca di layar kecil */
-        }
-
-        #projectTable th,
-        #projectTable td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        #projectTable th {
-            background-color: #f2f2f2;
-        }
-
-        @media screen and (max-width: 768px) {
-            #projectContainer {
-                padding: 0 10px;
-            }
-
-            #projectTable th,
-            #projectTable td {
-                font-size: 14px;
-                padding: 6px;
-            }
-        }
-
-        @media screen and (max-width: 480px) {
-            #projectTable {
-                font-size: 12px;
-            }
-
-            #projectTable th,
-            #projectTable td {
-                padding: 4px;
-            }
-        }
-    </style>
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -67,19 +20,21 @@
     </div>
     <div class="card">
         <div class="card-body">
-            <div class="container" id="projectContainer">
-                <table class="table" id="projectTable">
-                    <thead>
-                        <tr>
-                            <th>No. Project</th>
-                            <th>Nama Project</th>
-                            <th>Client</th>
-                            <th>Jenis Kerjaan</th>
-                            <th>Periode</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                </table>
+            <div class="table-responsive">
+                <div class="container">
+                    <table class="table" id="projectTable">
+                        <thead>
+                            <tr>
+                                <th>No. Project</th>
+                                <th>Nama Project</th>
+                                <th>Client</th>
+                                <th>Jenis Kerjaan</th>
+                                <th>Periode</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -299,6 +254,7 @@
         let table = $('#projectTable').DataTable({
             processing: true,
             serverSide: true,
+            resposive: true,
             ajax: '{{ route('projects.list') }}',
             columns: [{
                 data: 'no_project',
@@ -329,11 +285,11 @@
                 searchable: false
             },
             ],
-             "autoWidth": false
+            "autoWidth": false
         });
 
 
-        $('#exampleModalCenter').on('hidden.bs.modal', function() {
+        $('#exampleModalCenter').on('hidden.bs.modal', function () {
             $(this).find('form')[0].reset();
         });
 
