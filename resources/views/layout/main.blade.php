@@ -124,7 +124,7 @@
 <div class="page-wrap">
     <div class="app-sidebar colored collapsed">
         <div class="sidebar-header">
-            <a class="header-brand" href="index.html">
+            <a class="header-brand" href="#">
                 <span class="text logo-full">
                     Gatratrust
                     <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
