@@ -105,8 +105,8 @@
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
-                            <input type="text" name="nama_project" placeholder="Masukkan Nama Project"
-                                class="form-control" required>
+                            <input type="text" name="nama_project" placeholder="Masukkan Nama Project" class="form-control"
+                                required>
                         </div>
                         <div class="form-group">
                             <label>Client</label>
@@ -169,8 +169,7 @@
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
-                            <input type="text" name="nama_project" class="form-control" id="edit_nama_project"
-                                required>
+                            <input type="text" name="nama_project" class="form-control" id="edit_nama_project" required>
                         </div>
                         <div class="form-group">
                             <label>Client</label>
@@ -216,18 +215,79 @@
 @endsection
 
 @section('script')
+
+    <script>
+
+        $(document).on('click', '.btnDeletProject', function () {
+            var projectId = $(this).data('id');
+
+            // Konfirmasi penghapusan
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data ini akan dihapus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/projects/delete/${projectId}`,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function (res) {
+                            if (res.success) {
+                                Swal.fire(
+                                    'Deleted!',
+                                    res.message,
+                                    'success'
+                                ).then(() => {
+                                    table.ajax.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: res.message || 'Terjadi kesalahan saat menghapus project.'
+                                });
+                            }
+                        },
+                        error: function (xhr) {
+                            let errorMsg = 'Gagal menghapus project.';
+
+                            // Coba ambil pesan error dari response JSON
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: errorMsg
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+
+    </script>
     <script>
         let today = new Date().toISOString().split('T')[0];
         $('input[name="start"], input[name="end"]');
 
         // Jika ingin end tidak boleh sebelum start
-        $('input[name="start"]').on('change', function() {
+        $('input[name="start"]').on('change', function () {
             let startDate = $(this).val();
             $('input[name="end"]').attr('min', startDate);
         });
 
         // Reset min end saat modal dibuka
-        $('#exampleModalCenter, #EditProjectModal').on('show.bs.modal', function() {
+        $('#exampleModalCenter, #EditProjectModal').on('show.bs.modal', function () {
             let startVal = $(this).find('input[name="start"]').val();
             if (startVal) {
                 $(this).find('input[name="end"]').attr('min', startVal);
@@ -241,33 +301,33 @@
             serverSide: true,
             ajax: '{{ route('projects.list') }}',
             columns: [{
-                    data: 'no_project',
-                    name: 'no_project'
-                },
-                {
-                    data: 'nama_project',
-                    name: 'nama_project'
-                },
-                {
-                    data: 'client',
-                    name: 'client.name'
-                },
-                {
-                    data: 'kerjaan',
-                    name: 'kerjaan.nama_kerjaan'
-                },
-                {
-                    data: 'periode',
-                    name: 'periode',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'aksi',
-                    name: 'aksi',
-                    orderable: false,
-                    searchable: false
-                },
+                data: 'no_project',
+                name: 'no_project'
+            },
+            {
+                data: 'nama_project',
+                name: 'nama_project'
+            },
+            {
+                data: 'client',
+                name: 'client.name'
+            },
+            {
+                data: 'kerjaan',
+                name: 'kerjaan.nama_kerjaan'
+            },
+            {
+                data: 'periode',
+                name: 'periode',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'aksi',
+                name: 'aksi',
+                orderable: false,
+                searchable: false
+            },
             ]
         });
 
@@ -278,7 +338,7 @@
 
 
         // Tambah Project
-        $('#formTambahProject').on('submit', function(e) {
+        $('#formTambahProject').on('submit', function (e) {
             e.preventDefault();
             var form = $(this);
             var btn = form.find('button[type="submit"]');
@@ -288,7 +348,7 @@
                 url: "{{ route('projects.store') }}",
                 method: "POST",
                 data: form.serialize(),
-                success: function(res) {
+                success: function (res) {
                     $('#exampleModalCenter').modal('hide'); // Fixed modal ID
                     Swal.fire({
                         icon: 'success',
@@ -302,20 +362,20 @@
                         $('#exampleModalCenter').modal('hide');
                     });
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
                         text: 'Gagal menambah project. Pastikan data sudah benar.'
                     });
                 },
-                complete: function() {
+                complete: function () {
                     btn.prop('disabled', false).text('Simpan');
                 }
             });
         });
 
-        $(document).on('click', '.btn-edit-project', function() {
+        $(document).on('click', '.btn-edit-project', function () {
             // Ambil data dari tombol yang diklik
             var projectId = $(this).data('id'); // pastikan tombol punya data-id
             var no = $(this).data('no');
@@ -341,7 +401,7 @@
         });
 
         // Edit Project - Submit
-        $('#formEditProject').on('submit', function(e) {
+        $('#formEditProject').on('submit', function (e) {
             e.preventDefault();
             var form = $(this);
             var btn = form.find('button[type="submit"]');
@@ -353,7 +413,7 @@
                 url: actionUrl,
                 method: "POST",
                 data: form.serialize(),
-                success: function(res) {
+                success: function (res) {
 
                     Swal.fire({
                         icon: 'success',
@@ -366,16 +426,60 @@
                         $('#EditProjectModal').modal('hide');
                     });
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
                         text: 'Gagal mengedit project. ' + (xhr.responseJSON?.message || '')
                     });
                 },
-                complete: function() {
+                complete: function () {
                     btn.prop('disabled', false).text('Simpan');
                 }
+            });
+
+
+
+            //hapus project
+            $(document).on('click', '.DeleteProjectModal', function () {
+                var projectId = $(this).data('id');
+                var projectName = $(this).data('name');
+                // Konfirmasi penghapusan
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Data ini akan dihapus!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/projects/delete/${projectId}`,
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function (res) {
+                                Swal.fire(
+                                    'Deleted!',
+                                    'Project berhasil dihapus.',
+                                    'success'
+                                ).then(() => {
+                                    table.ajax.reload();
+                                });
+                            },
+                            error: function (xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: 'Gagal menghapus project. Pastikan data sudah benar.'
+                                });
+                            }
+                        });
+                    }
+                });
             });
         });
     </script>
