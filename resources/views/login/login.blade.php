@@ -1,5 +1,5 @@
-<!doctype html>
-<html class="no-js" lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
@@ -20,8 +20,7 @@
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
 </head>
 
-<body style="background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%); min-height: 100vh;">
-
+<body>
     <div class="auth-wrapper">
         <div class="container-fluid h-100">
             <div class="row flex-row h-100 bg-white">
@@ -38,13 +37,14 @@
                         style="background: #fff; max-width: 370px;">
                         <div class="logo-centered mb-3">
                             <a href="{{ url('/') }}">
-                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo" style="width: 80px;">
+                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
+                                    style="width: 80px;">
                             </a>
                         </div>
                         <h3 class="text-center mb-2" style="font-weight: 700; color:  #1da34b;">Gatra Trust</h3>
                         <p class="text-center mb-4" style="color: #888;">Welcome To Gatra Trust</p>
                         {{-- Alert Error --}}
-                        @if(session('status'))
+                        @if (session('status'))
                             <div class="alert alert-success">{{ session('status') }}</div>
                         @endif
                         @if ($errors->any())
@@ -62,8 +62,8 @@
                             <div class="form-group mb-3 position-relative">
                                 <i class="ik ik-user position-absolute"
                                     style="left: 15px; top: 50%; transform: translateY(-50%); color: #1da34b;"></i>
-                                <input type="text" class="form-control rounded-pill" placeholder="Username" name="name"
-                                    required style="padding-left: 40px;">
+                                <input type="text" class="form-control rounded-pill" placeholder="Username"
+                                    name="name" required style="padding-left: 40px;">
                             </div>
 
                             <div class="form-group mb-3 position-relative">
@@ -94,7 +94,10 @@
 
     {{-- JS Files --}}
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script>window.jQuery || document.write('<script src="{{ asset('template/src/js/vendor/jquery-3.3.1.min.js') }}"><\/script>')</script>
+    <script>
+        window.jQuery || document.write(
+            '<script src="{{ asset('template/src/js/vendor/jquery-3.3.1.min.js') }}"><\/script>')
+    </script>
     <script src="{{ asset('template/plugins/popper.js/dist/umd/popper.min.js') }}"></script>
     <script src="{{ asset('template/plugins/bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('template/plugins/perfect-scrollbar/dist/perfect-scrollbar.min.js') }}"></script>

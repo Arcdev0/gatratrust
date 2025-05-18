@@ -150,11 +150,13 @@
                             <i class="ik ik-folder"></i><span>Project</span>
                         </a>
                     </div>
-                    <div class="nav-item {{ request()->routeIs('user.tampilan') ? 'active' : '' }}">
-                        <a href="{{ route('user.tampilan') }}">
-                            <i class="ik ik-user"></i><span>User</span>
-                        </a>
-                    </div>
+                    @if (Auth::user()->role_id == 1)
+                        <div class="nav-item {{ request()->routeIs('user.tampilan') ? 'active' : '' }}">
+                            <a href="{{ route('user.tampilan') }}">
+                                <i class="ik ik-user"></i><span>User</span>
+                            </a>
+                        </div>
+                    @endif
                 </nav>
             </div>
         </div>

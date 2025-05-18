@@ -128,7 +128,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Deskripsi</label>
+                            <label>Deskripsi (Optional)</label>
                             <textarea name="deskripsi" placeholder="Masukkan deskripsi" class="form-control"></textarea>
                         </div>
                         <div class="form-group">
@@ -192,7 +192,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Deskripsi</label>
+                            <label>Deskripsi (Optional)</label>
                             <textarea name="deskripsi" class="form-control" id="edit_deskripsi"></textarea>
                         </div>
                         <div class="form-group">
@@ -328,9 +328,14 @@
                 orderable: false,
                 searchable: false
             },
-            ]
+            ],
+             "autoWidth": false
         });
 
+
+        $('#exampleModalCenter').on('hidden.bs.modal', function() {
+            $(this).find('form')[0].reset();
+        });
 
 
         // Tambah Project
