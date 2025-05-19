@@ -16,8 +16,18 @@
     <link rel="stylesheet" href="{{ asset('template/plugins/icon-kit/dist/css/iconkit.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/perfect-scrollbar/css/perfect-scrollbar.css') }}">
     <link rel="stylesheet" href="{{ asset('template/dist/css/theme.min.css') }}">
-
+    <link rel="stylesheet" href="{{ asset('template/css/custom.css') }}">
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
+
+    <style>
+        .auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+    </style>
 </head>
 
 <body>
@@ -33,12 +43,11 @@
                     </div>
                 </div>
                 <div class="col-xl-4 col-lg-6 col-md-7 my-auto p-0">
-                    <div class="authentication-form mx-auto shadow-lg rounded p-4"
+                    <div class="authentication-form mx-auto shadow-lg rounded p-4 w-100"
                         style="background: #fff; max-width: 370px;">
                         <div class="logo-centered mb-3">
                             <a href="{{ url('/') }}">
-                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
-                                    style="width: 80px;">
+                                <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo" style="width: 80px;">
                             </a>
                         </div>
                         <h3 class="text-center mb-2" style="font-weight: 700; color:  #1da34b;">Gatra Trust</h3>
@@ -62,8 +71,8 @@
                             <div class="form-group mb-3 position-relative">
                                 <i class="ik ik-user position-absolute"
                                     style="left: 15px; top: 50%; transform: translateY(-50%); color: #1da34b;"></i>
-                                <input type="text" class="form-control rounded-pill" placeholder="Username"
-                                    name="name" required style="padding-left: 40px;">
+                                <input type="text" class="form-control rounded-pill" placeholder="Username" name="name"
+                                    required style="padding-left: 40px;">
                             </div>
 
                             <div class="form-group mb-3 position-relative">
@@ -106,20 +115,19 @@
     <script src="{{ asset('template/plugins/screenfull/dist/screenfull.js') }}"></script>
     <script src="{{ asset('template/dist/js/theme.js') }}"></script>
 
-<script>
-   $('#register-link').on('click', function (e) {
-        e.preventDefault(); // Prevent the default action of the link
-        Swal.fire({
-            title: 'Pendaftaran',
-            text: "Silahkan Hubungi Admin Untuk Pendaftaran Akun Baru.",
-            icon: 'info',
-            confirmButtonText: 'OK'
+    <script>
+        $('#register-link').on('click', function (e) {
+            e.preventDefault(); // Prevent the default action of the link
+            Swal.fire({
+                title: 'Pendaftaran',
+                text: "Silahkan Hubungi Admin Untuk Pendaftaran Akun Baru.",
+                icon: 'info',
+                confirmButtonText: 'OK'
+            });
         });
-    });
-   
-</script>
+
+    </script>
 
 </body>
-
 
 </html>
