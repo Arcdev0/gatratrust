@@ -160,7 +160,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="font-weight-bold">Detail Project</h3>
                     <a href="{{ route('projects.tampilan') }}" class="btn btn-primary">
-                     Back to Project
+                        Back to Project
                     </a>
                 </div>
                 <div class="card">
@@ -199,47 +199,69 @@
                             <div class="timeline-container">
                                 <!-- Desktop Version -->
                                 <div class="timeline-horizontal">
-                                    @foreach ($steps as $index => $step)
+                                    @php
+                                        $stepKeys = array_keys($steps);
+                                        $stepCount = count($stepKeys);
+                                    @endphp
+
+                                    @foreach ($stepKeys as $i => $key)
                                         @php
-                                            $status = $stepStatuses[$index];
-                                            $listProsesId = $stepProcessIds[$index];
+                                            $step = $steps[$key];
+                                            $status = $stepStatuses[$key];
+                                            $listProsesId = $stepProcessIds[$key];
+                                            $urutan = $stepUrutan[$key];
                                         @endphp
 
                                         <div class="timeline-step">
-                                            <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
-                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}', '{{ $status }}')"
-                                                data-step="{{ $step }}" data-id="{{ $listProsesId }}">
+                                            <div class="circle {{ $status === 'done' ? 'done' : 'pending' }}"
+                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}', '{{ $status }}', '{{ $urutan }}')"
+                                                data-step="{{ $step }}" data-id="{{ $listProsesId }}"
+                                                data-urutan="{{ $urutan }}">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
                                         </div>
 
-                                        @if ($index < count($steps) - 1)
+                                        @if ($i < $stepCount - 1)
+                                            @php
+                                                $nextKey = $stepKeys[$i + 1];
+                                                $nextStatus = $stepStatuses[$nextKey];
+                                                $isArrowDone = $status === 'done' && $nextStatus === 'done';
+                                            @endphp
                                             <div class="arrow-connector">
-                                                <div class="arrow-line {{ $status == 'done' ? 'done' : '' }}"></div>
-                                                <div class="arrow-head {{ $status == 'done' ? 'done' : '' }}"></div>
+                                                <div class="arrow-line {{ $isArrowDone ? 'done' : '' }}"></div>
+                                                <div class="arrow-head {{ $isArrowDone ? 'done' : '' }}"></div>
                                             </div>
                                         @endif
                                     @endforeach
                                 </div>
 
-
                                 <!-- Mobile Version -->
                                 <div class="timeline-vertical">
-                                    @foreach ($steps as $index => $step)
+                                    @foreach ($stepKeys as $i => $key)
                                         @php
-                                            $status = $stepStatuses[$index];
-                                            $listProsesId = $stepProcessIds[$index];
+                                            $step = $steps[$key];
+                                            $status = $stepStatuses[$key];
+                                            $listProsesId = $stepProcessIds[$key];
+                                            $urutan = $stepUrutan[$key];
                                         @endphp
+
                                         <div class="timeline-step">
-                                            <div class="circle {{ $status == 'done' ? 'done' : 'pending' }}"
+                                            <div class="circle {{ $status === 'done' ? 'done' : 'pending' }}"
+                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}', '{{ $status }}', '{{ $urutan }}')"
                                                 data-step="{{ $step }}" data-id="{{ $listProsesId }}"
-                                                onclick="showStepModal('{{ $step }}', '{{ $listProsesId }}', '{{ $status }}')">
+                                                data-urutan="{{ $urutan }}">
                                                 <i class="fas fa-check"></i>
                                             </div>
                                             <p class="step-label">{{ $step }}</p>
-                                            @if ($index < count($steps) - 1)
-                                                <div class="arrow-line {{ $status == 'done' ? 'done' : '' }}"></div>
+
+                                            @if ($i < $stepCount - 1)
+                                                @php
+                                                    $nextKey = $stepKeys[$i + 1];
+                                                    $nextStatus = $stepStatuses[$nextKey];
+                                                    $isArrowDone = $status === 'done' && $nextStatus === 'done';
+                                                @endphp
+                                                <div class="arrow-line {{ $isArrowDone ? 'done' : '' }}"></div>
                                             @endif
                                         </div>
                                     @endforeach
@@ -261,6 +283,7 @@
                                     </div>
                                     <div class="modal-body">
                                         <input type="hidden" id="modalListProsesId" />
+                                        <input type="hidden" id="modalUrutanInput" name="urutan">
                                         <div class="row">
                                             <!-- Kolom Kiri: Data File yang sudah diupload -->
 
@@ -310,15 +333,15 @@
 
 @section('script')
     <script>
-        function showStepModal(step, prosesId, status) {
+        function showStepModal(step, prosesId, status, urutan) {
             $('#modalStepName').text(step);
             $('#modalListProsesId').val(prosesId);
-            $('#fileInputContainer').empty(); // reset input
+            $('#modalUrutan').text(urutan);
+            $('#modalUrutanInput').val(urutan);
+
+            $('#fileInputContainer').empty();
 
             const userRoleId = {{ Auth::user()->role_id }};
-
-            console.log(status);
-
 
             if (status === 'done') {
                 $('#markAsDoneBtn').hide();
@@ -357,12 +380,14 @@
 
                 let projectId = id;
                 let list_proses_id = $('#modalListProsesId').val();
+                let urutan = $('#modalUrutanInput').val();
 
                 $.ajax({
                     url: '/project/' + projectId + '/uploaded-files',
                     type: 'GET',
                     data: {
-                        list_proses_id: list_proses_id
+                        list_proses_id: list_proses_id,
+                        urutan_id: urutan
                     },
                     success: function(response) {
                         if (response.length === 0) {
@@ -379,6 +404,12 @@
 
                                 const userRoleId = {{ Auth::user()->role_id }};
                                 const isAdmin = userRoleId === 1;
+                                const isRestrictedProcess = list_proses_id ==
+                                4;
+
+                                // Tentukan apakah harus menampilkan tombol eye
+                                const showEyeButton = !isRestrictedProcess || (
+                                    isRestrictedProcess && isAdmin);
 
                                 html += `
                     <li class="list-group-item d-flex justify-content-between align-items-start flex-column">
@@ -386,11 +417,15 @@
                             <span>
                                 <strong>${file.name}</strong>
                             </span>
-                            <div>
+                            <div>`;
+
+                                // Tampilkan tombol eye jika memenuhi kondisi
+                                if (showEyeButton) {
+                                    html += `
                                 <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary me-2" title="Lihat File">
                                     <i class="fas fa-eye"></i>
                                 </a>`;
-
+                                }
 
                                 if (isAdmin) {
                                     html += `
@@ -441,6 +476,8 @@
 
             $('#saveFile').on('click', function() {
                 const formData = new FormData();
+                let urutan = $('#modalUrutanInput').val();
+                let list_proses_id = $('#modalListProsesId').val();
 
                 // Ambil semua input label dan file
                 $('#fileInputContainer .form-group').each(function(index, element) {
@@ -452,8 +489,9 @@
                 });
 
                 // Tambahkan step saat ini
-                formData.append('step_name', currentStep);
+                formData.append('list_proses_id', list_proses_id);
                 formData.append('project_id', id);
+                formData.append('urutan_id', urutan);
                 formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
                 // Kirim ke server via AJAX
@@ -545,6 +583,8 @@
             $(document).on('click', '#markAsDoneBtn', function() {
                 let projectId = id;
                 let list_proses_id = $('#modalListProsesId').val();
+                let urutan = $('#modalUrutanInput').val();
+
 
                 // Tampilkan konfirmasi sebelum mengubah status
                 Swal.fire({
@@ -562,6 +602,7 @@
                             type: 'POST',
                             data: {
                                 list_proses_id: list_proses_id,
+                                urutan_id: urutan,
                                 _token: $('meta[name="csrf-token"]').attr(
                                     'content') // CSRF token untuk Laravel
                             },
@@ -610,6 +651,7 @@
             $(document).on('click', '#unmarkAsDoneBtn', function() {
                 let projectId = id;
                 let list_proses_id = $('#modalListProsesId').val();
+                let urutan = $('#modalUrutanInput').val();
 
                 Swal.fire({
                     title: 'Konfirmasi',
@@ -625,6 +667,7 @@
                             type: 'POST',
                             data: {
                                 kerjaan_list_proses_id: list_proses_id,
+                                urutan_id: urutan,
                                 _token: $('meta[name="csrf-token"]').attr('content')
                             },
                             beforeSend: function() {
