@@ -192,14 +192,13 @@ public function getListProject(Request $request)
     public function uploadFiles(Request $request)
     {
 
-        // dd($request->all());
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'list_proses_id' => 'required|exists:list_proses,id',
             'fileLabel' => 'required|array',
             'fileLabel.*' => 'required|string',
             'fileInput' => 'required|array',
-            'fileInput.*' => 'required|file|mimes:pdf,jpg,png',
+            'fileInput.*' => 'required|file|mimes:pdf,jpg,png,doc,docx,xls,xlsx|max:102400',
         ]);
 
         $listProsesId = $request->input('list_proses_id');

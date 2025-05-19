@@ -405,7 +405,7 @@
                                 const userRoleId = {{ Auth::user()->role_id }};
                                 const isAdmin = userRoleId === 1;
                                 const isRestrictedProcess = list_proses_id ==
-                                4;
+                                    4;
 
                                 // Tentukan apakah harus menampilkan tombol eye
                                 const showEyeButton = !isRestrictedProcess || (
@@ -476,19 +476,35 @@
 
             $('#saveFile').on('click', function() {
                 const formData = new FormData();
-                let urutan = $('#modalUrutanInput').val();
-                let list_proses_id = $('#modalListProsesId').val();
+                const urutan = $('#modalUrutanInput').val();
+                const list_proses_id = $('#modalListProsesId').val();
+
+                let adaFileKosong = false;
 
                 // Ambil semua input label dan file
                 $('#fileInputContainer .form-group').each(function(index, element) {
                     const label = $(element).find('input[type="text"]').val();
-                    const file = $(element).find('input[type="file"]')[0].files[0];
+                    const fileInput = $(element).find('input[type="file"]')[0];
+                    const file = fileInput.files[0];
 
-                    formData.append(`fileLabel[${index}]`, label);
-                    formData.append(`fileInput[${index}]`, file);
+                    // Validasi: pastikan file tidak kosong
+                    if (!file) {
+                        adaFileKosong = true;
+                    }
+
+                    formData.append(`fileLabel[${index}]`, label ?? '');
+                    formData.append(`fileInput[${index}]`, file ?? '');
                 });
 
-                // Tambahkan step saat ini
+                if (adaFileKosong) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Semua input file harus diisi sebelum mengunggah.',
+                    });
+                    return;
+                }
+
                 formData.append('list_proses_id', list_proses_id);
                 formData.append('project_id', id);
                 formData.append('urutan_id', urutan);
@@ -499,10 +515,11 @@
                     url: '/projects/upload-step-files',
                     type: 'POST',
                     data: formData,
-                    processData: false,
-                    contentType: false,
+                    processData: false, // jangan ubah FormData ke query string
+                    contentType: false, // biarkan browser otomatis set boundary multipart
+                    timeout: 0, // tambahkan timeout 0 agar file besar tidak putus
                     beforeSend: function() {
-                        // Tampilkan loading sebelum request dimulai
+                        // Tampilkan loading
                         Swal.fire({
                             title: 'Mengunggah...',
                             text: 'Mohon tunggu sementara file diunggah.',
@@ -513,7 +530,6 @@
                         });
                     },
                     success: function(response) {
-                        // Tampilkan alert sukses
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil',
@@ -522,17 +538,17 @@
                             $('#timelineModal').modal('hide');
                         });
                     },
-                    error: function() {
-                        // Tampilkan alert error
+                    error: function(xhr) {
+                        console.error(xhr);
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
-                            text: 'Terjadi kesalahan saat mengunggah file',
+                            text: 'Terjadi kesalahan saat mengunggah file. Coba periksa ukuran file atau koneksi.',
                         });
                     }
                 });
-
             });
+
 
 
             $(document).on('click', '.btn-delete-file', function() {
