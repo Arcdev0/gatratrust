@@ -43,17 +43,21 @@ class TblProjectController extends Controller
                     return $project->client->company ?? '-';
                 })
                ->addColumn('selesai', function ($project) {
-                    // Ambil semua list_proses_id untuk kerjaan ini
-                    $listProsesIds = DB::table('kerjaan_list_proses')
+                    $listProses = DB::table('kerjaan_list_proses')
                         ->where('kerjaan_id', $project->kerjaan_id)
-                        ->pluck('list_proses_id');
-
-                    $totalProses = $listProsesIds->count();
-
-                    // Hitung yang sudah selesai (kerjaan_list_proses_id = list_proses_id DAN status = done)
+                        ->select('list_proses_id', 'urutan')
+                        ->get();
+                    $totalProses = $listProses->count();
                     $prosesSelesai = DB::table('project_details')
                         ->where('project_id', $project->id)
-                        ->whereIn('kerjaan_list_proses_id', $listProsesIds)
+                        ->where(function($query) use ($listProses) {
+                            foreach ($listProses as $proses) {
+                                $query->orWhere(function($q) use ($proses) {
+                                    $q->where('kerjaan_list_proses_id', $proses->list_proses_id)
+                                    ->where('urutan_id', $proses->urutan);
+                                });
+                            }
+                        })
                         ->where('status', 'done')
                         ->count();
 
