@@ -88,7 +88,13 @@
 
                 <div class="dropdown d-flex align-items-center">
                     <div class="text-right mr-2">
-                        <span class="font-weight-bold">{{ Auth::user()->company }}</span>
+                        <span class="font-weight-bold">
+                            @if (!empty(Auth::user()->company))
+                                {{ Auth::user()->company }}
+                            @else
+                                {{ Auth::user()->name }}
+                            @endif
+                        </span>
                     </div>
                     <a class="dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">
