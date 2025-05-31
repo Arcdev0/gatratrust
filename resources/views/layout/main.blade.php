@@ -156,6 +156,11 @@
                             </a>
                         </div>
                     @endif
+                    <div class="nav-item {{ request()->routeIs('listproses.tampilan') ? 'active' : '' }}">
+                        <a href="{{ route('listproses.index') }}">
+                            <i class="ik ik-folder"></i><span>List Proses</span>
+                        </a>
+                    </div>
                 </nav>
             </div>
         </div>

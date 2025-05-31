@@ -43,9 +43,13 @@
                                                     data-status="{{ $user->is_active }}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-danger btnDeleteUser">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                                                <form action="{{ route('user.destroy', $user->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button" class="btn btn-sm btn-danger btnDeleteUser">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
