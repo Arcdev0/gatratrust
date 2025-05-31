@@ -88,7 +88,7 @@
 
                 <div class="dropdown d-flex align-items-center">
                     <div class="text-right mr-2">
-                        <span class="font-weight-bold">{{ Auth::user()->name }}</span>
+                        <span class="font-weight-bold">{{ Auth::user()->company }}</span>
                     </div>
                     <a class="dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">
@@ -158,7 +158,7 @@
                     @endif
                     <div class="nav-item {{ request()->routeIs('listproses.tampilan') ? 'active' : '' }}">
                         <a href="{{ route('listproses.index') }}">
-                            <i class="ik ik-folder"></i><span>List Proses</span>
+                            <i class="ik ik-settings"></i><span>List Proses</span>
                         </a>
                     </div>
                 </nav>
