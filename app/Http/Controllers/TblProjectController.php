@@ -439,6 +439,45 @@ class TblProjectController extends Controller
     }
 
 
+    public function getListKomentar(Request $request)
+    {
+        $request->validate([
+            'project_id' => 'required|integer',
+            'list_proses_id' => 'required|integer',
+            'urutan_id' => 'required|integer',
+        ]);
 
+        // 1. Cari project_detail_id
+        $projectDetail = DB::table('project_details')
+            ->where('project_id', $request->project_id)
+            ->where('kerjaan_list_proses_id', $request->list_proses_id)
+            ->where('urutan_id', $request->urutan_id)
+            ->first();
+
+        // dd($projectDetail);
+
+        if (!$projectDetail) {
+            return response()->json([]); // Tidak ada komentar karena belum ada project_detail
+        }
+
+        // 2. Ambil komentar berdasarkan project_detail_id
+        $komentar = DB::table('project_detail_comments as c')
+            ->leftJoin('users as u', 'c.user_id', '=', 'u.id')
+            ->leftJoin('roles as r', 'u.role_id', '=', 'r.id')
+            ->select(
+                'c.id',
+                'c.comment',
+                'c.created_at',
+                'u.name as user_name',
+                'r.name as role_name'
+            )
+            ->where('c.project_detail_id', $projectDetail->id)
+            ->orderBy('c.created_at', 'asc')
+            ->get();
+
+        //   dd($komentar);
+
+        return response()->json($komentar);
+    }
 
 }

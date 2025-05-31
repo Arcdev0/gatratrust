@@ -36,6 +36,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/project/delete-file/{id}', [TblProjectController::class, 'deleteFile']);
     Route::post('/project/{id}/mark-step-done', [TblProjectController::class, 'markStepDone']);
     Route::post('/project/{id}/unmark-step-done', [TblProjectController::class, 'unmarkStepDone']);
+    Route::get('/project-detail/comments', [TblProjectController::class, 'getListKomentar']);
+
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');

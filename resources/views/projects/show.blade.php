@@ -152,6 +152,22 @@
                 display: none;
             }
         }
+
+        .comment-card {
+            background-color: #f0f0f0;
+            /* abu-abu terang */
+            border: 1px solid #ccc;
+            /* garis tepi abu-abu */
+            border-radius: 8px;
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
     </style>
 
     <div class="container-fluid">
@@ -310,16 +326,54 @@
                                                 </div>
                                             @endif
                                         </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="container pt-2 pb-5">
+                                                <!-- Form Komentar -->
+                                                <div class="mb-3">
+                                                    <label for="komentar" class="form-label">Tulis Komentar</label>
+                                                    <textarea class="form-control" id="komentar" rows="3" placeholder="Tulis komentar kamu di sini..."></textarea>
+                                                </div>
+                                                <button class="btn btn-primary mb-4" id="btnTambahKomentar">Tambah
+                                                    Komentar</button>
+
+                                                <!-- List Komentar -->
+                                                <div id="listKomentar">
+                                                    <!-- Komentar Dummy -->
+                                                    {{-- <div class="card mb-3 comment-card">
+                                                        <div class="card-body d-flex">
+                                                            <img src="{{ asset('template/img/user_main.jpg') }}"
+                                                                alt="User" class="comment-avatar mr-5">
+                                                            <div class="flex-grow-1">
+                                                                <div
+                                                                    class="d-flex justify-content-between align-items-start">
+                                                                    <div>
+                                                                        <h6 class="mb-0">Jane Doe <span
+                                                                                class="badge bg-secondary">Admin</span></h6>
+                                                                        <div class="comment-meta">31 Mei 2025, 12:30</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <button
+                                                                            class="btn btn-sm btn-outline-danger btn-sm">&times;</button>
+                                                                    </div>
+                                                                </div>
+                                                                <p class="mt-2 mb-0">Ini adalah komentar dummy untuk contoh
+                                                                    tampilan.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div> --}}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <div class="modal-footer">
-                                            @if (Auth::user()->role_id == 1)
-                                                <button class="btn btn-primary" id="saveFile">Simpan</button>
-                                                <button class="btn btn-success" id="markAsDoneBtn">Tandai Selesai</button>
-                                                <button class="btn btn-secondary" id="unmarkAsDoneBtn">Cabut Tanda
-                                                    Selesai</button>
-                                            @endif
-                                        </div>
+                                        @if (Auth::user()->role_id == 1)
+                                            <button class="btn btn-primary btn-sm" id="saveFile">Simpan</button>
+                                            <button class="btn btn-success btn-sm" id="markAsDoneBtn">Tandai
+                                                Selesai</button>
+                                            <button class="btn btn-secondary btn-sm" id="unmarkAsDoneBtn">Cabut Tanda
+                                                Selesai</button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -373,6 +427,65 @@
 
             let currentStep = null;
 
+
+            function loadKomentar(projectId, listProsesId, urutanId) {
+                $.ajax({
+                    url: `/project-detail/comments`,
+                    method: 'GET',
+                    data: {
+                        project_id: projectId,
+                        list_proses_id: listProsesId,
+                        urutan_id: urutanId
+                    },
+                    success: function(data) {
+                        let html = '';
+
+                        console.log(data);
+
+                        if (data.length === 0) {
+                            html = `
+                    <div class="text-center text-muted mt-3">
+                        <i class="fas fa-comments fa-2x mb-2"></i>
+                        <p class="mb-0">Belum ada komentar.</p>
+                    </div>`;
+                        } else {
+                            data.forEach(k => {
+                                html += `
+                    <div class="card mb-3 comment-card">
+                        <div class="card-body d-flex">
+                            <img src="/template/img/user_main.jpg" alt="User" class="comment-avatar mr-5">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
+                                            ${k.role_name ? `<span class="badge bg-secondary">${k.role_name}</span>` : ''}
+                                        </h6>
+                                        <div class="comment-meta">${formatDate(k.created_at)}</div>
+                                    </div>
+                                </div>
+                                <p class="mt-2 mb-0">${k.comment}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                            });
+                        }
+
+                        $('#listKomentar').html(html);
+                    },
+                    error: function() {
+                        $('#listKomentar').html('<p class="text-danger">Gagal memuat komentar.</p>');
+                    }
+                });
+            }
+
+            function formatDate(datetimeStr) {
+                const d = new Date(datetimeStr);
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit', month: 'long', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            }
+
             $('.circle').click(function() {
                 var step = $(this).data('step');
                 $('#modalStepName').text(step);
@@ -381,6 +494,8 @@
                 let projectId = id;
                 let list_proses_id = $('#modalListProsesId').val();
                 let urutan = $('#modalUrutanInput').val();
+
+                loadKomentar(projectId, list_proses_id, urutan);
 
                 $.ajax({
                     url: '/project/' + projectId + '/uploaded-files',
@@ -720,7 +835,6 @@
                     }
                 });
             });
-
 
         });
     </script>
