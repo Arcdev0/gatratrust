@@ -472,7 +472,7 @@ class TblProjectController extends Controller
                 'r.name as role_name'
             )
             ->where('c.project_detail_id', $projectDetail->id)
-            ->orderBy('c.created_at', 'asc')
+            ->orderBy('c.id', 'desc')
             ->get();
 
         //   dd($komentar);
@@ -480,4 +480,75 @@ class TblProjectController extends Controller
         return response()->json($komentar);
     }
 
+
+    public function storeKomentar(Request $request)
+    {
+        $request->validate([
+            'project_id' => 'required|integer',
+            'list_proses_id' => 'required|integer',
+            'urutan_id' => 'required|integer',
+            'comment' => 'required|string|max:1000',
+        ]);
+
+        $projectId = $request->project_id;
+        $listProsesId = $request->list_proses_id;
+        $urutanId = $request->urutan_id;
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Cek apakah sudah ada project_detail
+            $projectDetail = DB::table('project_details')
+                ->where('project_id', $projectId)
+                ->where('kerjaan_list_proses_id', $listProsesId)
+                ->where('urutan_id', $urutanId)
+                ->first();
+
+            // 2. Kalau belum ada, insert dulu
+            if (!$projectDetail) {
+                $projectDetailId = DB::table('project_details')->insertGetId([
+                    'project_id' => $projectId,
+                    'kerjaan_list_proses_id' => $listProsesId,
+                    'urutan_id' => $urutanId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $projectDetailId = $projectDetail->id;
+            }
+
+            // 3. Simpan komentar ke project_detail_comments
+            $inserted = DB::table('project_detail_comments')->insert([
+                'project_detail_id' => $projectDetailId,
+                'user_id' => Auth::id(),
+                'comment' => $request->comment,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            if (!$inserted) {
+                throw new \Exception('Gagal menambahkan komentar.');
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Komentar berhasil ditambahkan']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal menambahkan komentar',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteKomentar($id)
+    {
+        try {
+            DB::table('project_detail_comments')->where('id', $id)->delete();
+
+            return response()->json(['message' => 'Komentar berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menghapus komentar'], 500);
+        }
+    }
 }

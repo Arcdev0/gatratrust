@@ -37,7 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/project/{id}/mark-step-done', [TblProjectController::class, 'markStepDone']);
     Route::post('/project/{id}/unmark-step-done', [TblProjectController::class, 'unmarkStepDone']);
     Route::get('/project-detail/comments', [TblProjectController::class, 'getListKomentar']);
-
+    Route::post('/project-detail/comments/store', [TblProjectController::class, 'storeKomentar'])->name('project.comments.store');
+    Route::delete('/project-detail/comments/{id}', [TblProjectController::class, 'deleteKomentar']);
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');

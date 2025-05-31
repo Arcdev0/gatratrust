@@ -342,7 +342,8 @@
                                                     Komentar</button>
 
                                                 <!-- List Komentar -->
-                                                <div id="listKomentar">
+                                                <div id="listKomentar"
+                                                    style="max-height: 300px; overflow-y: auto; padding-right: 10px;">
                                                     <!-- Komentar Dummy -->
                                                     {{-- <div class="card mb-3 comment-card">
                                                         <div class="card-body d-flex">
@@ -431,7 +432,6 @@
 
             let currentStep = null;
 
-
             function loadKomentar(projectId, listProsesId, urutanId) {
                 $.ajax({
                     url: `/project-detail/comments`,
@@ -444,7 +444,8 @@
                     success: function(data) {
                         let html = '';
 
-                        console.log(data);
+                        const userRoleId = {{ Auth::user()->role_id }};
+                        const isAdmin = userRoleId === 1;
 
                         if (data.length === 0) {
                             html = `
@@ -466,6 +467,9 @@
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>
+                                    <div>
+                                        ${isAdmin ? `<button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>` : ''}
+                                    </div>
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
@@ -485,8 +489,11 @@
             function formatDate(datetimeStr) {
                 const d = new Date(datetimeStr);
                 return d.toLocaleDateString('id-ID', {
-                    day: '2-digit', month: 'long', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
                 });
             }
 
@@ -663,6 +670,112 @@
                             icon: 'error',
                             title: 'Gagal',
                             text: 'Terjadi kesalahan saat mengunggah file. Coba periksa ukuran file atau koneksi.',
+                        });
+                    }
+                });
+            });
+
+            $('#btnTambahKomentar').on('click', function() {
+                let $btn = $(this);
+                let projectId = id; // asumsi id global sudah terdefinisi
+                let list_proses_id = $('#modalListProsesId').val();
+                let urutan_id = $('#modalUrutanInput').val();
+                let komentar = $('#komentar').val().trim();
+
+                if (!komentar) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Komentar kosong',
+                        text: 'Silakan isi komentar terlebih dahulu.'
+                    });
+                    return;
+                }
+
+                // Ubah tombol jadi loading
+                $btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengirim...'
+                );
+
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+
+                $.ajax({
+                    url: '/project-detail/comments/store',
+                    method: 'POST',
+                    data: {
+                        project_id: projectId,
+                        list_proses_id: list_proses_id,
+                        urutan_id: urutan_id,
+                        comment: komentar
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message
+                        });
+                        $('#komentar').val('');
+                        loadKomentar(projectId, list_proses_id, urutan_id);
+                    },
+                    error: function(xhr) {
+                        let errMsg = xhr.responseJSON?.error || xhr.responseJSON?.message ||
+                            'Terjadi kesalahan saat menyimpan komentar.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: errMsg
+                        });
+                    },
+                    complete: function() {
+                        // Kembalikan tombol ke normal
+                        $btn.prop('disabled', false).html('Tambah Komentar');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-delete-komentar', function() {
+                const komentarId = $(this).data('id');
+
+                let projectId = id;
+                let list_proses_id = $('#modalListProsesId').val();
+                let urutan_id = $('#modalUrutanInput').val();
+
+                Swal.fire({
+                    title: 'Yakin ingin menghapus komentar ini?',
+                    text: "Tindakan ini tidak dapat dibatalkan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        $.ajaxSetup({
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            }
+                        });
+                        $.ajax({
+                            url: `/project-detail/comments/${komentarId}`,
+                            method: 'DELETE',
+                            success: function() {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: 'Komentar telah dihapus',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                loadKomentar(projectId, list_proses_id, urutan_id);
+                            },
+                            error: function() {
+                                Swal.fire('Gagal', 'Komentar gagal dihapus', 'error');
+                            }
                         });
                     }
                 });
