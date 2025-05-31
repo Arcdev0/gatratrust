@@ -137,7 +137,8 @@
                         style="width: 50px; height: 50px; margin-left: 10px;">
                 </span>
                 <span class="logo-mini" style="display:none;">
-                    <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo" style="width: 50px; height: 50px;">
+                    <img src="{{ asset('template/img/Logo_gatra.png') }}" alt="Logo"
+                        style="width: 50px; height: 50px;">
                     <span class="text">Gatratrust</span>
                 </span>
             </a>
@@ -161,12 +162,12 @@
                                 <i class="ik ik-user"></i><span>User</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('listproses.tampilan') ? 'active' : '' }}">
+                            <a href="{{ route('listproses.index') }}">
+                                <i class="ik ik-settings"></i><span>List Proses</span>
+                            </a>
+                        </div>
                     @endif
-                    <div class="nav-item {{ request()->routeIs('listproses.tampilan') ? 'active' : '' }}">
-                        <a href="{{ route('listproses.index') }}">
-                            <i class="ik ik-settings"></i><span>List Proses</span>
-                        </a>
-                    </div>
                 </nav>
             </div>
         </div>
@@ -191,13 +192,15 @@
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Gene Newman">
                         <figure class="user--online">
                             <img src="img/users/1.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Gene Newman</span> <span class="username">@gene_newman</span>
+                        </figure><span><span class="name">Gene Newman</span> <span
+                                class="username">@gene_newman</span>
                         </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Billy Black">
                         <figure class="user--online">
                             <img src="img/users/2.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Billy Black</span> <span class="username">@billyblack</span>
+                        </figure><span><span class="name">Billy Black</span> <span
+                                class="username">@billyblack</span>
                         </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Herbert Diaz">
@@ -215,13 +218,15 @@
                     <a href="javascript:void(0)" class="list-group-item active" data-chat-user="Marsha Hoffman">
                         <figure class="user--busy">
                             <img src="img/users/5.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Marsha Hoffman</span> <span class="username">@m_hoffman</span>
+                        </figure><span><span class="name">Marsha Hoffman</span> <span
+                                class="username">@m_hoffman</span>
                         </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Mason Grant">
                         <figure class="user--offline">
                             <img src="img/users/1.jpg" class="rounded-circle" alt="">
-                        </figure><span><span class="name">Mason Grant</span> <span class="username">@masongrant</span>
+                        </figure><span><span class="name">Mason Grant</span> <span
+                                class="username">@masongrant</span>
                         </span>
                     </a>
                     <a href="javascript:void(0)" class="list-group-item" data-chat-user="Shelly Sullivan">
@@ -313,7 +318,8 @@
             <form action="javascript:void(0)" class="card-footer" method="post">
                 <div class="d-flex justify-content-end">
                     <textarea class="border-0 flex-1" rows="1" placeholder="Type your message here"></textarea>
-                    <button class="btn btn-icon" type="submit"><i class="ik ik-arrow-right text-success"></i></button>
+                    <button class="btn btn-icon" type="submit"><i
+                            class="ik ik-arrow-right text-success"></i></button>
                 </div>
             </form>
         </div>
@@ -331,7 +337,7 @@
 </div>
 
 <script>
-    $('.nav-toggle').on('click', function () {
+    $('.nav-toggle').on('click', function() {
         $('.app-sidebar').toggleClass('collapsed');
     });
 
@@ -352,6 +358,4 @@
             }
         });
     }
-
-
 </script>
