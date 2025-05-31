@@ -17,7 +17,6 @@
                         <table class="table table-bordered" id="listProsesTable">
                             <thead style="background-color: #f2f2f2;">
                                 <tr>
-                                    <th>No</th>
                                     <th>Nama Proses</th>
                                     <th>Aksi</th>
                                 </tr>
@@ -25,7 +24,6 @@
                             <tbody>
                                 @foreach($listProses as $index => $proses)
                                     <tr>
-                                        <td>{{ $index + 1 }}</td>
                                         <td>{{ $proses->nama_proses }}</td>
                                         <td>
                                             <button class="btn btn-secondary btn-sm btnEditProses" data-id="{{ $proses->id }}"
