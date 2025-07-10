@@ -406,6 +406,10 @@
                                         <th>Dibuat Oleh</th>
                                         <td>{{ $project->creator->name }}</td>
                                     </tr>
+                                    <tr>
+                                        <th>Tanggal </th>
+                                        <td>{{ $project->start }} - {{ $project->end }}</td>
+                                    </tr>
                                 </table>
                             </div>
                         </div>
@@ -640,31 +644,37 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            const timelineData = [{
-                    title: "Pembuatan dokumen",
-                    start_plan: "2025-07-05",
-                    end_plan: "2025-07-25",
-                    start_action: "2025-07-02",
-                    end_action: "2025-07-20"
-                },
-                {
-                    title: "Proses pengujian",
-                    start_plan: "2025-07-12",
-                    end_plan: "2025-08-10",
-                    start_action: "2025-08-05",
-                    end_action: "2025-08-15"
-                },
-                {
-                    title: "Distribusi laporan",
-                    start_plan: "2025-07-15",
-                    end_plan: "2025-07-30",
-                    start_action: "2025-07-20",
-                    end_action: "2025-07-25"
-                }
-            ];
+            // const timelineData = [{
+            //         title: "Pembuatan dokumen",
+            //         start_plan: "2025-07-05",
+            //         end_plan: "2025-07-25",
+            //         start_action: "2025-07-02",
+            //         end_action: "2025-07-20"
+            //     },
+            //     {
+            //         title: "Proses pengujian",
+            //         start_plan: "2025-07-12",
+            //         end_plan: "2025-08-10",
+            //         start_action: "2025-08-05",
+            //         end_action: "2025-08-15"
+            //     },
+            //     {
+            //         title: "Distribusi laporan",
+            //         start_plan: "2025-07-15",
+            //         end_plan: "2025-07-30",
+            //         start_action: "2025-07-20",
+            //         end_action: "2025-07-25"
+            //     }
+            // ];
 
-            const startDate = new Date("2025-07-01");
-            const endDate = new Date("2025-08-31");
+            const timelineData = @json($timelineData);
+            console.log(timelineData);
+
+            const startDate = new Date("{{ \Carbon\Carbon::parse($project->start)->format('Y-m-d') }}");
+            const endDate = new Date("{{ \Carbon\Carbon::parse($project->end)->format('Y-m-d') }}");
+
+            console.log("Start Date:", startDate);
+            console.log("End Date:", endDate);
 
             const $monthRow = $("#month-row");
             const $dateRow = $("#date-row");

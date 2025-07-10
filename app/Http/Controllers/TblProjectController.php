@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\ProjectTbl;
 use App\Models\User;
 use App\Models\Kerjaan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +44,7 @@ class TblProjectController extends Controller
                 ->addColumn('company', function ($project) {
                     return $project->client->company ?? '-';
                 })
-               ->addColumn('selesai', function ($project) {
+                ->addColumn('selesai', function ($project) {
                     $listProses = DB::table('kerjaan_list_proses')
                         ->where('kerjaan_id', $project->kerjaan_id)
                         ->select('list_proses_id', 'urutan')
@@ -50,11 +52,11 @@ class TblProjectController extends Controller
                     $totalProses = $listProses->count();
                     $prosesSelesai = DB::table('project_details')
                         ->where('project_id', $project->id)
-                        ->where(function($query) use ($listProses) {
+                        ->where(function ($query) use ($listProses) {
                             foreach ($listProses as $proses) {
-                                $query->orWhere(function($q) use ($proses) {
+                                $query->orWhere(function ($q) use ($proses) {
                                     $q->where('kerjaan_list_proses_id', $proses->list_proses_id)
-                                    ->where('urutan_id', $proses->urutan);
+                                        ->where('urutan_id', $proses->urutan);
                                 });
                             }
                         })
@@ -114,68 +116,157 @@ class TblProjectController extends Controller
     }
 
 
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'nama_project' => 'required|string|max:100',
+    //         'no_project' => 'required|string|unique:projects',
+    //         'client_id' => 'required|exists:users,id',
+    //         'kerjaan_id' => 'required|exists:kerjaans,id',
+    //         'deskripsi' => 'nullable|string',
+    //         'start' => 'nullable|date',
+    //         'end' => 'nullable|date|after_or_equal:start'
+    //     ]);
+
+    //     $validated['created_by'] = Auth::id();
+
+    //     ProjectTbl::create($validated);
+
+    //     if ($request->ajax()) {
+    //         return response()->json(['success' => true]);
+    //     }
+
+    //     return redirect()->route('projects.tampilan')
+    //         ->with('success', 'Project berhasil ditambahkan');
+    // }
+
+
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'nama_project' => 'required|string|max:100',
-        'no_project' => 'required|string|unique:projects',
-        'client_id' => 'required|exists:users,id',
-        'kerjaan_id' => 'required|exists:kerjaans,id',
-        'deskripsi' => 'nullable|string',
-        'start' => 'nullable|date',
-        'end' => 'nullable|date|after_or_equal:start'
-    ]);
+    {
+        $validated = $request->validate([
+            'nama_project' => 'required|string|max:100',
+            'no_project' => 'required|string|unique:projects',
+            'client_id' => 'required|exists:users,id',
+            'kerjaan_id' => 'required|exists:kerjaans,id',
+            'deskripsi' => 'nullable|string',
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start'
+        ]);
 
-    $validated['created_by'] = Auth::id();
+        $validated['created_by'] = Auth::id();
 
-    ProjectTbl::create($validated);
+        // Simpan project utama
+        $project = ProjectTbl::create($validated);
 
-    if ($request->ajax()) {
-        return response()->json(['success' => true]);
+        // Ambil semua kerjaan_list_proses sesuai kerjaan_id
+        $listProses = DB::table('kerjaan_list_proses')
+            ->where('kerjaan_id', $validated['kerjaan_id'])
+            ->orderBy('urutan', 'asc')
+            ->get();
+
+        // Hitung tanggal start_plan dan end_plan
+        $startPlan = Carbon::parse($validated['start']); // Start dari request
+
+        foreach ($listProses as $proses) {
+            // Tambahkan record ke project_details
+            DB::table('project_details')->insert([
+                'project_id' => $project->id,
+                'kerjaan_list_proses_id' => $proses->id,
+                'urutan_id' => $proses->urutan,
+                'status' => 'pending', // default status
+                'start_plan' => $startPlan,
+                'end_plan' => $startPlan->copy()->addDays($proses->hari - 1), // end_plan = start_plan + hari - 1
+                'start_action' => null,
+                'end_action' => null,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Update startPlan untuk proses berikutnya (end_plan + 1 hari)
+            $startPlan = $startPlan->copy()->addDays($proses->hari);
+        }
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('projects.tampilan')
+            ->with('success', 'Project berhasil ditambahkan');
     }
 
-    return redirect()->route('projects.tampilan')
-        ->with('success', 'Project berhasil ditambahkan');
-}
 
     public function show(ProjectTbl $project)
-        {
-            $kerjaanId = $project->kerjaan_id;
-            $projectId = $project->id;
+    {
+        $kerjaanId = $project->kerjaan_id;
+        $projectId = $project->id;
 
-            // dd( $kerjaanId,  $projectId);
+        // Query lama untuk steps
+        $q = "SELECT
+                a.urutan,
+                a.list_proses_id,
+                b.nama_proses,
+                c.status
+            FROM kerjaan_list_proses a
+            JOIN list_proses b ON a.list_proses_id = b.id
+            LEFT JOIN project_details c
+                ON b.id = c.kerjaan_list_proses_id
+                AND c.project_id = '$projectId'
+                AND c.urutan_id = a.urutan
+            WHERE a.kerjaan_id = '$kerjaanId'
+            ORDER BY a.urutan ASC";
 
-         $q = "SELECT
-                    a.urutan,
-                    a.list_proses_id,
-                    b.nama_proses,
-                    c.status
-                FROM kerjaan_list_proses a
-                JOIN list_proses b ON a.list_proses_id = b.id
-                LEFT JOIN project_details c
-                    ON b.id = c.kerjaan_list_proses_id
-                    AND c.project_id = '$projectId'
-                    AND c.urutan_id = a.urutan
-                WHERE a.kerjaan_id = '$kerjaanId'
-                ORDER BY a.urutan ASC";
+        $processes = DB::select($q);
 
-           $processes = DB::select($q);
+        $steps = [];
+        $stepStatuses = [];
+        $stepProcessIds = [];
+        $stepUrutan = [];
 
-            $steps = [];
-            $stepStatuses = [];
-            $stepProcessIds = [];
-            $stepUrutan = [];
-
-            foreach ($processes as $process) {
-                $key = $process->list_proses_id . '-' . $process->urutan;
-                $steps[$key] = $process->nama_proses;
-                $stepStatuses[$key] = $process->status ?? 'pending';
-                $stepProcessIds[$key] = $process->list_proses_id;
-                $stepUrutan[$key] = $process->urutan;
-            }
-
-            return view('projects.show', compact('project', 'steps', 'stepStatuses', 'stepProcessIds', 'stepUrutan'));
+        foreach ($processes as $process) {
+            $key = $process->list_proses_id . '-' . $process->urutan;
+            $steps[$key] = $process->nama_proses;
+            $stepStatuses[$key] = $process->status ?? 'pending';
+            $stepProcessIds[$key] = $process->list_proses_id;
+            $stepUrutan[$key] = $process->urutan;
         }
+
+        // ✅ Query baru untuk timeline
+        $timelineQuery = "SELECT
+                        b.nama_proses AS title,
+                        c.start_plan,
+                        c.end_plan,
+                        c.start_action,
+                        c.end_action
+                    FROM kerjaan_list_proses a
+                    JOIN list_proses b ON a.list_proses_id = b.id
+                    JOIN project_details c
+                        ON a.id = c.kerjaan_list_proses_id
+                    WHERE c.project_id = '$projectId'
+                    ORDER BY a.urutan ASC";
+
+        $timelineRows = DB::select($timelineQuery);
+
+        // Format timeline data ke array
+        $timelineData = array_map(function ($row) {
+            return [
+                'title' => $row->title,
+                'start_plan' => $row->start_plan ? \Carbon\Carbon::parse($row->start_plan)->toDateString() : null,
+                'end_plan' => $row->end_plan ? \Carbon\Carbon::parse($row->end_plan)->toDateString() : null,
+                'start_action' => $row->start_action ? \Carbon\Carbon::parse($row->start_action)->toDateString() : null,
+                'end_action' => $row->end_action ? \Carbon\Carbon::parse($row->end_action)->toDateString() : null,
+            ];
+        }, $timelineRows);
+
+        return view('projects.show', compact(
+            'project',
+            'steps',
+            'stepStatuses',
+            'stepProcessIds',
+            'stepUrutan',
+            'timelineData' // Kirim timelineData ke view
+        ));
+    }
+
 
     public function update(Request $request, ProjectTbl $project)
     {
@@ -307,7 +398,7 @@ class TblProjectController extends Controller
         }
     }
 
- public function getUploadedFiles($projectId, Request $request)
+    public function getUploadedFiles($projectId, Request $request)
     {
         $listProsesId = $request->input('list_proses_id');
         $urutanId = $request->input('urutan_id'); // Ambil dari request
@@ -328,13 +419,13 @@ class TblProjectController extends Controller
         }
 
         $files = $query->select([
-                'project_progress_files.id',
-                'list_proses_files.nama_file as name',
-                'project_progress_files.file_path',
-                'project_progress_files.keterangan',
-                'project_progress_files.created_at',
-                'project_progress_files.uploaded_by'
-            ])
+            'project_progress_files.id',
+            'list_proses_files.nama_file as name',
+            'project_progress_files.file_path',
+            'project_progress_files.keterangan',
+            'project_progress_files.created_at',
+            'project_progress_files.uploaded_by'
+        ])
             ->get()
             ->map(function ($file) {
                 return [
@@ -373,7 +464,7 @@ class TblProjectController extends Controller
 
 
 
-  public function markStepDone($id, Request $request)
+    public function markStepDone($id, Request $request)
     {
         $project_id = $id;
         $validated = $request->validate([
