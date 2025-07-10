@@ -17,10 +17,8 @@ class ProjectTbl extends Model
         'client_id',
         'kerjaan_id',
         'deskripsi',
-        'start_plan',
-        'end_plan',
-        'start_action',
-        'end_action',
+        'start',
+        'end',
         'created_by'
     ];
 
