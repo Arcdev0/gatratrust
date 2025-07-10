@@ -298,6 +298,73 @@
         .legend-action-late {
             background-color: red;
         }
+
+        /* Mobile View */
+        @media (max-width: 768px) {
+            #agenda-proyek {
+                margin: 10px;
+                border: none;
+            }
+
+            #agenda-proyek h2 {
+                font-size: 18px;
+                padding: 8px;
+            }
+
+            .timeline-container {
+                display: block;
+                /* Stack vertically */
+            }
+
+            .left-column {
+                border-right: none;
+                margin-bottom: 10px;
+            }
+
+            .left-column table,
+            .right-timeline table {
+                width: 100%;
+                min-width: auto;
+            }
+
+            .right-timeline {
+                overflow-x: scroll;
+            }
+
+            .right-timeline table {
+                min-width: 600px;
+                /* still scrollable horizontally */
+            }
+
+            .right-timeline th,
+            .right-timeline td {
+                font-size: 12px;
+                min-width: 15px;
+                padding: 1px;
+            }
+
+            /* Timeline bar smaller */
+            .timeline-bar {
+                height: 15px;
+            }
+
+            /* Legend stacked vertically */
+            .legend {
+                flex-direction: column;
+                align-items: flex-start;
+                font-size: 12px;
+                gap: 5px;
+            }
+
+            .legend-item {
+                gap: 8px;
+            }
+
+            .legend-color {
+                width: 15px;
+                height: 15px;
+            }
+        }
     </style>
 
     <div class="container-fluid">
@@ -578,7 +645,7 @@
                     start_plan: "2025-07-05",
                     end_plan: "2025-07-25",
                     start_action: "2025-07-02",
-                    end_action: "2025-07-20" 
+                    end_action: "2025-07-20"
                 },
                 {
                     title: "Proses pengujian",
@@ -652,12 +719,12 @@
 
                     if (isInAction && isoDate < item.start_plan) {
                         $cell.append(
-                            `<div class="timeline-bar action-early"></div>`); 
+                            `<div class="timeline-bar action-early"></div>`);
                     } else if (isInAction && isoDate > item.end_plan) {
                         $cell.append(
                             `<div class="timeline-bar action-late"></div>`);
                     } else if (isInAction && isInPlan) {
-                        $cell.append(`<div class="timeline-bar action-in"></div>`); 
+                        $cell.append(`<div class="timeline-bar action-in"></div>`);
                     } else if (isInPlan) {
                         $cell.append(`<div class="timeline-bar plan"></div>`);
                     }
