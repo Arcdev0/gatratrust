@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kerjaan;
 use App\Models\KerjaanListProses;
+use App\Models\ListProses;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,10 @@ class KerjaanController extends Controller
 {
     public function index()
     {
+        // Ambil semua data list proses
+        $listProses = ListProses::orderBy('nama_proses')->get();
 
-        return view('kerjaan.index');
+        return view('kerjaan.index', compact('listProses'));
     }
 
     public function getData()
@@ -24,11 +27,12 @@ class KerjaanController extends Controller
         return DataTables::of($kerjaans)
             ->editColumn('created_at', function ($row) {
                 return Carbon::parse($row->created_at)->translatedFormat('d F Y');
-                // Hasil: 10 Juli 2025
             })
             ->addColumn('action', function ($row) {
                 return '
-                <a href="" class="btn btn-sm btn-primary">Edit</a>
+                <button class="btn btn-sm btn-primary edit-kerjaan" data-id="' . $row->id . '">
+                    <i class="fas fa-edit"></i>
+                </button>
                 <button class="btn btn-sm btn-danger delete-kerjaan" data-id="' . $row->id . '">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -36,6 +40,23 @@ class KerjaanController extends Controller
             })
             ->rawColumns(['action'])
             ->make(true);
+    }
+
+    public function show($id)
+    {
+        $kerjaan = Kerjaan::with(['prosesList'])->findOrFail($id);
+
+        return response()->json([
+            'id' => $kerjaan->id,
+            'nama_kerjaan' => $kerjaan->nama_kerjaan,
+            'proses' => $kerjaan->prosesList->map(function ($item) {
+                return [
+                    'list_proses_id' => $item->list_proses_id,
+                    'proses' => $item->nama_proses,
+                    'urutan' => $item->urutan
+                ];
+            })
+        ]);
     }
 
 
@@ -111,6 +132,56 @@ class KerjaanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus data!',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+
+        // dd($request->all());
+        $validated = $request->validate([
+            'nama_pekerjaan' => 'required|string|max:255',
+            'proses' => 'required|array',
+            'proses.*.id' => 'required|integer',
+            'proses.*.proses' => 'required|string',
+            'proses.*.urutan' => 'required|integer',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $kerjaan = Kerjaan::findOrFail($id);
+            $kerjaan->update([
+                'nama_kerjaan' => $validated['nama_pekerjaan'],
+                'updated_at' => now()
+            ]);
+
+            // Hapus proses lama
+            KerjaanListProses::where('kerjaan_id', $id)->delete();
+
+            // Simpan proses baru
+            foreach ($validated['proses'] as $proses) {
+                KerjaanListProses::create([
+                    'kerjaan_id' => $kerjaan->id,
+                    'list_proses_id' => $proses['id'],
+                    'urutan' => $proses['urutan'],
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui!'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui data!',
                 'error' => $e->getMessage()
             ], 500);
         }

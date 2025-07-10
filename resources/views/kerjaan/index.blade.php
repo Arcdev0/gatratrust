@@ -1,14 +1,14 @@
 @extends('layout.app')
-@section('title', 'Input Project')
+@section('title', 'Tipe Project')
 
 @section('content')
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="text-primary font-weight-bold">Input Project</h3>
+                    <h3 class="text-primary font-weight-bold">Tipe Project</h3>
                     <button id="openModalBtn" class="btn btn-success">
-                        Tambah Pekerjaan
+                        Tambah Tipe Project
                     </button>
                 </div>
                 <div class="card">
@@ -17,7 +17,7 @@
                             <table class="table table-bordered" id="kerjaanTable">
                                 <thead>
                                     <tr>
-                                        <th>Nama Pekerjaan</th>
+                                        <th>Nama Tipe Project</th>
                                         <th>Dibuat Pada</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -36,7 +36,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addPekerjaanModalLabel">Tambah Pekerjaan</h5>
+                    <h5 class="modal-title" id="addPekerjaanModalLabel">Tambah tipe project</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -57,10 +57,11 @@
                             <label for="prosesSelect">Pilih Proses</label>
                             <select id="prosesSelect" class="form-control">
                                 <option value="">-- Pilih Proses --</option>
-                                <option value="Administrasi" data-id="1">Administrasi</option>
-                                <option value="Invoice" data-id="2">Invoice</option>
-                                <option value="Pembayaran" data-id="3">Pembayaran</option>
-                                <option value="Quality Check" data-id="4">Quality Check</option>
+                                @foreach ($listProses as $proses)
+                                    <option value="{{ $proses->nama_proses }}" data-id="{{ $proses->id }}">
+                                        {{ $proses->nama_proses }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
@@ -89,6 +90,70 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Modal Edit Pekerjaan -->
+    <div class="modal fade" id="editPekerjaanModal" tabindex="-1" aria-labelledby="editPekerjaanModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPekerjaanModalLabel">Edit tipe project</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Input Nama Pekerjaan -->
+                    <input type="hidden" id="editKerjaanId">
+                    <div class="mb-3">
+                        <label for="editNamaPekerjaan" class="form-label">Nama Pekerjaan</label>
+                        <input type="text" class="form-control" id="editNamaPekerjaan"
+                            placeholder="Contoh: Welding Procedure 0.1">
+                    </div>
+
+                    <hr>
+
+                    <h6>Edit Proses</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="editProsesSelect">Pilih Proses</label>
+                            <select id="editProsesSelect" class="form-control">
+                                <option value="">-- Pilih Proses --</option>
+                                @foreach ($listProses as $proses)
+                                    <option value="{{ $proses->nama_proses }}" data-id="{{ $proses->id }}">
+                                        {{ $proses->nama_proses }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button id="editAddProsesBtn" class="btn btn-success w-100">Tambah</button>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Proses -->
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Urutan</th>
+                                <th>Proses</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editListProsesTable">
+                            <!-- List proses akan muncul di sini -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveEditPekerjaanBtn" class="btn btn-primary">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-secondary" id="closeModalEditFooterBtn">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 @endsection
 @section('script')
@@ -257,7 +322,7 @@
                                 if (result.isConfirmed) {
                                     $('#addPekerjaanModal').modal('hide');
                                     resetModal();
-                                    // Optional: refresh data atau lakukan sesuatu setelah simpan
+                                    $('#kerjaanTable').DataTable().ajax.reload();
                                 }
                             });
                         } else {
@@ -336,6 +401,126 @@
             listProses = [];
             renderTable();
         }
+
+        let editListProses = [];
+
+        // Saat klik tombol edit
+        $(document).on('click', '.edit-kerjaan', function() {
+            let id = $(this).data('id');
+
+            // Ambil data kerjaan + proses dari server
+            $.get('/kerjaan/edit/' + id, function(data) {
+                $('#editKerjaanId').val(data.id);
+                $('#editNamaPekerjaan').val(data.nama_kerjaan);
+
+                // Isi list proses
+                editListProses = data.proses.map((item, index) => {
+                    return {
+                        id: item.list_proses_id,
+                        proses: item.proses,
+                        urutan: index + 1
+                    };
+                });
+                renderEditTable();
+
+                // Tampilkan modal
+                $('#editPekerjaanModal').modal('show');
+            });
+        });
+
+        // Close modal
+        $('#closeModalEditFooterBtn, #closeModalEditFooterBtn').click(function() {
+            $('#editPekerjaanModal').modal('hide');
+            // resetModal();
+        });
+
+        // Tambahkan proses ke list edit
+        $('#editAddProsesBtn').click(function() {
+            let selectedOption = $('#editProsesSelect option:selected');
+            let prosesId = selectedOption.data('id');
+            let prosesText = selectedOption.text();
+
+            if (prosesId) {
+                let urutan = editListProses.length + 1;
+                editListProses.push({
+                    id: prosesId,
+                    proses: prosesText,
+                    urutan: urutan
+                });
+                renderEditTable();
+                $('#editProsesSelect').val('');
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Peringatan',
+                    text: 'Pilih proses terlebih dahulu!',
+                    confirmButtonColor: '#3085d6',
+                });
+            }
+        });
+
+        // Render table proses edit
+        function renderEditTable() {
+            let html = '';
+            editListProses.forEach((item, index) => {
+                html += `
+        <tr>
+            <td>${item.urutan}</td>
+            <td>${item.proses}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="removeEditProses(${index})"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+        `;
+            });
+            $('#editListProsesTable').html(html);
+        }
+
+        // Hapus proses dari list edit
+        function removeEditProses(index) {
+            editListProses.splice(index, 1);
+            // Reset urutan setelah hapus
+            editListProses.forEach((item, idx) => {
+                item.urutan = idx + 1;
+            });
+            renderEditTable();
+        }
+
+        // Simpan perubahan
+        $('#saveEditPekerjaanBtn').click(function() {
+            let id = $('#editKerjaanId').val();
+            let formData = {
+                nama_pekerjaan: $('#editNamaPekerjaan').val(),
+                proses: editListProses,
+                _token: '{{ csrf_token() }}',
+                _method: 'PUT'
+            };
+
+            $.ajax({
+                url: '/kerjaan/update/' + id,
+                type: 'POST',
+                data: formData,
+                success: function(res) {
+                    $('#editPekerjaanModal').modal('hide');
+                    $('#kerjaanTable').DataTable().ajax.reload();
+
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: res.message,
+                        icon: 'success',
+                        confirmButtonColor: '#3085d6'
+                    });
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: 'Gagal menyimpan perubahan.',
+                        icon: 'error',
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            });
+        });
     </script>
 
 @endsection

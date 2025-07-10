@@ -169,7 +169,7 @@
                         </div>
                         <div class="nav-item {{ request()->routeIs('kerjaan.show') ? 'active' : '' }}">
                             <a href="{{ route('kerjaan.show') }}">
-                                <i class="ik ik-settings"></i><span>Input project</span>
+                                <i class="fas fa-bars"></i><span>Tipe Project</span>
                             </a>
                         </div>
                     @endif

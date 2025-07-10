@@ -64,6 +64,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/kerjaan/data', [KerjaanController::class, 'getData'])->name('kerjaan.data');
     Route::post('/kerjaan/store', [KerjaanController::class, 'store'])->name('kerjaan.store');
     Route::delete('/kerjaan/{id}', [KerjaanController::class, 'destroy'])->name('kerjaan.destroy');
-
-
+    Route::get('/kerjaan/edit/{id}', [KerjaanController::class, 'show'])->name('kerjaan.edit');
+    Route::put('/kerjaan/update/{id}', [KerjaanController::class, 'update'])->name('kerjaan.update');
 });
