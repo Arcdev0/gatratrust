@@ -162,7 +162,7 @@
                                 <i class="ik ik-user"></i><span>User</span>
                             </a>
                         </div>
-                        <div class="nav-item {{ request()->routeIs('listproses.tampilan') ? 'active' : '' }}">
+                        <div class="nav-item {{ request()->routeIs('listproses.index') ? 'active' : '' }}">
                             <a href="{{ route('listproses.index') }}">
                                 <i class="ik ik-settings"></i><span>List Proses</span>
                             </a>
