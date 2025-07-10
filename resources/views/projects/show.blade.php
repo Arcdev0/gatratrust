@@ -168,6 +168,135 @@
             border-radius: 50%;
             border: 2px solid #ddd;
         }
+
+        #agenda-proyek {
+            margin: 20px;
+            border: 1px solid #ccc;
+        }
+
+        #agenda-proyek h2 {
+            text-align: center;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .timeline-container {
+            display: flex;
+        }
+
+        /* Fixed left column */
+        .left-column {
+            flex: 0 0 250px;
+            border-right: 1px solid #ddd;
+        }
+
+        .left-column table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .left-column th,
+        .left-column td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+
+        /* Scrollable timeline */
+        .right-timeline {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .right-timeline table {
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .right-timeline th,
+        .right-timeline td {
+            border: 1px solid #ddd;
+            text-align: center;
+            min-width: 20px;
+            padding: 2px;
+        }
+
+        .right-timeline .month-header {
+            background-color: #ddd;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .right-timeline .date-header {
+            background-color: #f0f0f0;
+            font-weight: normal;
+        }
+
+        .timeline-bar {
+            height: 20px;
+            border-radius: 5px;
+        }
+
+        /* Status colors */
+        .plan {
+            background-color: orange;
+        }
+
+        /* 🟧 Plan */
+        .action-in {
+            background-color: green;
+        }
+
+        /* 🟩 Action in Plan */
+        .action-early {
+            background-color: rgba(0, 162, 255, 0.973);
+        }
+
+        /* 🟦 Action before Plan */
+        .action-late {
+            background-color: red;
+        }
+
+        /* 🟥 Action after Plan */
+
+        /* Legend Styles */
+        .legend {
+            display: flex;
+            margin-top: 10px;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .legend-plan {
+            background-color: orange;
+        }
+
+        .legend-action-in {
+            background-color: green;
+        }
+
+        .legend-action-early {
+            background-color: rgba(0, 162, 255, 0.973);
+        }
+
+        .legend-action-late {
+            background-color: red;
+        }
     </style>
 
     <div class="container-fluid">
@@ -210,6 +339,56 @@
                                         <td>{{ $project->creator->name }}</td>
                                     </tr>
                                 </table>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div id="agenda-proyek">
+                                    <h2>TIMELINE PROYEK</h2>
+                                    <div class="timeline-container">
+                                        <!-- Fixed title column -->
+                                        <div class="left-column">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Deskripsi Pekerjaan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="title-column"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <!-- Scrollable timeline -->
+                                        <div class="right-timeline">
+                                            <table>
+                                                <thead>
+                                                    <tr id="month-row"></tr>
+                                                    <tr id="date-row"></tr>
+                                                </thead>
+                                                <tbody id="timeline-body"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Legend -->
+                                    <div class="legend">
+                                        <div class="legend-item">
+                                            <div class="legend-color legend-plan"></div> Plan (Rencana)
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color legend-action-in"></div> Action (Dalam Plan)
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color legend-action-early"></div> Early Start (Action Sebelum
+                                            Plan)
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color legend-action-late"></div> Late Finish (Action Setelah
+                                            Plan)
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -391,6 +570,105 @@
 @endsection
 
 @section('script')
+    <script>
+        $(document).ready(function() {
+            const timelineData = [{
+                    title: "Pembuatan dokumen",
+                    start_plan: "2025-07-05",
+                    end_plan: "2025-07-25",
+                    start_action: "2025-07-02",
+                    end_action: "2025-07-20" // 🟦 Early Start + 🟩 In Plan
+                },
+                {
+                    title: "Proses pengujian",
+                    start_plan: "2025-07-12",
+                    end_plan: "2025-08-10",
+                    start_action: "2025-08-05",
+                    end_action: "2025-08-15" // 🟥 Late Finish
+                },
+                {
+                    title: "Distribusi laporan",
+                    start_plan: "2025-07-15",
+                    end_plan: "2025-07-30",
+                    start_action: "2025-07-20",
+                    end_action: "2025-07-25" // 🟩 In Plan
+                }
+            ];
+
+            // Generate date range for 2 months
+            const startDate = new Date("2025-07-01");
+            const endDate = new Date("2025-08-31");
+
+            const $monthRow = $("#month-row");
+            const $dateRow = $("#date-row");
+
+            let dates = [];
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
+                "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+
+            let currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // Group dates by month
+            let monthMap = {};
+            dates.forEach(date => {
+                const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+                if (!monthMap[monthKey]) {
+                    monthMap[monthKey] = [];
+                }
+                monthMap[monthKey].push(date);
+            });
+
+            // Render month row
+            $.each(monthMap, function(key, days) {
+                const month = monthNames[days[0].getMonth()];
+                const year = days[0].getFullYear();
+                const colspan = days.length;
+                $monthRow.append(`<th class="month-header" colspan="${colspan}">${month} ${year}</th>`);
+            });
+
+            // Render date row
+            dates.forEach(date => {
+                const day = date.getDate();
+                $dateRow.append(`<th class="date-header">${day}</th>`);
+            });
+
+            // Render titles & timeline bars
+            timelineData.forEach(item => {
+                $("#title-column").append(`<tr><td>${item.title}</td></tr>`);
+
+                let $row = $("<tr></tr>");
+                dates.forEach(date => {
+                    let isoDate = date.toISOString().split('T')[0];
+                    let $cell = $("<td></td>");
+
+                    const isInPlan = isoDate >= item.start_plan && isoDate <= item.end_plan;
+                    const isInAction = isoDate >= item.start_action && isoDate <= item.end_action;
+
+                    if (isInAction && isoDate < item.start_plan) {
+                        $cell.append(
+                        `<div class="timeline-bar action-early"></div>`); // 🟦 Early Start
+                    } else if (isInAction && isoDate > item.end_plan) {
+                        $cell.append(
+                        `<div class="timeline-bar action-late"></div>`); // 🟥 Late Finish
+                    } else if (isInAction && isInPlan) {
+                        $cell.append(`<div class="timeline-bar action-in"></div>`); // 🟩 In Plan
+                    } else if (isInPlan) {
+                        $cell.append(`<div class="timeline-bar plan"></div>`); // 🟧 Plan Only
+                    }
+
+                    $row.append($cell);
+                });
+                $("#timeline-body").append($row);
+            });
+        });
+    </script>
+
     <script>
         function showStepModal(step, prosesId, status, urutan) {
             $('#modalStepName').text(step);
