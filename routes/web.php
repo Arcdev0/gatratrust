@@ -62,4 +62,5 @@ Route::middleware('auth')->group(function () {
 
     // Input Project
     Route::get('/kerjaan', [KerjaanController::class, 'index'])->name('kerjaan.show');
+    Route::post('/kerjaan/store', [KerjaanController::class, 'store'])->name('kerjaan.store');
 });
