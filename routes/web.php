@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TblProjectController;
@@ -58,4 +59,7 @@ Route::middleware('auth')->group(function () {
     route::post('/listproses/store', [App\Http\Controllers\ListProsesController::class, 'store'])->name('listproses.store');
     Route::post('/listproses/update/{id}', [App\Http\Controllers\ListProsesController::class, 'update'])->name('listproses.update');
     Route::delete('/listproses/delete/{id}', [App\Http\Controllers\ListProsesController::class, 'destroy'])->name('listproses.destroy');
+
+    // Input Project
+    Route::get('/kerjaan', [KerjaanController::class, 'index'])->name('kerjaan.show');
 });

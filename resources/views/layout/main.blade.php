@@ -167,6 +167,11 @@
                                 <i class="ik ik-settings"></i><span>List Proses</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('kerjaan.show') ? 'active' : '' }}">
+                            <a href="{{ route('kerjaan.show') }}">
+                                <i class="ik ik-settings"></i><span>Input project</span>
+                            </a>
+                        </div>
                     @endif
                 </nav>
             </div>
