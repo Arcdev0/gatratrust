@@ -75,6 +75,7 @@
                             <tr>
                                 <th>Urutan</th>
                                 <th>Proses</th>
+                                <th>Deadline (Hari)</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -291,6 +292,12 @@
                     return;
                 }
 
+                $('#listProsesTable tr').each(function(index) {
+                    let hariInput = $(this).find('input[type="number"]').val();
+                    listProses[index].hari = parseInt(hariInput) || 0;
+                });
+
+                // Kirim data ke backend
                 $.ajax({
                     url: '{{ route('kerjaan.store') }}',
                     type: 'POST',
@@ -354,6 +361,13 @@
                 <tr>
                     <td>${item.urutan}</td>
                     <td>${item.proses}</td>
+                    <td>
+                        <input type="number" 
+                            class="form-control" 
+                            value="${item.hari ?? 0}" 
+                            min="0" 
+                            onchange="updateHari(${index}, this.value)">
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-danger" onclick="removeProses(${index})"><i class="fas fa-trash"></i></button>
                     </td>

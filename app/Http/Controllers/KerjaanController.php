@@ -62,6 +62,8 @@ class KerjaanController extends Controller
 
     public function store(Request $request)
     {
+
+        // dd($request->all());
         // Validasi
         $validated = $request->validate([
             'nama_pekerjaan' => 'required|string|max:255',
@@ -69,6 +71,7 @@ class KerjaanController extends Controller
             'proses.*.id' => 'required|integer',
             'proses.*.proses' => 'required|string',
             'proses.*.urutan' => 'required|integer',
+            'proses.*.hari' => 'required|integer|min:0'
         ]);
 
         DB::beginTransaction();
@@ -87,6 +90,7 @@ class KerjaanController extends Controller
                     'kerjaan_id' => $kerjaan->id, // ambil id kerjaan
                     'list_proses_id' => $proses['id'],
                     'urutan' => $proses['urutan'],
+                    'hari' => $proses['hari'],
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
                 ]);

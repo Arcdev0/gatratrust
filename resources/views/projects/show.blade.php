@@ -268,6 +268,7 @@
             margin-top: 10px;
             gap: 20px;
             font-size: 14px;
+            justify-content: center;
         }
 
         .legend-item {
@@ -345,7 +346,7 @@
                         <div class="row">
                             <div class="col-12">
                                 <div id="agenda-proyek">
-                                    <h2>TIMELINE PROYEK</h2>
+                                    <h2>TIMELINE PROJECT</h2>
                                     <div class="timeline-container">
                                         <!-- Fixed title column -->
                                         <div class="left-column">
@@ -577,25 +578,24 @@
                     start_plan: "2025-07-05",
                     end_plan: "2025-07-25",
                     start_action: "2025-07-02",
-                    end_action: "2025-07-20" // 🟦 Early Start + 🟩 In Plan
+                    end_action: "2025-07-20" 
                 },
                 {
                     title: "Proses pengujian",
                     start_plan: "2025-07-12",
                     end_plan: "2025-08-10",
                     start_action: "2025-08-05",
-                    end_action: "2025-08-15" // 🟥 Late Finish
+                    end_action: "2025-08-15"
                 },
                 {
                     title: "Distribusi laporan",
                     start_plan: "2025-07-15",
                     end_plan: "2025-07-30",
                     start_action: "2025-07-20",
-                    end_action: "2025-07-25" // 🟩 In Plan
+                    end_action: "2025-07-25"
                 }
             ];
 
-            // Generate date range for 2 months
             const startDate = new Date("2025-07-01");
             const endDate = new Date("2025-08-31");
 
@@ -652,14 +652,14 @@
 
                     if (isInAction && isoDate < item.start_plan) {
                         $cell.append(
-                        `<div class="timeline-bar action-early"></div>`); // 🟦 Early Start
+                            `<div class="timeline-bar action-early"></div>`); 
                     } else if (isInAction && isoDate > item.end_plan) {
                         $cell.append(
-                        `<div class="timeline-bar action-late"></div>`); // 🟥 Late Finish
+                            `<div class="timeline-bar action-late"></div>`);
                     } else if (isInAction && isInPlan) {
-                        $cell.append(`<div class="timeline-bar action-in"></div>`); // 🟩 In Plan
+                        $cell.append(`<div class="timeline-bar action-in"></div>`); 
                     } else if (isInPlan) {
-                        $cell.append(`<div class="timeline-bar plan"></div>`); // 🟧 Plan Only
+                        $cell.append(`<div class="timeline-bar plan"></div>`);
                     }
 
                     $row.append($cell);

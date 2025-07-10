@@ -22,7 +22,8 @@ class KerjaanListProses extends Model
     protected $fillable = [
         'kerjaan_id',
         'list_proses_id',
-        'urutan'
+        'urutan',
+        'hari'
     ];
 
     /**
