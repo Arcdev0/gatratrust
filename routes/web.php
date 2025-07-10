@@ -17,7 +17,6 @@ Route::get('/', function () {
 Route::controller(LoginController::class)->group(function () {
     Route::post('/auth', 'login')->name('login.auth');
     Route::get('/login', 'showLoginForm')->name('login');
-
 });
 
 // Authenticated Routes
@@ -62,5 +61,9 @@ Route::middleware('auth')->group(function () {
 
     // Input Project
     Route::get('/kerjaan', [KerjaanController::class, 'index'])->name('kerjaan.show');
+    Route::get('/kerjaan/data', [KerjaanController::class, 'getData'])->name('kerjaan.data');
     Route::post('/kerjaan/store', [KerjaanController::class, 'store'])->name('kerjaan.store');
+    Route::delete('/kerjaan/{id}', [KerjaanController::class, 'destroy'])->name('kerjaan.destroy');
+
+
 });

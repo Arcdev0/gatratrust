@@ -14,15 +14,14 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="container">
-                            <table class="table table-bordered">
-                                <thead style="background-color: #f2f2f2;">
+                            <table class="table table-bordered" id="kerjaanTable">
+                                <thead>
                                     <tr>
-                                        <th>Nama Proses</th>
+                                        <th>Nama Pekerjaan</th>
+                                        <th>Dibuat Pada</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -38,9 +37,9 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addPekerjaanModalLabel">Tambah Pekerjaan</h5>
-                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <!-- Input Nama Pekerjaan -->
@@ -97,6 +96,72 @@
         let listProses = [];
 
         $(document).ready(function() {
+            $(function() {
+                $('#kerjaanTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: '{{ route('kerjaan.data') }}',
+                    columns: [{
+                            data: 'nama_kerjaan',
+                            name: 'nama_kerjaan'
+                        },
+                        {
+                            data: 'created_at',
+                            name: 'created_at'
+                        },
+                        {
+                            data: 'action',
+                            name: 'action',
+                            orderable: false,
+                            searchable: false
+                        },
+                    ]
+                });
+            });
+
+            $(document).on('click', '.delete-kerjaan', function() {
+                let id = $(this).data('id'); // Ambil ID dari data-id
+
+                Swal.fire({
+                    title: 'Apakah kamu yakin?',
+                    text: "Data pekerjaan ini akan dihapus secara permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/kerjaan/' + id,
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(res) {
+                                $('#kerjaanTable').DataTable().ajax.reload();
+
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    text: res.message,
+                                    icon: 'success',
+                                    confirmButtonColor: '#3085d6'
+                                });
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: 'Gagal menghapus data.',
+                                    icon: 'error',
+                                    confirmButtonColor: '#d33'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
             // Show modal
             $('#openModalBtn').click(function() {
                 $('#addPekerjaanModal').modal('show');
@@ -111,11 +176,11 @@
             // Tambahkan proses ke list
             $('#addProsesBtn').click(function() {
                 let selectedOption = $('#prosesSelect option:selected');
-                let prosesId = selectedOption.data('id'); 
-                let prosesText = selectedOption.text(); 
+                let prosesId = selectedOption.data('id');
+                let prosesText = selectedOption.text();
 
                 if (prosesId) {
-                  
+
                     let urutan = listProses.length + 1;
                     listProses.push({
                         id: prosesId,

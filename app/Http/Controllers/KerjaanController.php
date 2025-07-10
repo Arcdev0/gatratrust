@@ -7,6 +7,7 @@ use App\Models\KerjaanListProses;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class KerjaanController extends Controller
 {
@@ -14,6 +15,27 @@ class KerjaanController extends Controller
     {
 
         return view('kerjaan.index');
+    }
+
+    public function getData()
+    {
+        $kerjaans = Kerjaan::query();
+
+        return DataTables::of($kerjaans)
+            ->editColumn('created_at', function ($row) {
+                return Carbon::parse($row->created_at)->translatedFormat('d F Y');
+                // Hasil: 10 Juli 2025
+            })
+            ->addColumn('action', function ($row) {
+                return '
+                <a href="" class="btn btn-sm btn-primary">Edit</a>
+                <button class="btn btn-sm btn-danger delete-kerjaan" data-id="' . $row->id . '">
+                    <i class="fas fa-trash"></i>
+                </button>
+            ';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
 
@@ -61,6 +83,35 @@ class KerjaanController extends Controller
                 'success' => false,
                 'message' => 'Gagal menyimpan data!',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Hapus semua list proses terkait
+            KerjaanListProses::where('kerjaan_id', $id)->delete();
+
+            // Hapus kerjaan utama
+            $kerjaan = Kerjaan::findOrFail($id);
+            $kerjaan->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil dihapus!'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data!',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
