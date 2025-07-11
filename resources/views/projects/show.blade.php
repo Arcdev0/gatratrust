@@ -228,6 +228,7 @@
             background-color: #ddd;
             font-weight: bold;
             text-align: center;
+            white-space: nowrap;
         }
 
         .right-timeline .date-header {
@@ -236,7 +237,7 @@
         }
 
         .timeline-bar {
-            height: 20px;
+            height: 25.5px;
             border-radius: 5px;
         }
 
@@ -420,7 +421,7 @@
                                             <table>
                                                 <thead>
                                                     <tr>
-                                                        <th>Deskripsi Pekerjaan</th>
+                                                        <th style="height:50px;">Deskripsi Pekerjaan</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="title-column"></tbody>
@@ -576,6 +577,19 @@
 
                                                 </div>
                                             @endif
+                                        </div>
+                                        <!-- Form Start and End Action -->
+                                        <div class="row mt-4">
+                                            <div class="col-md-6">
+                                                <label for="startActionDate" class="form-label">Tanggal Mulai</label>
+                                                <input type="date" class="form-control" id="startActionDate"
+                                                    name="start_action">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="endActionDate" class="form-label">Tanggal Selesai</label>
+                                                <input type="date" class="form-control bulanDefault"
+                                                    id="endActionDate" name="end_action">
+                                            </div>
                                         </div>
                                         <hr>
                                         <div class="row">
@@ -819,6 +833,14 @@
                 });
             }
 
+            function getTodayDate() {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
             $('.circle').click(function() {
                 var step = $(this).data('step');
                 $('#modalStepName').text(step);
@@ -888,13 +910,60 @@
                         <small class="text-muted">Diunggah pada: ${formattedDate}</small>
                     </li>`;
                             });
+
                             html += '</ul>';
                             $('#dataFile').html(html);
+
+
+
                         }
+
+
+                        if (response.length > 0) {
+                            let startDate = response[0].start_action.split(' ')[
+                                0]; // Ambil bagian tanggal saja
+                            let endDate = response[0].end_action.split(' ')[
+                                0]; // Ambil bagian tanggal saja
+
+                            $('#startActionDate').val(startDate);
+                            $('#endActionDate').val(endDate);
+                        } else {
+                            $('#startActionDate').val('');
+                            $('#endActionDate').val('');
+                        }
+
                     },
                     error: function(xhr) {
                         $('#dataFile').html(
                             '<p class="text-danger">Gagal memuat data file.</p>');
+                    }
+                });
+
+                $('#startActionDate').on('change', function() {
+                    let startDateAction = $(this).val();
+                    $('#endActionDate').attr('min', startDateAction);
+                    let endDateAction = $('#endActionDate').val();
+                    if (endDateAction && endDateAction < startDateAction) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tanggal tidak valid',
+                            text: 'Tanggal Selesai tidak boleh lebih awal dari Tanggal Mulai.',
+                        });
+                        $('#endActionDate').val('');
+                    }
+                });
+
+                $('#endActionDate').on('change', function() {
+                    let startDateAction = $('#startActionDate').val();
+                    let endDateAction = $(this).val();
+
+                    if (startDateAction && endDateAction < startDateAction) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tanggal tidak valid',
+                            text: 'Tanggal Selesai tidak boleh lebih awal dari Tanggal Mulai.',
+                        });
+                        $(this).val('');
                     }
                 });
 
@@ -926,6 +995,8 @@
                 const formData = new FormData();
                 const urutan = $('#modalUrutanInput').val();
                 const list_proses_id = $('#modalListProsesId').val();
+                const start_action = $('#startActionDate').val();
+                const end_action = $('#endActionDate').val();
 
                 let adaFileKosong = false;
 
@@ -956,6 +1027,8 @@
                 formData.append('list_proses_id', list_proses_id);
                 formData.append('project_id', id);
                 formData.append('urutan_id', urutan);
+                formData.append('start_action', start_action);
+                formData.append('end_action', end_action);
                 formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
                 // Kirim ke server via AJAX

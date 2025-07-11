@@ -168,23 +168,25 @@ class TblProjectController extends Controller
         $startPlan = Carbon::parse($validated['start']); // Start dari request
 
         foreach ($listProses as $proses) {
-            // Tambahkan record ke project_details
+            $currentStartPlan = $startPlan->copy();
+
             DB::table('project_details')->insert([
                 'project_id' => $project->id,
-                'kerjaan_list_proses_id' => $proses->id,
+                'kerjaan_list_proses_id' => $proses->list_proses_id,
                 'urutan_id' => $proses->urutan,
-                'status' => 'pending', // default status
-                'start_plan' => $startPlan,
-                'end_plan' => $startPlan->copy()->addDays($proses->hari - 1), // end_plan = start_plan + hari - 1
+                'status' => 'pending',
+                'start_plan' => $currentStartPlan,
+                'end_plan' => $currentStartPlan->copy()->addDays($proses->hari - 1),
                 'start_action' => null,
                 'end_action' => null,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
-            // Update startPlan untuk proses berikutnya (end_plan + 1 hari)
-            $startPlan = $startPlan->copy()->addDays($proses->hari);
+            // Increment startPlan untuk proses berikutnya
+            $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
         }
+
 
         if ($request->ajax()) {
             return response()->json(['success' => true]);
@@ -242,7 +244,7 @@ class TblProjectController extends Controller
                     JOIN project_details c
                         ON a.id = c.kerjaan_list_proses_id
                     WHERE c.project_id = '$projectId'
-                    ORDER BY a.urutan ASC";
+                    ORDER BY c.urutan_id ASC";
 
         $timelineRows = DB::select($timelineQuery);
 
@@ -311,6 +313,8 @@ class TblProjectController extends Controller
     public function uploadFiles(Request $request)
     {
 
+
+        // dd($request->all());
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'list_proses_id' => 'required|exists:list_proses,id',
@@ -318,6 +322,8 @@ class TblProjectController extends Controller
             'fileLabel.*' => 'required|string',
             'fileInput' => 'required|array',
             'fileInput.*' => 'required|file|mimes:pdf,jpg,png,doc,docx,xls,xlsx|max:102400',
+            'start_action' => 'nullable|date',
+            'end_action' => 'nullable|date|after_or_equal:start_action',
         ]);
 
         $listProsesId = $request->input('list_proses_id');
@@ -339,11 +345,20 @@ class TblProjectController extends Controller
                     'kerjaan_list_proses_id' => $listProsesId,
                     'urutan_id' => $urutanId,
                     'status' => 'in_progress',
+                    'start_action' => $request->start_action ?? null,
+                    'end_action' => $request->end_action ?? null,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             } else {
                 $projectDetailId = $projectDetail->id;
+                DB::table('project_details')
+                    ->where('id', $projectDetailId)
+                    ->update([
+                        'start_action' => $request->start_action ?? $projectDetail->start_action,
+                        'end_action' => $request->end_action ?? $projectDetail->end_action,
+                        'updated_at' => now(),
+                    ]);
             }
 
             // 2. Proses file yang diunggah
@@ -424,7 +439,9 @@ class TblProjectController extends Controller
             'project_progress_files.file_path',
             'project_progress_files.keterangan',
             'project_progress_files.created_at',
-            'project_progress_files.uploaded_by'
+            'project_progress_files.uploaded_by',
+            'project_details.start_action',
+            'project_details.end_action'
         ])
             ->get()
             ->map(function ($file) {
@@ -434,7 +451,9 @@ class TblProjectController extends Controller
                     'url' => asset($file->file_path),
                     'description' => $file->keterangan,
                     'uploaded_at' => $file->created_at,
-                    'uploaded_by' => $file->uploaded_by
+                    'uploaded_by' => $file->uploaded_by,
+                    'start_action' => $file->start_action,
+                    'end_action' => $file->end_action
                 ];
             });
 
