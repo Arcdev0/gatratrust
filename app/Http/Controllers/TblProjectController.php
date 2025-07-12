@@ -413,43 +413,46 @@ class TblProjectController extends Controller
             }
 
             // 2. Proses file yang diunggah
-            foreach ($request->file('fileInput') as $index => $file) {
-                $namaFile = $request->fileLabel[$index] ?? 'Unnamed File';
+            if ($request->hasFile('fileInput')) {
+                foreach ($request->file('fileInput') as $index => $file) {
+                    $namaFile = $request->fileLabel[$index] ?? 'Unnamed File';
 
-                // 2a. Ambil atau buat list_proses_file
-                $listProsesFile = DB::table('list_proses_files')
-                    ->where('list_proses_id', $listProsesId)
-                    ->where('nama_file', $namaFile)
-                    ->first();
+                    // 2a. Ambil atau buat list_proses_file
+                    $listProsesFile = DB::table('list_proses_files')
+                        ->where('list_proses_id', $listProsesId)
+                        ->where('nama_file', $namaFile)
+                        ->first();
 
-                if (!$listProsesFile) {
-                    $listProsesFileId = DB::table('list_proses_files')->insertGetId([
-                        'list_proses_id' => $listProsesId,
-                        'nama_file' => $namaFile,
+                    if (!$listProsesFile) {
+                        $listProsesFileId = DB::table('list_proses_files')->insertGetId([
+                            'list_proses_id' => $listProsesId,
+                            'nama_file' => $namaFile,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    } else {
+                        $listProsesFileId = $listProsesFile->id;
+                    }
+
+                    // 2b. Simpan file ke storage
+                    $directory = 'uploads/projects/' . $request->project_id;
+                    $fileName = time() . '_' . $file->getClientOriginalName();
+                    $file->move(public_path($directory), $fileName);
+                    $publicPath = $directory . '/' . $fileName;
+
+                    // 2c. Simpan data ke project_progress_files
+                    DB::table('project_progress_files')->insert([
+                        'project_detail_id' => $projectDetailId,
+                        'list_proses_file_id' => $listProsesFileId,
+                        'file_path' => $publicPath,
+                        'keterangan' => $namaFile,
+                        'uploaded_by' => auth()->id(),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                } else {
-                    $listProsesFileId = $listProsesFile->id;
                 }
-
-                // 2b. Simpan file ke storage
-                $directory = 'uploads/projects/' . $request->project_id;
-                $fileName = time() . '_' . $file->getClientOriginalName();
-                $file->move(public_path($directory), $fileName);
-                $publicPath = $directory . '/' . $fileName;
-
-                // 2c. Simpan data ke project_progress_files
-                DB::table('project_progress_files')->insert([
-                    'project_detail_id' => $projectDetailId,
-                    'list_proses_file_id' => $listProsesFileId,
-                    'file_path' => $publicPath,
-                    'keterangan' => $namaFile,
-                    'uploaded_by' => auth()->id(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
             }
+
 
             DB::commit();
 
