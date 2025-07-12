@@ -51,9 +51,10 @@ class KerjaanController extends Controller
             'nama_kerjaan' => $kerjaan->nama_kerjaan,
             'proses' => $kerjaan->prosesList->map(function ($item) {
                 return [
-                    'list_proses_id' => $item->list_proses_id,
+                    'list_proses_id' => $item->pivot->list_proses_id,
                     'proses' => $item->nama_proses,
-                    'urutan' => $item->urutan
+                    'urutan' => $item->pivot->urutan,
+                    'hari' => $item->pivot->hari
                 ];
             })
         ]);
@@ -144,14 +145,16 @@ class KerjaanController extends Controller
     public function update(Request $request, $id)
     {
 
-        // dd($request->all());
         $validated = $request->validate([
             'nama_pekerjaan' => 'required|string|max:255',
             'proses' => 'required|array',
             'proses.*.id' => 'required|integer',
             'proses.*.proses' => 'required|string',
             'proses.*.urutan' => 'required|integer',
+            'proses.*.hari' => 'required|integer|min:0'
         ]);
+
+        // dd($validated);
 
         DB::beginTransaction();
         try {
@@ -170,6 +173,7 @@ class KerjaanController extends Controller
                     'kerjaan_id' => $kerjaan->id,
                     'list_proses_id' => $proses['id'],
                     'urutan' => $proses['urutan'],
+                    'hari' => $proses['hari'],
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);

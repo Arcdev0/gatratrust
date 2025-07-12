@@ -7,14 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Kerjaan extends Model
 {
-     use HasFactory;
+    use HasFactory;
 
     protected $fillable = ['nama_kerjaan'];
 
 
-     public function prosesList() {
+    public function prosesList()
+    {
         return $this->belongsToMany(ListProses::class, 'kerjaan_list_proses')
-                    ->withPivot('urutan')
-                    ->orderBy('kerjaan_list_proses.urutan');
+            ->withPivot('urutan', 'hari')
+            ->orderBy('kerjaan_list_proses.urutan');
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
 
 class TblProjectController extends Controller
@@ -149,8 +150,8 @@ class TblProjectController extends Controller
             'client_id' => 'required|exists:users,id',
             'kerjaan_id' => 'required|exists:kerjaans,id',
             'deskripsi' => 'nullable|string',
-            'start' => 'nullable|date',
-            'end' => 'nullable|date|after_or_equal:start'
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start'
         ]);
 
         $validated['created_by'] = Auth::id();
@@ -316,14 +317,26 @@ class TblProjectController extends Controller
 
         // dd($request->all());
         $request->validate([
-            'project_id' => 'required|exists:projects,id',
+            'project_id'     => 'required|exists:projects,id',
             'list_proses_id' => 'required|exists:list_proses,id',
-            'fileLabel' => 'required|array',
-            'fileLabel.*' => 'required|string',
-            'fileInput' => 'required|array',
-            'fileInput.*' => 'required|file|mimes:pdf,jpg,png,doc,docx,xls,xlsx|max:102400',
-            'start_action' => 'nullable|date',
-            'end_action' => 'nullable|date|after_or_equal:start_action',
+            'fileLabel'      => 'nullable|array',
+            'fileLabel.*'    => [
+                Rule::requiredIf(function () use ($request) {
+                    return !empty($request->fileLabel);
+                }),
+                'string'
+            ],
+            'fileInput'      => 'nullable|array',
+            'fileInput.*'    => [
+                Rule::requiredIf(function () use ($request) {
+                    return !empty($request->fileLabel);
+                }),
+                'file',
+                'mimes:pdf,jpg,png,doc,docx,xls,xlsx',
+                'max:102400'
+            ],
+            'start_action'   => 'required|date',
+            'end_action'     => 'required|date|after_or_equal:start_action',
         ]);
 
         $listProsesId = $request->input('list_proses_id');

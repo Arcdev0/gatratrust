@@ -139,6 +139,7 @@
                             <tr>
                                 <th>Urutan</th>
                                 <th>Proses</th>
+                                <th>Deadline (Hari)</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -424,6 +425,7 @@
 
             // Ambil data kerjaan + proses dari server
             $.get('/kerjaan/edit/' + id, function(data) {
+
                 $('#editKerjaanId').val(data.id);
                 $('#editNamaPekerjaan').val(data.nama_kerjaan);
 
@@ -432,7 +434,8 @@
                     return {
                         id: item.list_proses_id,
                         proses: item.proses,
-                        urutan: index + 1
+                        urutan: index + 1,
+                        hari: item.hari
                     };
                 });
                 renderEditTable();
@@ -482,12 +485,27 @@
             <td>${item.urutan}</td>
             <td>${item.proses}</td>
             <td>
-                <button class="btn btn-sm btn-danger" onclick="removeEditProses(${index})"><i class="fas fa-trash"></i></button>
+              <input 
+                    type="number" 
+                    class="form-control form-control-sm"
+                    min="0"
+                    value="${item.hari || 0}" 
+                    oninput="updateEditHari(${index}, this.value)"
+                >
+            </td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="removeEditProses(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
             </td>
         </tr>
         `;
             });
             $('#editListProsesTable').html(html);
+        }
+
+        function updateEditHari(index, value) {
+            editListProses[index].hari = parseInt(value);
         }
 
         // Hapus proses dari list edit
