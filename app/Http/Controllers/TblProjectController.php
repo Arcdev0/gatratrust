@@ -156,16 +156,13 @@ class TblProjectController extends Controller
 
         $validated['created_by'] = Auth::id();
 
-        // Simpan project utama
         $project = ProjectTbl::create($validated);
 
-        // Ambil semua kerjaan_list_proses sesuai kerjaan_id
         $listProses = DB::table('kerjaan_list_proses')
             ->where('kerjaan_id', $validated['kerjaan_id'])
             ->orderBy('urutan', 'asc')
             ->get();
 
-        // Hitung tanggal start_plan dan end_plan
         $startPlan = Carbon::parse($validated['start']); // Start dari request
 
         foreach ($listProses as $proses) {
@@ -283,7 +280,47 @@ class TblProjectController extends Controller
             'end' => 'nullable|date|after_or_equal:start'
         ]);
 
+        // Simpan data lama untuk cek perubahan
+        $oldStart = $project->start;
+        $oldKerjaanId = $project->kerjaan_id;
+
+        // Update project
         $project->update($validated);
+
+        // Cek apakah start date atau kerjaan_id berubah
+        if (($validated['start'] ?? $oldStart) != $oldStart || $validated['kerjaan_id'] != $oldKerjaanId) {
+            // Ambil list proses sesuai kerjaan baru
+            $listProses = DB::table('kerjaan_list_proses')
+                ->where('kerjaan_id', $validated['kerjaan_id'])
+                ->orderBy('urutan', 'asc')
+                ->get();
+
+            // Hitung ulang start_plan dan end_plan
+            $startPlan = Carbon::parse($validated['start'] ?? $oldStart);
+
+            // Hapus detail lama
+            DB::table('project_details')->where('project_id', $project->id)->delete();
+
+            // Insert ulang detail dengan plan yang disesuaikan
+            foreach ($listProses as $proses) {
+                $currentStartPlan = $startPlan->copy();
+
+                DB::table('project_details')->insert([
+                    'project_id' => $project->id,
+                    'kerjaan_list_proses_id' => $proses->list_proses_id,
+                    'urutan_id' => $proses->urutan,
+                    'status' => 'pending',
+                    'start_plan' => $currentStartPlan,
+                    'end_plan' => $currentStartPlan->copy()->addDays($proses->hari - 1),
+                    'start_action' => null,
+                    'end_action' => null,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
+            }
+        }
 
         if ($request->ajax()) {
             return response()->json(['success' => true]);
@@ -292,6 +329,7 @@ class TblProjectController extends Controller
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil diperbarui');
     }
+
 
     public function destroy(ProjectTbl $project, Request $request)
     {
