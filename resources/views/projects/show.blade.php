@@ -804,7 +804,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     ${isAdmin ? `
-                                                <button class="btn btn-outline-danger btn-sm btn-delete-file" data-id="${file.id}">
+                                                <button class="btn btn-outline-danger btn-sm btn-delete-fileadmin" data-id="${file.id}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             ` : ''}
@@ -845,7 +845,7 @@
                 return new Date(dateString).toLocaleDateString('id-ID', options);
             }
 
-            $(document).on('click', '.btn-delete-file', function() {
+            $(document).on('click', '.btn-delete-fileadmin', function() {
                 const fileId = $(this).data('id');
 
                 Swal.fire({
@@ -860,7 +860,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/administrasi-files/' + fileId,
+                            url: '/project-detail/administrasi-files/' + fileId,
                             type: 'DELETE',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
