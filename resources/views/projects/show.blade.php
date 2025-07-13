@@ -415,7 +415,7 @@
                             <div class="col-12">
                                 <div class="row g-4 pt-3">
                                     <div class="col-md-6">
-                                       <h5>Administrasi File</h5>
+                                        <h5>Administrasi File</h5>
                                         <div id="uploaded-files">
                                             <div class="text-center py-3">
                                                 <p class="text-muted mt-2">Memuat file...</p>
@@ -804,10 +804,10 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     ${isAdmin ? `
-                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteFile(${file.id})">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        ` : ''}
+                                                <button class="btn btn-outline-danger btn-sm btn-delete-file" data-id="${file.id}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -844,6 +844,51 @@
                 };
                 return new Date(dateString).toLocaleDateString('id-ID', options);
             }
+
+            $(document).on('click', '.btn-delete-file', function() {
+                const fileId = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Hapus File?',
+                    text: 'File akan dihapus secara permanen.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/administrasi-files/' + fileId,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+
+                                // Refresh daftar file
+                                refreshUploadedFiles();
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal!',
+                                    text: xhr.responseJSON.message ||
+                                        'Terjadi kesalahan saat menghapus file.'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
         });
     </script>
     <script>
@@ -1002,9 +1047,9 @@
                                     <div>
                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
                                             ${k.role_name ? `
-                                                                                                                                    <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
-                                                                                                                                        ${k.role_name}
-                                                                                                                                    </span>` : ''}
+                                                                                                                                                <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                                                                                                    ${k.role_name}
+                                                                                                                                                </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>

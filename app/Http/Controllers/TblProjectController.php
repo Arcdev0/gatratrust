@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
 
@@ -751,5 +752,24 @@ class TblProjectController extends Controller
             'success' => true,
             'data' => $files
         ]);
+    }
+
+    public function deleteAdministrasiFile($id)
+    {
+        $file = DB::table('administrasi_files')->where('id', $id)->first();
+
+        if (!$file) {
+            return response()->json(['success' => false, 'message' => 'File tidak ditemukan.'], 404);
+        }
+
+        // Hapus file dari storage
+        if (Storage::disk('public')->exists($file->file_path)) {
+            Storage::disk('public')->delete($file->file_path);
+        }
+
+        // Hapus dari database
+        DB::table('administrasi_files')->where('id', $id)->delete();
+
+        return response()->json(['success' => true, 'message' => 'File berhasil dihapus.']);
     }
 }

@@ -41,6 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/project-detail/comments/{id}', [TblProjectController::class, 'deleteKomentar']);
     Route::post('/upload-administrasi-file', [TblProjectController::class, 'uploadFileAdministrasi']);
     Route::get('/get-administrasi-files/{id}', [TblProjectController::class, 'getDataAdministrasi']);
+    Route::delete('/administrasi-files/{id}', [TblProjectController::class, 'deleteAdministrasiFile']);
+
 
 
 
