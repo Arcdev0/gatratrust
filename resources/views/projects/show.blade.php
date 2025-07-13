@@ -413,7 +413,7 @@
 
                         <div class="row">
                             <div class="col-12">
-                                <div id="agenda-proyek">
+                                <div id="agenda-proyek" class="d-none">
                                     <h2>TIMELINE PROJECT</h2>
                                     <div class="timeline-container">
                                         <!-- Fixed title column -->
@@ -655,6 +655,14 @@
     <script>
         $(document).ready(function() {
             const timelineData = @json($timelineData);
+
+            // Cek apakah ada data dengan start_plan dan end_plan yang tidak null
+            const hasValidPlan = timelineData.some(item => item.start_plan && item.end_plan);
+
+            // Jika ada data valid, tampilkan div agenda-proyek
+            if (hasValidPlan) {
+                $('#agenda-proyek').removeClass('d-none');
+            }
             const startDate = new Date("{{ \Carbon\Carbon::parse($project->start)->format('Y-m-d') }}");
             const endDate = new Date("{{ \Carbon\Carbon::parse($project->end)->format('Y-m-d') }}");
             const $monthRow = $("#month-row");
@@ -800,9 +808,9 @@
                                     <div>
                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
                                             ${k.role_name ? `
-                                                                <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
-                                                                    ${k.role_name}
-                                                                </span>` : ''}
+                                                                        <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                            ${k.role_name}
+                                                                        </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>
