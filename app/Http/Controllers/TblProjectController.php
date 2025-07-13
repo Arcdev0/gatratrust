@@ -715,4 +715,41 @@ class TblProjectController extends Controller
             return response()->json(['message' => 'Gagal menghapus komentar'], 500);
         }
     }
+
+
+    public function uploadFileAdministrasi(Request $request)
+    {
+        $id = $request->input('id');
+        $files = $request->file('files');
+        $fileNames = $request->input('file_names');
+
+        foreach ($files as $index => $file) {
+            $name = $fileNames[$index] ?? $file->getClientOriginalName();
+            $path = $file->store('administrasi_files', 'public');
+
+            DB::table('administrasi_files')->insert([
+                'project_id' => $id, // ganti related_id ke project_id
+                'file_name' => $name,
+                'file_path' => $path,
+                'uploaded_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function getDataAdministrasi($id)
+    {
+        $files = DB::table('administrasi_files')
+            ->where('project_id', $id)
+            ->orderBy('uploaded_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $files
+        ]);
+    }
 }

@@ -34,6 +34,10 @@ class ProjectTbl extends Model
     {
         return $this->belongsTo(User::class, 'client_id');
     }
+    public function administrasiFiles()
+    {
+        return $this->hasMany(AdministrasiFile::class);
+    }
 
     public function kerjaan()
     {

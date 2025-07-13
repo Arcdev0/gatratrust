@@ -413,6 +413,32 @@
 
                         <div class="row">
                             <div class="col-12">
+                                <div class="row g-4 pt-3">
+                                    <div class="col-md-6">
+                                       <h5>Administrasi File</h5>
+                                        <div id="uploaded-files">
+                                            <div class="text-center py-3">
+                                                <p class="text-muted mt-2">Memuat file...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" id="upload-section" style="display: none;">
+                                        <h5 class="mb-3 fw-bold">Upload File Administrasi</h5>
+                                        <div id="file-upload-list"></div>
+                                        <button type="button" class="btn btn-primary btn-sm" id="add-file">
+                                            <i class="bi bi-plus-circle"></i> Tambah File
+                                        </button>
+                                        <button type="button" class="btn btn-success btn-sm" id="upload-files">
+                                            <i class="bi bi-upload"></i> Simpan file
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row">
+                            <div class="col-12">
                                 <div id="agenda-proyek" class="d-none">
                                     <h2>TIMELINE PROJECT</h2>
                                     <div class="timeline-container">
@@ -652,6 +678,174 @@
 @endsection
 
 @section('script')
+
+    <script>
+        $(document).ready(function() {
+            const path = window.location.pathname;
+            const match = path.match(/\/(\d+)$/);
+            const id = match ? match[1] : null;
+
+            refreshUploadedFiles();
+
+            const userRoleId = parseInt(@json(Auth::user()->role_id));
+            const isAdmin = userRoleId === 1;
+
+            if (isAdmin) {
+                $('#upload-section').show();
+            }
+
+            // Tambah baris file baru
+            $('#add-file').click(function() {
+                let newFileRow = `
+            <div class="input-group mb-2 shadow-sm">
+                <input type="text" name="file_names[]" class="form-control" placeholder="Nama File">
+                <input type="file" name="files[]" class="form-control">
+                <button class="btn btn-outline-danger remove-file" type="button">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`;
+                $('#file-upload-list').append(newFileRow);
+            });
+
+            // Hapus baris input file
+            $(document).on('click', '.remove-file', function() {
+                $(this).closest('.input-group').remove();
+            });
+
+            // Upload file dengan AJAX
+            $('#upload-files').click(function() {
+                let formData = new FormData();
+                formData.append('id', id);
+
+                let isEmpty = true;
+
+                $('#file-upload-list .input-group').each(function() {
+                    const fileInput = $(this).find('input[type="file"]')[0].files[0];
+                    const fileName = $(this).find('input[type="text"]').val();
+
+                    if (fileInput && fileName) {
+                        formData.append('files[]', fileInput);
+                        formData.append('file_names[]', fileName);
+                        isEmpty = false;
+                    }
+                });
+
+                if (isEmpty) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Oops...',
+                        text: 'Silakan isi nama file dan pilih file sebelum upload!',
+                    });
+                    return;
+                }
+
+                // Tampilkan loading
+                Swal.fire({
+                    title: 'Mengupload...',
+                    html: 'Mohon tunggu sebentar.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: '/upload-administrasi-file',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'File berhasil diupload.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        // Bersihkan input upload
+                        $('#file-upload-list').html('');
+
+                        // Refresh uploaded files
+                        refreshUploadedFiles();
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: 'Terjadi kesalahan saat upload file.'
+                        });
+                    }
+                });
+            });
+
+            function refreshUploadedFiles() {
+                $.ajax({
+                    url: '/get-administrasi-files/' + id,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success && response.data.length > 0) {
+                            let html = '';
+
+                            response.data.forEach(file => {
+                                html += `
+                        <div class="card shadow-sm border-0 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">${file.file_name}</h6>
+                                    <small class="text-muted">Diunggah pada: ${formatDate(file.uploaded_at)}</small>
+                                </div>
+                                <div>
+                                    <a href="/storage/${file.file_path}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    ${isAdmin ? `
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteFile(${file.id})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                            });
+
+                            $('#uploaded-files').html(html);
+                        } else {
+                            $('#uploaded-files').html(`
+                    <div class="alert alert-secondary" role="alert">
+                        Belum ada file.
+                    </div>
+                `);
+                        }
+                    },
+                    error: function() {
+                        $('#uploaded-files').html(`
+                <div class="alert alert-danger" role="alert">
+                    Gagal memuat data file terunggah.
+                </div>
+            `);
+                    }
+                });
+            }
+
+            // Helper untuk format tanggal
+            function formatDate(dateString) {
+                const options = {
+                    year: 'numeric',
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                return new Date(dateString).toLocaleDateString('id-ID', options);
+            }
+        });
+    </script>
     <script>
         $(document).ready(function() {
             const timelineData = @json($timelineData);
@@ -808,9 +1002,9 @@
                                     <div>
                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
                                             ${k.role_name ? `
-                                                                        <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
-                                                                            ${k.role_name}
-                                                                        </span>` : ''}
+                                                                                                                                    <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                                                                                        ${k.role_name}
+                                                                                                                                    </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>
