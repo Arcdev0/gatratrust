@@ -463,7 +463,7 @@
 
 
                         <div class="container my-4">
-                            <h5 class="mt-4">Timeline {{ $project->kerjaan->nama_kerjaan }}</h5>
+                            <h5 class="mt-4">Proses {{ $project->kerjaan->nama_kerjaan }}</h5>
                             <div class="timeline-container">
                                 <!-- Desktop Version -->
                                 <div class="timeline-horizontal">
@@ -798,8 +798,11 @@
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
-                                            ${k.role_name ? `<span class="badge bg-secondary">${k.role_name}</span>` : ''}
+                                       <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
+                                            ${k.role_name ? `
+                                                                <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                    ${k.role_name}
+                                                                </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>
@@ -846,6 +849,9 @@
                 $('#modalStepName').text(step);
                 currentStep = $(this).data('step');
 
+                const userRoleId = parseInt(@json(Auth::user()->role_id));
+                const isAdmin = userRoleId === 1;
+
                 let projectId = id;
                 let list_proses_id = $('#modalListProsesId').val();
                 let urutan = $('#modalUrutanInput').val();
@@ -872,8 +878,7 @@
                                     timeStyle: 'short'
                                 });
 
-                                const userRoleId = {{ Auth::user()->role_id }};
-                                const isAdmin = userRoleId === 1;
+
                                 const isRestrictedProcess = list_proses_id ==
                                     4;
 
@@ -967,6 +972,15 @@
                     }
                 });
 
+
+                if (!isAdmin) {
+                    $('#startActionDate').closest('.form-group').hide();
+                    $('#endActionDate').closest('.form-group').hide();
+                } else {
+                    $('#startActionDate').closest('.form-group').show();
+                    $('#endActionDate').closest('.form-group').show();
+                }
+
                 $('#timelineModal').modal('show');
             });
 
@@ -1056,7 +1070,9 @@
                             title: 'Berhasil',
                             text: 'File berhasil disimpan',
                         }).then(() => {
-                            $('#timelineModal').modal('hide');
+                            // $('#timelineModal').modal('hide');
+                            location
+                                .reload();
                         });
                     },
                     error: function(xhr) {
