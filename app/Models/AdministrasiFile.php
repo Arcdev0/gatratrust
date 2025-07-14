@@ -16,6 +16,7 @@ class AdministrasiFile extends Model
         'project_id',
         'file_name',
         'file_path',
+        'is_internal',
         'uploaded_at',
     ];
 

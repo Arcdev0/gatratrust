@@ -747,24 +747,26 @@ class TblProjectController extends Controller
         $id = $request->input('id');
         $files = $request->file('files');
         $fileNames = $request->input('file_names');
+        $isInternalFlags = $request->input('is_internal');
 
         foreach ($files as $index => $file) {
             $name = $fileNames[$index] ?? $file->getClientOriginalName();
             $path = $file->store('administrasi_files', 'public');
+            $isInternal = $isInternalFlags[$index] ?? 0; 
 
             DB::table('administrasi_files')->insert([
-                'project_id' => $id, // ganti related_id ke project_id
-                'file_name' => $name,
-                'file_path' => $path,
+                'project_id' => $id,              
+                'file_name' => $name,             
+                'file_path' => $path,             
+                'is_internal' => $isInternal,     
                 'uploaded_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true, 'message' => 'File berhasil diupload']);
     }
-
     public function getDataAdministrasi($id)
     {
         $files = DB::table('administrasi_files')

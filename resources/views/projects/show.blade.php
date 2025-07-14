@@ -694,38 +694,48 @@
                 $('#upload-section').show();
             }
 
-            // Tambah baris file baru
             $('#add-file').click(function() {
                 let newFileRow = `
-            <div class="input-group mb-2 shadow-sm">
-                <input type="text" name="file_names[]" class="form-control" placeholder="Nama File">
-                <input type="file" name="files[]" class="form-control">
+        <div class="d-flex align-items-center mb-2 file-row">
+            <div class="flex-grow-1 d-flex">
+                <input type="text" name="file_names[]" class="form-control rounded-0 rounded-start" placeholder="Nama File">
+                <input type="file" name="files[]" class="form-control rounded-0" style="width: auto; min-width: 220px;">
+            </div>
+            <div class="ms-2 d-flex align-items-center">
+                <div class="form-check form-switch mx-2">
+                    <input class="form-check-input" type="checkbox" name="is_internal[]">
+                    <label class="form-check-label">Internal</label>
+                </div>
                 <button class="btn btn-outline-danger remove-file" type="button">
                     <i class="fas fa-trash"></i>
                 </button>
-            </div>`;
+            </div>
+        </div>`;
                 $('#file-upload-list').append(newFileRow);
             });
 
             // Hapus baris input file
             $(document).on('click', '.remove-file', function() {
-                $(this).closest('.input-group').remove();
+                $(this).closest('.file-row').remove();
             });
 
-            // Upload file dengan AJAX
+            // Upload file dengan AJAX (tetap sama seperti sebelumnya)
             $('#upload-files').click(function() {
                 let formData = new FormData();
                 formData.append('id', id);
 
                 let isEmpty = true;
 
-                $('#file-upload-list .input-group').each(function() {
+                $('.file-row').each(function() {
                     const fileInput = $(this).find('input[type="file"]')[0].files[0];
                     const fileName = $(this).find('input[type="text"]').val();
+                    const isInternal = $(this).find('input[type="checkbox"]').is(':checked') ? 1 :
+                        0;
 
                     if (fileInput && fileName) {
                         formData.append('files[]', fileInput);
                         formData.append('file_names[]', fileName);
+                        formData.append('is_internal[]', isInternal);
                         isEmpty = false;
                     }
                 });
@@ -792,11 +802,24 @@
                             let html = '';
 
                             response.data.forEach(file => {
+                                // 👉 Skip file internal jika user bukan admin
+                                if (!isAdmin && file.is_internal) {
+                                    return; // lewati
+                                }
+
+                                // ✅ Tambahkan badge jika file internal
+                                let internalBadge = file.is_internal ? `
+                        <span class="badge bg-primary text-white ms-2">Internal</span>
+                    ` : '';
+
                                 html += `
                         <div class="card shadow-sm border-0 p-3 mb-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-0 fw-semibold">${file.file_name}</h6>
+                                    <h6 class="mb-0 fw-semibold">
+                                        ${file.file_name}
+                                        ${internalBadge} <!-- ✅ Badge internal -->
+                                    </h6>
                                     <small class="text-muted">Diunggah pada: ${formatDate(file.uploaded_at)}</small>
                                 </div>
                                 <div>
@@ -814,7 +837,16 @@
                     `;
                             });
 
-                            $('#uploaded-files').html(html);
+                            if (html === '') {
+                                // Kalau semua file disembunyikan (user bukan admin dan semua file internal)
+                                $('#uploaded-files').html(`
+                        <div class="alert alert-secondary" role="alert">
+                            Belum ada file yang bisa ditampilkan.
+                        </div>
+                    `);
+                            } else {
+                                $('#uploaded-files').html(html);
+                            }
                         } else {
                             $('#uploaded-files').html(`
                     <div class="alert alert-secondary" role="alert">
@@ -1047,9 +1079,9 @@
                                     <div>
                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
                                             ${k.role_name ? `
-                                                                                                                                                <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
-                                                                                                                                                    ${k.role_name}
-                                                                                                                                                </span>` : ''}
+                                                                                                                                                                    <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                                                                                                                        ${k.role_name}
+                                                                                                                                                                    </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>
