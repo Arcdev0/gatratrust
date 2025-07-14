@@ -57,8 +57,8 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>No. Project</label>
-                            <input type="text" name="no_project" placeholder="Masukkan No. Project" class="form-control"
-                                required>
+                            <input type="text" id="no_projectGenerate" name="no_project"
+                                placeholder="Masukkan No. Project" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>Nama Project</label>
@@ -176,6 +176,24 @@
 @section('script')
 
     <script>
+        $('#exampleModalCenter').on('show.bs.modal', function(e) {
+            $.ajax({
+                url: '/projects/generate-no',
+                method: 'GET',
+                success: function(response) {
+                    $('#no_projectGenerate').val(response.no_project);
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal generate No. Project.'
+                    });
+                }
+            });
+        });
+
+
         $(document).on('click', '.btnDeletProject', function() {
             var projectId = $(this).data('id');
 
