@@ -29,7 +29,8 @@ class TblProjectController extends Controller
     public function getListProject(Request $request)
     {
         if ($request->ajax()) {
-            $query = ProjectTbl::with(['client', 'kerjaan'])->select('projects.*');
+            $query = ProjectTbl::with(['client', 'kerjaan'])->select('projects.*')
+                ->orderBy('id', 'desc');
 
             // Jika user adalah client, filter hanya project miliknya
             if (auth()->user()->role_id == 2) {
@@ -169,56 +170,74 @@ class TblProjectController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nama_project' => 'required|string|max:100',
-            'no_project' => 'required|string|unique:projects',
-            'client_id' => 'required|exists:users,id',
-            'kerjaan_id' => 'required|exists:kerjaans,id',
-            'deskripsi' => 'nullable|string',
-            'start' => 'required|date',
-            'end' => 'required|date|after_or_equal:start'
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $validated['created_by'] = Auth::id();
-
-        $project = ProjectTbl::create($validated);
-
-        $listProses = DB::table('kerjaan_list_proses')
-            ->where('kerjaan_id', $validated['kerjaan_id'])
-            ->orderBy('urutan', 'asc')
-            ->get();
-
-        $startPlan = Carbon::parse($validated['start']); // Start dari request
-
-        foreach ($listProses as $proses) {
-            $currentStartPlan = $startPlan->copy();
-
-            DB::table('project_details')->insert([
-                'project_id' => $project->id,
-                'kerjaan_list_proses_id' => $proses->list_proses_id,
-                'urutan_id' => $proses->urutan,
-                'status' => 'pending',
-                'start_plan' => $currentStartPlan,
-                'end_plan' => $currentStartPlan->copy()->addDays($proses->hari - 1),
-                'start_action' => null,
-                'end_action' => null,
-                'created_at' => now(),
-                'updated_at' => now()
+            $validated = $request->validate([
+                'nama_project' => 'required|string|max:100',
+                'no_project' => 'required|string|unique:projects',
+                'client_id' => 'required|exists:users,id',
+                'kerjaan_id' => 'required|exists:kerjaans,id',
+                'deskripsi' => 'nullable|string',
+                'start' => 'required|date',
+                'end' => 'required|date|after_or_equal:start'
             ]);
 
-            // Increment startPlan untuk proses berikutnya
-            $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
+            $validated['created_by'] = Auth::id();
+
+            $project = ProjectTbl::create($validated);
+
+            $listProses = DB::table('kerjaan_list_proses')
+                ->where('kerjaan_id', $validated['kerjaan_id'])
+                ->orderBy('urutan', 'asc')
+                ->get();
+
+            // dd($listProses);
+
+            $startPlan = Carbon::parse($validated['start']);
+
+            foreach ($listProses as $proses) {
+                $currentStartPlan = $startPlan->copy();
+
+                DB::table('project_details')->insert([
+                    'project_id' => $project->id,
+                    'kerjaan_list_proses_id' => $proses->list_proses_id,
+                    'urutan_id' => $proses->urutan,
+                    'status' => 'pending',
+                    'start_plan' => $currentStartPlan,
+                    'end_plan' => $currentStartPlan->copy()->addDays($proses->hari - 1),
+                    'start_action' => null,
+                    'end_action' => null,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
+            }
+
+
+
+            DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json(['success' => true]);
+            }
+
+            return redirect()->route('projects.tampilan')
+                ->with('success', 'Project berhasil ditambahkan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // Anda bisa menambahkan log error di sini jika perlu
+            // \Log::error($e->getMessage());
+
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
+
+            return back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-
-        if ($request->ajax()) {
-            return response()->json(['success' => true]);
-        }
-
-        return redirect()->route('projects.tampilan')
-            ->with('success', 'Project berhasil ditambahkan');
     }
-
 
     public function show(ProjectTbl $project)
     {
@@ -255,19 +274,20 @@ class TblProjectController extends Controller
             $stepUrutan[$key] = $process->urutan;
         }
 
-        // ✅ Query baru untuk timeline
         $timelineQuery = "SELECT
-                        b.nama_proses AS title,
-                        c.start_plan,
-                        c.end_plan,
-                        c.start_action,
-                        c.end_action
-                    FROM kerjaan_list_proses a
-                    JOIN list_proses b ON a.list_proses_id = b.id
-                    JOIN project_details c
-                        ON a.id = c.kerjaan_list_proses_id
-                    WHERE c.project_id = '$projectId'
-                    ORDER BY c.urutan_id ASC";
+                    b.nama_proses AS title,
+                    c.start_plan,
+                    c.end_plan,
+                    c.start_action,
+                    c.end_action
+                FROM kerjaan_list_proses a
+                JOIN list_proses b ON a.list_proses_id = b.id
+                LEFT JOIN project_details c 
+                    ON a.list_proses_id = c.kerjaan_list_proses_id 
+                    AND a.urutan = c.urutan_id 
+                    AND c.project_id = '$projectId'
+                WHERE a.kerjaan_id = '$kerjaanId'
+                ORDER BY a.urutan ASC";
 
         $timelineRows = DB::select($timelineQuery);
 
@@ -752,13 +772,13 @@ class TblProjectController extends Controller
         foreach ($files as $index => $file) {
             $name = $fileNames[$index] ?? $file->getClientOriginalName();
             $path = $file->store('administrasi_files', 'public');
-            $isInternal = $isInternalFlags[$index] ?? 0; 
+            $isInternal = $isInternalFlags[$index] ?? 0;
 
             DB::table('administrasi_files')->insert([
-                'project_id' => $id,              
-                'file_name' => $name,             
-                'file_path' => $path,             
-                'is_internal' => $isInternal,     
+                'project_id' => $id,
+                'file_name' => $name,
+                'file_path' => $path,
+                'is_internal' => $isInternal,
                 'uploaded_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
