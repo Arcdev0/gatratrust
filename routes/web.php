@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
 
     // User Management
     Route::get('/user', [UserController::class, 'index'])->name('user.tampilan');
+    Route::get('/user/getListTable', [UserController::class, 'getListTable'])->name('user.list');
     Route::post('/user/store', [UserController::class, 'store'])->name('user.store');
     Route::post('/user/update/{user}', [UserController::class, 'update'])->name('user.update');
     Route::delete('/user/delete/{user}', [UserController::class, 'destroy'])->name('user.destroy');
@@ -53,9 +54,6 @@ Route::middleware('auth')->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
-
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
 
     // List Proses
     Route::get('/listproses', [App\Http\Controllers\ListProsesController::class, 'index'])->name('listproses.index');
@@ -70,4 +68,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kerjaan/{id}', [KerjaanController::class, 'destroy'])->name('kerjaan.destroy');
     Route::get('/kerjaan/edit/{id}', [KerjaanController::class, 'show'])->name('kerjaan.edit');
     Route::put('/kerjaan/update/{id}', [KerjaanController::class, 'update'])->name('kerjaan.update');
+    
+
+
+      Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

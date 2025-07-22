@@ -27,23 +27,24 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($users as $user)
+                                    {{-- @foreach ($users as $user)
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $user->name }}</td>
                                             <td>{{ $user->email }}</td>
                                             <td>{{ $user->role->name }}</td>
-                                            <td>{{ $user->status}}</td>
+                                            <td>{{ $user->status }}</td>
                                             <td>{{ $user->company ?? '-' }}</td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-secondary btnEditUser"
-                                                    data-toggle="modal" data-target="#editUserModal" data-id="{{ $user->id }}"
-                                                    data-name="{{ $user->name }}" data-email="{{ $user->email }}"
-                                                    data-role="{{ $user->role_id }}" data-company="{{ $user->company ?? '' }}"
+                                                    data-id="{{ $user->id }}" data-name="{{ $user->name }}"
+                                                    data-email="{{ $user->email }}" data-role="{{ $user->role_id }}"
+                                                    data-company="{{ $user->company ?? '' }}"
                                                     data-status="{{ $user->is_active }}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <form action="{{ route('user.destroy', $user->id) }}" method="POST" class="d-inline">
+                                                <form action="{{ route('user.destroy', $user->id) }}" method="POST"
+                                                    class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="button" class="btn btn-sm btn-danger btnDeleteUser">
@@ -52,7 +53,7 @@
                                                 </form>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @endforeach --}}
                                 </tbody>
                             </table>
                         </div>
@@ -176,14 +177,46 @@
 
 @section('script')
     <script>
-        $(document).ready(function () {
-            $('#usersTable').DataTable({
-                "paging": true,
-                "lengthChange": true,
-                "searching": true,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false
+        $(document).ready(function() {
+            var table = $('#usersTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: '{{ route('user.list') }}',
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'name',
+                        name: 'name'
+                    },
+                    {
+                        data: 'email',
+                        name: 'email'
+                    },
+                    {
+                        data: 'role',
+                        name: 'role.name'
+                    },
+                    {
+                        data: 'status',
+                        name: 'is_active',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'company',
+                        name: 'company'
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        orderable: false,
+                        searchable: false
+                    }
+                ]
             });
         });
 
@@ -193,14 +226,14 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
-        $(document).ready(function () {
+        $(document).ready(function() {
             // Tampilkan Modal Tambah User
-            $('#addUserBtn').click(function () {
+            $('#addUserBtn').click(function() {
                 $('#addUserModal').modal('show');
             });
 
             // Submit Form Tambah User
-            $('#addUserForm').submit(function (e) {
+            $('#addUserForm').submit(function(e) {
                 e.preventDefault();
                 var form = $(this);
                 var url = form.attr('action');
@@ -210,18 +243,20 @@
                     type: "POST",
                     url: url,
                     data: data,
-                    success: function (response) {
+                    success: function(response) {
                         $('#addUserModal').modal('hide');
                         form[0].reset();
                         location.reload();
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         alert('Gagal menambahkan user. Pastikan data valid.');
                     }
                 });
             });
+
+
             // Tampilkan Modal Edit User
-            $('.btnEditUser').click(function () {
+            $('#usersTable').on('click', '.btnEditUser', function() {
                 var userId = $(this).data('id');
                 var name = $(this).data('name');
                 var email = $(this).data('email');
@@ -231,16 +266,16 @@
 
                 $('#editName').val(name);
                 $('#editEmail').val(email);
-                $('#editRole').val(role);
+                $('#editRole').val(String(role));
                 $('#editCompany').val(company);
-                $('#editIsActive').val(status);
+                $('#editIsActive').val(String(status));
 
-                // Set action form edit
                 $('#editUserForm').attr('action', `/user/update/${userId}`);
+                $('#editUserModal').modal('show');
             });
 
             // Submit Form Edit User
-            $('#editUserForm').submit(function (e) {
+            $('#editUserForm').submit(function(e) {
                 e.preventDefault();
                 var form = $(this);
                 var url = form.attr('action');
@@ -250,20 +285,20 @@
                     type: "POST",
                     url: url,
                     data: data,
-                    success: function (response) {
+                    success: function(response) {
                         $('#editUserModal').modal('hide');
                         form[0].reset();
                         location.reload();
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         alert('Gagal mengedit user. Pastikan data valid.');
                     }
                 });
             });
 
-            $(document).on('click', '.btnDeleteUser', function (e) {
-                e.preventDefault();
-                var form = $(this).closest('form');
+            $(document).on('click', '.btnDeleteUser', function() {
+                var userId = $(this).data('id'); // Ambil ID user
+
                 Swal.fire({
                     title: 'Apakah Anda yakin?',
                     text: "User akan dihapus secara permanen!",
@@ -275,7 +310,26 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        form.submit();
+                        $.ajax({
+                            url: `/user/delete/${userId}`,
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire('Berhasil!', response.message, 'success');
+                                    $('#usersTable').DataTable().ajax.reload(null,
+                                        false);
+                                } else {
+                                    Swal.fire('Gagal!', response.message, 'error');
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Error!', 'Terjadi kesalahan pada server.',
+                                    'error');
+                            }
+                        });
                     }
                 });
             });

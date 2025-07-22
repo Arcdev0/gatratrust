@@ -5,21 +5,49 @@ namespace App\Http\Controllers;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Yajra\DataTables\DataTables;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('role')->get()->map(function ($user) {
-            $user->status = $user->is_active ? 'Active' : 'Non Active';
-            return $user;
-        });
         $roles = Role::all();
-        $clients = User::whereHas('role', function ($query) {
-            $query->where('name', 'client');
-        })->get();
 
-        return view('user.tampilan', compact('users', 'roles', 'clients'));
+        return view('user.tampilan', compact('roles'));
+    }
+
+
+    public function getListTable()
+    {
+        $users = User::with('role')->select('users.*');
+
+        return DataTables::of($users)
+            ->addIndexColumn() // nomor urut otomatis
+            ->editColumn('status', function ($user) {
+                return $user->is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Non Active</span>';
+            })
+            ->addColumn('role', function ($user) {
+                return $user->role ? $user->role->name : '-';
+            })
+            ->addColumn('actions', function ($user) {
+                return '
+                <button type="button" class="btn btn-sm btn-secondary btnEditUser"
+                    data-id="' . $user->id . '"
+                    data-name="' . $user->name . '"
+                    data-email="' . $user->email . '"
+                    data-role="' . $user->role_id . '"
+                    data-company="' . ($user->company ?? '') . '"
+                    data-status="' . $user->is_active . '">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger btnDeleteUser"
+                    data-id="' . $user->id . '">
+                    <i class="fas fa-trash"></i>
+                </button>
+            ';
+            })
+            ->rawColumns(['status', 'actions']) // biar HTML badge dan button tidak di-escape
+            ->make(true);
     }
 
     public function store(Request $request)
@@ -78,10 +106,16 @@ class UserController extends Controller
     {
         try {
             $user->delete();
-            return redirect()->route('user.tampilan')->with('success', 'User berhasil dihapus');
-        } catch (\Illuminate\Database\QueryException $e) {
-            return redirect()->route('user.tampilan')->with('error', 'User tidak dapat dihapus karena masih digunakan di data lain.');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User berhasil dihapus.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus user.'
+            ], 500);
         }
     }
-
 }
