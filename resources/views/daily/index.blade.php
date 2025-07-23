@@ -173,8 +173,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                            <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                        ` : ''}
+                                                                                    <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                ` : ''}
                             </div>
                         </div>
                         `;
@@ -273,6 +273,7 @@
                 }
             }
 
+            let quillEditPlanToday, quillEditPlanTomorrow, quillEditProblem;
 
             function initEditQuillEditors() {
                 if (!quillEditPlanToday) {
