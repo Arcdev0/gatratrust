@@ -28,11 +28,15 @@ class DailyController extends Controller
         if ($tanggal) {
             $query->whereDate('tanggal', $tanggal);
         } else {
-            $query->whereDate('tanggal', now()); 
+            $query->whereDate('tanggal', now());
         }
 
-        return response()->json($query->get());
+        return response()->json([
+            'data' => $query->get(),
+            'auth_user_id' => auth()->id(),
+        ]);
     }
+
 
     /**
      * Store a newly created daily record.

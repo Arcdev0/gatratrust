@@ -48,7 +48,7 @@
                             <input type="datetime-local" name="tanggal" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label>Plan Today</label>
+                            <label>Today’s Achievements</label>
                             <div id="planTodayEditor" style="height: 150px;"></div>
                             <input type="hidden" name="plan_today">
                         </div>
@@ -97,7 +97,7 @@
                             <input type="datetime-local" name="tanggal" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label>Plan Today</label>
+                            <label>Today’s Achievements</label>
                             <div id="editPlanTodayEditor" style="height: 150px;"></div>
                             <input type="hidden" name="plan_today">
                         </div>
@@ -151,11 +151,23 @@
                     method: "GET",
                     data: {
                         tanggal: tanggal
-                    }, // kirim tanggal ke backend
-                    success: function(data) {
+                    },
+                    success: function(response) {
                         let html = '';
+                        let authUserId = response.auth_user_id; // user yang login
+                        let data = response.data;
+
                         if (data.length > 0) {
                             data.forEach(function(item) {
+                                // Cek apakah user login sama dengan pembuat data
+                                let actionButtons = '';
+                                if (authUserId === item.user_id) {
+                                    actionButtons = `
+                            <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">Edit</button>
+                            <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">Delete</button>
+                        `;
+                                }
+
                                 html += `
                         <div class="card mb-3">
                             <div class="card-header d-flex justify-content-between align-items-center">
@@ -164,20 +176,19 @@
                                     <small class="text-muted">${new Date(item.tanggal).toLocaleString()}</small>
                                 </div>
                                 <div>
-                                    <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">Edit</button>
-                                    <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">Delete</button>
+                                    ${actionButtons}
                                 </div>
                             </div>
                             <div class="card-body">
-                                <p><strong>Plan Today:</strong> ${item.plan_today}</p>
+                                <p><strong>Today’s Achievements:</strong> ${item.plan_today}</p>
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                                    <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                ` : ''}
+                                        <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                    ` : ''}
                             </div>
                         </div>
-                        `;
+                    `;
                             });
                         } else {
                             html =
@@ -206,7 +217,7 @@
             function initQuillEditors() {
                 quillPlanToday = new Quill('#planTodayEditor', {
                     theme: 'snow',
-                    placeholder: 'Tulis Plan Today...',
+                    placeholder: 'Tulis Today’s Achievements...',
                     modules: {
                         toolbar: [
                             ['bold', 'italic', 'underline'],
