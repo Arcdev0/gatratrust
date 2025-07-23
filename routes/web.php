@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\LoginController;
@@ -68,8 +69,19 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kerjaan/{id}', [KerjaanController::class, 'destroy'])->name('kerjaan.destroy');
     Route::get('/kerjaan/edit/{id}', [KerjaanController::class, 'show'])->name('kerjaan.edit');
     Route::put('/kerjaan/update/{id}', [KerjaanController::class, 'update'])->name('kerjaan.update');
-    
+
+    //Daily
+
+    Route::prefix('daily')->group(function () {
+        Route::get('/', [DailyController::class, 'index'])->name('daily.index');
+        Route::get('/list', [DailyController::class, 'getList'])->name('daily.getList');
+        Route::post('/store', [DailyController::class, 'store'])->name('daily.store');
+        Route::get('/edit/{id}', [DailyController::class, 'edit'])->name('daily.edit');
+        Route::put('/update/{id}', [DailyController::class, 'update'])->name('daily.update');
+        Route::delete('/delete/{id}', [DailyController::class, 'destroy'])->name('daily.destroy');
+    });
 
 
-      Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

@@ -172,6 +172,11 @@
                                 <i class="fas fa-bars"></i><span>Tipe Project</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('daily.index') ? 'active' : '' }}">
+                            <a href="{{ route('daily.index') }}">
+                                <i class="fas fa-user-tag"></i><span>Daily activity</span>
+                            </a>
+                        </div>
                     @endif
                 </nav>
             </div>

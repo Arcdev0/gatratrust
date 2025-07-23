@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="{{ asset('template/plugins/weather-icons/css/weather-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('template/plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }} ">
     <link rel="stylesheet" href="{{ asset('template/dist/css/theme.min.css') }}">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
 
     @yield('css')
@@ -53,6 +54,7 @@
 
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
         window.jQuery || document.write(
             '<script src="{{ asset('template/src/js/vendor/jquery-3.3.1.min.js') }}"><\/script>');
