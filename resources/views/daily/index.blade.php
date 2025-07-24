@@ -2,6 +2,16 @@
 @section('title', 'Daily Activity')
 
 @section('content')
+    <style>
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+    </style>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -126,6 +136,28 @@
         </div>
     </div>
 
+    <div class="modal fade" id="komentarModal" tabindex="-1" aria-labelledby="komentarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Komentar</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="komentarInput" class="form-label">Tulis Komentar</label>
+                        <textarea class="form-control" id="komentarInput" rows="3" placeholder="Tulis komentar di sini..."></textarea>
+                    </div>
+                    <button class="btn btn-primary mb-3" id="btnTambahKomentar">Tambah Komentar</button>
+                    <hr>
+                    <div id="listKomentar" style="max-height: 300px; overflow-y: auto; padding-right: 10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 
 @endsection
@@ -139,12 +171,12 @@
             // Fetch and render Daily Activities by date
             function fetchDailyActivities(tanggal = today) {
                 $('#dailyCardList').html(`
-            <div class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
             </div>
-        `);
+        </div>
+    `);
 
                 $.ajax({
                     url: "{{ route('daily.getList') }}",
@@ -154,12 +186,11 @@
                     },
                     success: function(response) {
                         let html = '';
-                        let authUserId = response.auth_user_id; // user yang login
+                        let authUserId = response.auth_user_id;
                         let data = response.data;
 
                         if (data.length > 0) {
                             data.forEach(function(item) {
-                                // Cek apakah user login sama dengan pembuat data
                                 let actionButtons = '';
                                 if (authUserId === item.user_id) {
                                     actionButtons = `
@@ -169,7 +200,7 @@
                                 }
 
                                 html += `
-                        <div class="card mb-3">
+                        <div class="card mb-3" data-id="${item.id}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div>
                                     <h5 class="mb-0">${item.user.name}</h5>
@@ -187,6 +218,11 @@
                                         <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
                                     ` : ''}
                             </div>
+                            <div class="card-footer d-flex justify-content-start">
+                                <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
+                                    💬 <span class="comment-count">${item.comments_count || 0}</span>
+                                </button>
+                            </div>
                         </div>
                     `;
                             });
@@ -194,6 +230,7 @@
                             html =
                                 '<p class="text-center text-muted">Tidak ada data untuk tanggal ini.</p>';
                         }
+
                         $('#dailyCardList').html(html);
                     },
                     error: function() {
@@ -203,14 +240,69 @@
                 });
             }
 
-            // Load data untuk hari ini saat pertama kali
             fetchDailyActivities();
 
-            // Reload data saat tanggal diganti
             $('#filterTanggal').on('change', function() {
                 let tanggalDipilih = $(this).val();
                 fetchDailyActivities(tanggalDipilih);
             });
+
+            let currentDailyId = null;
+
+            $(document).on('click', '.commentBtn', function() {
+                currentDailyId = $(this).data('id');
+                $('#komentarInput').val('');
+                $('#listKomentar').html('<p class="text-muted">Memuat komentar...</p>');
+                $('#komentarModal').modal('show');
+
+                // Load komentar
+                loadKomentar(currentDailyId);
+            });
+
+            function loadKomentar(id) {
+                $.get(`/daily/${id}/comments`, function(res) {
+                    if (res.length === 0) {
+                        $('#listKomentar').html('<p class="text-muted">Belum ada komentar.</p>');
+                    } else {
+                        let html = '';
+                        res.forEach(k => {
+                            html += `
+                    <div class="card mb-3 comment-card">
+                        <div class="card-body d-flex">
+                            <img src="/template/img/user_main.jpg" alt="User" class="comment-avatar mr-3" width="52">
+                            <div>
+                                <h6 class="mb-0">${k.user.name}</h6>
+                                <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
+                                <p class="mt-2 mb-0">${k.comment}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                        });
+                        $('#listKomentar').html(html);
+                    }
+                });
+            }
+
+            $('#btnTambahKomentar').click(function() {
+                let isiKomentar = $('#komentarInput').val().trim();
+                if (!isiKomentar) return alert('Komentar tidak boleh kosong');
+
+                $.post(`/daily/${currentDailyId}/comments`, {
+                    _token: "{{ csrf_token() }}",
+                    comment: isiKomentar
+                }, function() {
+                    $('#komentarInput').val('');
+                    loadKomentar(currentDailyId); // Reload list komentar
+
+                    // Update count komentar pada card yang sesuai
+                    let card = $(`.card[data-id="${currentDailyId}"]`);
+                    let countSpan = card.find('.comment-count');
+                    let count = parseInt(countSpan.text());
+                    countSpan.text(count + 1);
+                });
+            });
+
 
             let quillPlanToday, quillPlanTomorrow, quillProblem;
 

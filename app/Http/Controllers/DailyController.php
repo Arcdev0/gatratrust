@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Daily;
+use App\Models\DailyComment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,7 +24,9 @@ class DailyController extends Controller
     {
         $tanggal = $request->get('tanggal');
 
-        $query = Daily::with('user')->orderBy('tanggal', 'desc');
+        $query = Daily::with(['user'])
+            ->withCount('comments') // tambahkan ini
+            ->orderBy('tanggal', 'desc');
 
         if ($tanggal) {
             $query->whereDate('tanggal', $tanggal);
@@ -35,6 +38,25 @@ class DailyController extends Controller
             'data' => $query->get(),
             'auth_user_id' => auth()->id(),
         ]);
+    }
+    public function dataDailyComments(Daily $daily)
+    {
+        return $daily->comments()->with('user')->latest()->get();
+    }
+
+    public function storeDailyComments(Request $request, $daily)
+    {
+        $request->validate([
+            'comment' => 'required|string|max:1000',
+        ]);
+
+        DailyComment::create([
+            'daily_id' => $daily,
+            'user_id' => auth()->id(),
+            'comment' => $request->comment,
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
 

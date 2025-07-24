@@ -80,6 +80,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/update/{id}', [DailyController::class, 'update'])->name('daily.update');
         Route::delete('/delete/{id}', [DailyController::class, 'destroy'])->name('daily.destroy');
     });
+    Route::get('/daily/{daily}/comments', [DailyController::class, 'dataDailyComments']);
+    Route::post('/daily/{daily}/comments', [DailyController::class, 'storeDailyComments']);
+
 
 
 
