@@ -82,6 +82,8 @@ Route::middleware('auth')->group(function () {
     });
     Route::get('/daily/{daily}/comments', [DailyController::class, 'dataDailyComments']);
     Route::post('/daily/{daily}/comments', [DailyController::class, 'storeDailyComments']);
+    Route::delete('/daily/comments/{comment}', [DailyController::class, 'destroyDailyComments']);
+
 
 
 

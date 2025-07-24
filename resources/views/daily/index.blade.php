@@ -137,7 +137,7 @@
     </div>
 
     <div class="modal fade" id="komentarModal" tabindex="-1" aria-labelledby="komentarModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Komentar</h5>
@@ -152,7 +152,7 @@
                     </div>
                     <button class="btn btn-primary mb-3" id="btnTambahKomentar">Tambah Komentar</button>
                     <hr>
-                    <div id="listKomentar" style="max-height: 300px; overflow-y: auto; padding-right: 10px;"></div>
+                    <div id="listKomentar" style="max-height: 400px; overflow-y: auto; padding-right: 10px;"></div>
                 </div>
             </div>
         </div>
@@ -215,8 +215,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                        <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                    ` : ''}
+                                                        <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                    ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -266,13 +266,21 @@
                     } else {
                         let html = '';
                         res.forEach(k => {
+                            const isOwnComment = k.user.id === {{ auth()->id() }};
                             html += `
-                    <div class="card mb-3 comment-card">
+                    <div class="card mb-3 comment-card mx-auto" style="max-width: 700px;" data-id="${k.id}">
                         <div class="card-body d-flex">
                             <img src="/template/img/user_main.jpg" alt="User" class="comment-avatar mr-3" width="52">
-                            <div>
-                                <h6 class="mb-0">${k.user.name}</h6>
-                                <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-0">${k.user.name}</h6>
+                                        <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
+                                    </div>
+                                    ${isOwnComment ? `
+                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                    ` : ''}
+                                </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
                         </div>
@@ -286,20 +294,89 @@
 
             $('#btnTambahKomentar').click(function() {
                 let isiKomentar = $('#komentarInput').val().trim();
-                if (!isiKomentar) return alert('Komentar tidak boleh kosong');
+                if (!isiKomentar) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Oops!',
+                        text: 'Komentar tidak boleh kosong.'
+                    });
+                    return;
+                }
 
                 $.post(`/daily/${currentDailyId}/comments`, {
-                    _token: "{{ csrf_token() }}",
-                    comment: isiKomentar
-                }, function() {
-                    $('#komentarInput').val('');
-                    loadKomentar(currentDailyId); // Reload list komentar
+                        _token: "{{ csrf_token() }}",
+                        comment: isiKomentar
+                    })
+                    .done(function() {
+                        $('#komentarInput').val('');
+                        loadKomentar(currentDailyId); // Reload list komentar
 
-                    // Update count komentar pada card yang sesuai
-                    let card = $(`.card[data-id="${currentDailyId}"]`);
-                    let countSpan = card.find('.comment-count');
-                    let count = parseInt(countSpan.text());
-                    countSpan.text(count + 1);
+                        // Update count komentar pada card yang sesuai
+                        let card = $(`.card[data-id="${currentDailyId}"]`);
+                        let countSpan = card.find('.comment-count');
+                        let count = parseInt(countSpan.text());
+                        countSpan.text(count + 1);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Komentar ditambahkan!',
+                            showConfirmButton: false,
+                            timer: 1000
+                        });
+                    })
+                    .fail(function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: 'Komentar tidak berhasil ditambahkan.'
+                        });
+                    });
+            });
+
+            $(document).on('click', '.btn-delete-komentar', function() {
+                const commentId = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Hapus komentar ini?',
+                    text: "Tindakan ini tidak bisa dibatalkan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/daily/comments/${commentId}`,
+                            type: 'DELETE',
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function() {
+                                loadKomentar(currentDailyId);
+
+                                // Update count komentar pada card yang sesuai
+                                let card = $(`.card[data-id="${currentDailyId}"]`);
+                                let countSpan = card.find('.comment-count');
+                                let count = parseInt(countSpan.text());
+                                if (count > 0) countSpan.text(count - 1);
+
+                                Swal.fire(
+                                    'Dihapus!',
+                                    'Komentar telah dihapus.',
+                                    'success'
+                                );
+                            },
+                            error: function(err) {
+                                Swal.fire(
+                                    'Gagal!',
+                                    'Komentar gagal dihapus.',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
                 });
             });
 

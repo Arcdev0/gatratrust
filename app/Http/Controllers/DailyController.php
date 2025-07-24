@@ -59,6 +59,17 @@ class DailyController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function destroyDailyComments(DailyComment $comment)
+    {
+        if ($comment->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['message' => 'Komentar berhasil dihapus']);
+    }
+
 
     /**
      * Store a newly created daily record.
