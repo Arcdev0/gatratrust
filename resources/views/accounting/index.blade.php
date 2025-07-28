@@ -193,35 +193,35 @@
                 if (res.files.length > 0) {
                     fileList = '<div class="row">';
                     res.files.forEach(file => {
-                        // Cek ekstensi file
-                          console.log(file);
-                    
+                        console.log(file);
                         let ext = file.path.split('.').pop().toLowerCase();
                         let iconPreview = '';
+
                         if (ext === 'pdf') {
                             iconPreview =
                                 `<img src="/images/default-pdf.png" class="img-fluid" style="max-height:100px;">`;
                         } else if (['jpg', 'jpeg', 'png'].includes(ext)) {
                             iconPreview =
-                                `<img src="/storage/${file.path}" class="img-fluid" style="max-height:100px;">`;
+                                `<img src="${file.path}" class="img-fluid" style="max-height:100px;">`;
                         } else {
                             iconPreview =
                                 `<i class="bi bi-file-earmark-text" style="font-size:2rem;"></i>`;
                         }
 
                         fileList += `
-                    <div class="col-md-4 mb-3">
-                        <div class="card shadow-sm file-preview" 
-                             data-link="/storage/${file.path}" 
-                             style="cursor:pointer;">
-                            <div class="card-body text-center">
-                                ${iconPreview}
-                                <p class="mt-2 mb-0">${file.name}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm file-preview" 
+                 data-link="${file.path}" 
+                 style="cursor:pointer;">
+                <div class="card-body text-center">
+                    ${iconPreview}
+                    <p class="mt-2 mb-0">${file.name}</p>
+                </div>
+            </div>
+        </div>
+    `;
                     });
+
                     fileList += '</div>';
                 } else {
                     fileList = '<p class="text-muted">Tidak ada file</p>';
