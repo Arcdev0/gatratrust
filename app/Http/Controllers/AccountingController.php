@@ -17,28 +17,37 @@ class AccountingController extends Controller
         return view('accounting.index');
     }
 
-    public function data()
+    public function data(Request $request)
     {
-        $accountings = Accounting::select('id', 'no_jurnal', 'tipe_jurnal', 'deskripsi', 'debit', 'credit', 'total')
+        $query = Accounting::select('id', 'no_jurnal', 'tipe_jurnal', 'tanggal', 'deskripsi', 'debit', 'credit', 'total')
             ->orderBy('id', 'desc');
 
+        // Filter bulan
+        if ($request->month) {
+            $query->whereMonth('tanggal', '=', date('m', strtotime($request->month)))
+                ->whereYear('tanggal', '=', date('Y', strtotime($request->month)));
+        }
 
-        return DataTables::of($accountings)
+        // Filter range tanggal
+        if ($request->range) {
+            $dates = explode(' s/d ', $request->range);
+            if (count($dates) === 2) {
+                $query->whereBetween('tanggal', [$dates[0], $dates[1]]);
+            }
+        }
+
+        return DataTables::of($query)
+            ->addColumn('tanggal_format', fn($row) => \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y'))
             ->addColumn('action', function ($row) {
                 return '
-                 <button type="button" 
-                        class="btn btn-sm btn-info btnShow me-1" 
-                        data-id="' . $row->id . '">
-                    Show
-                </button>
-               
+                <button type="button" class="btn btn-sm btn-info btnShow me-1" data-id="' . $row->id . '">Show</button>
                 <button data-id="' . $row->id . '" class="btn btn-danger btn-sm btnDelete">Hapus</button>
             ';
             })
             ->rawColumns(['action'])
             ->make(true);
 
-            //  <a href="' . route('accounting.edit', $row->id) . '" class="btn btn-primary btn-sm">Edit</a>
+        //  <a href="' . route('accounting.edit', $row->id) . '" class="btn btn-primary btn-sm">Edit</a>
     }
 
     public function generateNoJurnal(Request $request)

@@ -28,11 +28,27 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label>Pilih Bulan</label>
+                                    <input type="month" id="filterMonth" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Range Tanggal</label>
+                                    <input type="text" id="filterRange" class="form-control">
+                                </div>
+                                <div class="col-md-3 align-self-end">
+                                    <button class="btn btn-primary" id="btnFilter">Filter</button>
+                                    <button class="btn btn-secondary" id="btnReset">Reset</button>
+                                </div>
+                            </div>
+
                             <table class="table table-bordered" id="accountingTable">
                                 <thead>
                                     <tr>
                                         <th>No Jurnal</th>
                                         <th>Tipe Jurnal</th>
+                                        <th>Tanggal</th>
                                         <th>Deskripsi</th>
                                         <th>Total</th>
                                         <th>Debit</th>
@@ -81,10 +97,30 @@
 @section('script')
     <script>
         $(function() {
-            $('#accountingTable').DataTable({
+            // Set default bulan ini di filterMonth
+            let bulanIni = moment().format('YYYY-MM');
+            $('#filterMonth').val(bulanIni);
+
+            // Inisialisasi date range picker dengan default bulan ini
+            $('#filterRange').daterangepicker({
+                startDate: moment().startOf('month'),
+                endDate: moment().endOf('month'),
+                locale: {
+                    format: 'YYYY-MM-DD',
+                    separator: ' s/d '
+                }
+            });
+
+            let table = $('#accountingTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: '{{ route('accounting.data') }}',
+                ajax: {
+                    url: '{{ route('accounting.data') }}',
+                    data: function(d) {
+                        d.month = $('#filterMonth').val();
+                        d.range = $('#filterRange').val();
+                    }
+                },
                 columns: [{
                         data: 'no_jurnal',
                         name: 'no_jurnal'
@@ -94,29 +130,25 @@
                         name: 'tipe_jurnal'
                     },
                     {
+                        data: 'tanggal_format',
+                        name: 'tanggal',
+                        orderable: true
+                    },
+                    {
                         data: 'deskripsi',
                         name: 'deskripsi'
                     },
                     {
                         data: 'total',
-                        name: 'total',
-                        render: function(data) {
-                            return formatRupiah(data);
-                        }
+                        name: 'total'
                     },
                     {
                         data: 'debit',
-                        name: 'debit',
-                        render: function(data) {
-                            return formatRupiah(data);
-                        }
+                        name: 'debit'
                     },
                     {
                         data: 'credit',
-                        name: 'credit',
-                        render: function(data) {
-                            return formatRupiah(data);
-                        }
+                        name: 'credit'
                     },
                     {
                         data: 'action',
@@ -127,14 +159,12 @@
                 ],
                 drawCallback: function(settings) {
                     let api = this.api();
-                    let totalDebit = api.column(4, {
-                            page: 'current'
-                        }).data()
-                        .reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
-                    let totalCredit = api.column(5, {
-                            page: 'current'
-                        }).data()
-                        .reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
+                    let totalDebit = api.column(5, {
+                        page: 'current'
+                    }).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
+                    let totalCredit = api.column(6, {
+                        page: 'current'
+                    }).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
                     let saldo = totalDebit - totalCredit;
 
                     $('#totalDebit').text(formatRupiah(totalDebit));
@@ -143,13 +173,22 @@
                 }
             });
 
-            // Fungsi Format Rupiah
+            $('#btnFilter').on('click', function() {
+                table.ajax.reload();
+            });
+
+            $('#btnReset').on('click', function() {
+                $('#filterMonth').val(bulanIni); // Reset ke bulan ini
+                $('#filterRange').val(moment().startOf('month').format('YYYY-MM-DD') + ' s/d ' + moment()
+                    .endOf('month').format('YYYY-MM-DD'));
+                table.ajax.reload();
+            });
+
             function formatRupiah(angka) {
-                return 'Rp ' + parseFloat(angka)
-                    .toFixed(0)
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                return 'Rp ' + parseFloat(angka).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
         });
+
 
         $(document).on('click', '.btnDelete', function() {
             let id = $(this).data('id');
