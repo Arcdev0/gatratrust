@@ -111,7 +111,7 @@ class AccountingController extends Controller
             'tanggal'      => 'required|date',
             'total'        => 'required|numeric',
             'deskripsi'    => 'nullable|string',
-            'files.*'      => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+            'files.*'      => 'nullable|file|mimes:pdf,jpg,png',
             'file_names.*' => 'nullable|string|max:255'
         ]);
 
