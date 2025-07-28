@@ -66,6 +66,17 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Zoom Gambar -->
+    <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-body text-center">
+                    <img id="zoomImage" src="" class="img-fluid" style="max-height: 80vh; cursor: zoom-in;">
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 @section('script')
     <script>
@@ -193,7 +204,6 @@
                 if (res.files.length > 0) {
                     fileList = '<div class="row">';
                     res.files.forEach(file => {
-                        console.log(file);
                         let ext = file.path.split('.').pop().toLowerCase();
                         let iconPreview = '';
 
@@ -209,19 +219,19 @@
                         }
 
                         fileList += `
-        <div class="col-md-4 mb-3">
-            <div class="card shadow-sm file-preview" 
-                 data-link="${file.path}" 
-                 style="cursor:pointer;">
-                <div class="card-body text-center">
-                    ${iconPreview}
-                    <p class="mt-2 mb-0">${file.name}</p>
-                </div>
-            </div>
-        </div>
-    `;
+                    <div class="col-md-4 mb-3">
+                        <div class="card shadow-sm file-preview" 
+                             data-link="${file.path}" 
+                             data-ext="${ext}"
+                             style="cursor:pointer;">
+                            <div class="card-body text-center">
+                                ${iconPreview}
+                                <p class="mt-2 mb-0">${file.name}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
                     });
-
                     fileList += '</div>';
                 } else {
                     fileList = '<p class="text-muted">Tidak ada file</p>';
@@ -237,6 +247,21 @@
             ${fileList}
         `);
             });
+        });
+
+        // Klik file preview
+        $(document).on('click', '.file-preview', function() {
+            let fileLink = $(this).data('link');
+            let fileExt = $(this).data('ext');
+
+            if (fileExt === 'pdf') {
+                // Buka PDF di tab baru
+                window.open(fileLink, '_blank');
+            } else if (['jpg', 'jpeg', 'png'].includes(fileExt)) {
+                // Tampilkan gambar di modal zoom
+                $('#zoomImage').attr('src', fileLink);
+                $('#zoomModal').modal('show');
+            }
         });
     </script>
 
