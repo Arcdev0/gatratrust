@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KerjaanController;
@@ -84,8 +85,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/daily/{daily}/comments', [DailyController::class, 'storeDailyComments']);
     Route::delete('/daily/comments/{comment}', [DailyController::class, 'destroyDailyComments']);
 
-
-
+    // Accounting
+    Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
+    Route::get('/accounting/data', [AccountingController::class, 'data'])->name('accounting.data');
+    Route::get('/accounting/create', [AccountingController::class, 'create'])->name('accounting.create');
+    Route::get('/accounting/{id}/show', [AccountingController::class, 'show'])->name('accounting.show');
+    Route::get('/accounting/generate-no', [AccountingController::class, 'generateNoJurnal'])->name('accounting.generateNo');
+    Route::post('/accounting/store', [AccountingController::class, 'store'])->name('accounting.store');
+    Route::get('/accounting/{accounting}/edit', [AccountingController::class, 'edit'])->name('accounting.edit');
+    Route::post('/accounting/{accounting}/update', [AccountingController::class, 'update'])->name('accounting.update');
+    Route::delete('/accounting/{accounting}/delete', [AccountingController::class, 'destroy'])->name('accounting.delete');
+    Route::delete('/accounting/file/{file}', [AccountingController::class, 'deleteFile'])->name('accounting.file.delete');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

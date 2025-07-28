@@ -177,6 +177,11 @@
                                 <i class="fas fa-user-tag"></i><span>Daily activity</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">
+                            <a href="{{ route('accounting.index') }}">
+                               <i class="fas fa-coins"></i><span>Accounting</span>
+                            </a>
+                        </div>
                     @endif
                 </nav>
             </div>
