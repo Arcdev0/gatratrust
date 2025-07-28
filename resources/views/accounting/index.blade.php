@@ -97,11 +97,9 @@
 @section('script')
     <script>
         $(function() {
-            // Set default bulan ini di filterMonth
             let bulanIni = moment().format('YYYY-MM');
             $('#filterMonth').val(bulanIni);
 
-            // Inisialisasi date range picker dengan default bulan ini
             $('#filterRange').daterangepicker({
                 startDate: moment().startOf('month'),
                 endDate: moment().endOf('month'),
@@ -140,15 +138,24 @@
                     },
                     {
                         data: 'total',
-                        name: 'total'
+                        name: 'total',
+                        render: function(data) {
+                            return formatRupiah(data);
+                        }
                     },
                     {
                         data: 'debit',
-                        name: 'debit'
+                        name: 'debit',
+                        render: function(data) {
+                            return formatRupiah(data);
+                        }
                     },
                     {
                         data: 'credit',
-                        name: 'credit'
+                        name: 'credit',
+                        render: function(data) {
+                            return formatRupiah(data);
+                        }
                     },
                     {
                         data: 'action',
@@ -157,14 +164,21 @@
                         searchable: false
                     }
                 ],
+                createdRow: function(row, data) {
+                    if (parseFloat(data.debit) > 0) {
+                        $(row).css('background-color', '#d4edda'); // Hijau muda
+                    }
+                },
                 drawCallback: function(settings) {
                     let api = this.api();
                     let totalDebit = api.column(5, {
-                        page: 'current'
-                    }).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
+                            page: 'current'
+                        }).data()
+                        .reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
                     let totalCredit = api.column(6, {
-                        page: 'current'
-                    }).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
+                            page: 'current'
+                        }).data()
+                        .reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
                     let saldo = totalDebit - totalCredit;
 
                     $('#totalDebit').text(formatRupiah(totalDebit));
@@ -178,17 +192,18 @@
             });
 
             $('#btnReset').on('click', function() {
-                $('#filterMonth').val(bulanIni); // Reset ke bulan ini
-                $('#filterRange').val(moment().startOf('month').format('YYYY-MM-DD') + ' s/d ' + moment()
-                    .endOf('month').format('YYYY-MM-DD'));
+                $('#filterMonth').val(bulanIni);
+                $('#filterRange').val(moment().startOf('month').format('YYYY-MM-DD') +
+                    ' s/d ' +
+                    moment().endOf('month').format('YYYY-MM-DD'));
                 table.ajax.reload();
             });
 
             function formatRupiah(angka) {
-                return 'Rp ' + parseFloat(angka).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                angka = parseFloat(angka) || 0;
+                return 'Rp ' + angka.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
         });
-
 
         $(document).on('click', '.btnDelete', function() {
             let id = $(this).data('id');
