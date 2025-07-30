@@ -11,9 +11,9 @@
                         Tambah Jurnal
                     </a>
 
-                    {{-- <button class="btn btn-primary" data-toggle="modal" data-target="#importModal">
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#importModal">
                         Import Excel
-                    </button> --}}
+                    </button>
                 </div>
                 <div class="card">
                     <div class="card-body">
