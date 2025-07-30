@@ -150,40 +150,64 @@
         <div class="sidebar-content">
             <div class="nav-container">
                 <nav id="main-menu-navigation" class="navigation-main">
-                    <div class="nav-lavel">Pages</div>
+                    <div class="nav-lavel">Gatra Consultant</div>
+
+                    {{-- Project --}}
                     <div class="nav-item {{ request()->routeIs('projects.tampilan') ? 'active' : '' }}">
                         <a href="{{ route('projects.tampilan') }}">
                             <i class="ik ik-folder"></i><span>Project</span>
                         </a>
                     </div>
+
                     @if (Auth::user()->role_id == 1)
-                        <div class="nav-item {{ request()->routeIs('user.tampilan') ? 'active' : '' }}">
-                            <a href="{{ route('user.tampilan') }}">
-                                <i class="ik ik-user"></i><span>User</span>
+                        {{-- Master Data --}}
+                        <div
+                            class="nav-item has-sub {{ request()->routeIs('user.tampilan') || request()->routeIs('listproses.index') || request()->routeIs('kerjaan.show') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="ik ik-layers"></i><span>Master Data</span>
                             </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('user.tampilan') }}"
+                                    class="menu-item {{ request()->routeIs('user.tampilan') ? 'active' : '' }}">User</a>
+                                <a href="{{ route('listproses.index') }}"
+                                    class="menu-item {{ request()->routeIs('listproses.index') ? 'active' : '' }}">List
+                                    Proses</a>
+                                <a href="{{ route('kerjaan.show') }}"
+                                    class="menu-item {{ request()->routeIs('kerjaan.show') ? 'active' : '' }}">Tipe
+                                    Project</a>
+                            </div>
                         </div>
-                        <div class="nav-item {{ request()->routeIs('listproses.index') ? 'active' : '' }}">
-                            <a href="{{ route('listproses.index') }}">
-                                <i class="ik ik-settings"></i><span>List Proses</span>
-                            </a>
-                        </div>
-                        <div class="nav-item {{ request()->routeIs('kerjaan.show') ? 'active' : '' }}">
-                            <a href="{{ route('kerjaan.show') }}">
-                                <i class="fas fa-bars"></i><span>Tipe Project</span>
-                            </a>
-                        </div>
+
+                          <div class="nav-lavel">Data Company</div>
+
+                        {{-- Daily Activity --}}
                         <div class="nav-item {{ request()->routeIs('daily.index') ? 'active' : '' }}">
                             <a href="{{ route('daily.index') }}">
-                                <i class="fas fa-user-tag"></i><span>Daily activity</span>
+                                <i class="fas fa-user-tag"></i><span>Daily Activity</span>
                             </a>
                         </div>
+
+                        {{-- Accounting --}}
                         <div class="nav-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">
                             <a href="{{ route('accounting.index') }}">
-                               <i class="fas fa-coins"></i><span>Accounting</span>
+                                <i class="fas fa-coins"></i><span>Accounting</span>
+                            </a>
+                        </div>
+
+                        {{-- Data Karyawan --}}
+                        <div class="nav-item {{ request()->routeIs('karyawan.index') ? 'active' : '' }}">
+                            <a href="{{ route('karyawan.index') }}">
+                                <i class="fas fa-users"></i><span>Data Karyawan</span>
+                            </a>
+                        </div>
+                        <div class="nav-item {{ request()->routeIs('jabatan.index') ? 'active' : '' }}">
+                            <a href="{{ route('jabatan.index') }}">
+                                <i class="fas fa-network-wired"></i><span>Jabatan</span>
                             </a>
                         </div>
                     @endif
                 </nav>
+
             </div>
         </div>
     </div>

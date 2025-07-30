@@ -6,10 +6,14 @@
         <div class="row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="text-primary font-weight-bold">Jurnal</h3>
+                    <h3 class="text-primary font-weight-bold">Accounting</h3>
                     <a href="{{ route('accounting.create') }}" id="openModalBtn" class="btn btn-success">
                         Tambah Jurnal
                     </a>
+
+                    {{-- <button class="btn btn-primary" data-toggle="modal" data-target="#importModal">
+                        Import Excel
+                    </button> --}}
                 </div>
                 <div class="card">
                     <div class="card-body">
@@ -29,10 +33,6 @@
                             </div>
 
                             <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label>Pilih Bulan</label>
-                                    <input type="month" id="filterMonth" class="form-control">
-                                </div>
                                 <div class="col-md-4">
                                     <label>Range Tanggal</label>
                                     <input type="text" id="filterRange" class="form-control">
@@ -93,12 +93,54 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Import Excel -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Import Data Jurnal dari Excel</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Input File -->
+                    <div class="form-group">
+                        <label for="excelFile">Pilih File Excel</label>
+                        <input type="file" id="excelFile" class="form-control" accept=".xlsx,.xls">
+                    </div>
+
+                    <!-- Preview Data -->
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered" id="previewTable" style="display:none;">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Deskripsi</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                    <th>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btnSaveImport" class="btn btn-success" style="display:none;">Simpan ke Database</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 @endsection
 @section('script')
     <script>
         $(function() {
-            let bulanIni = moment().format('YYYY-MM');
-            $('#filterMonth').val(bulanIni);
+
 
             $('#filterRange').daterangepicker({
                 startDate: moment().startOf('month'),
@@ -115,7 +157,6 @@
                 ajax: {
                     url: '{{ route('accounting.data') }}',
                     data: function(d) {
-                        d.month = $('#filterMonth').val();
                         d.range = $('#filterRange').val();
                     }
                 },
@@ -139,23 +180,17 @@
                     {
                         data: 'total',
                         name: 'total',
-                        render: function(data) {
-                            return formatRupiah(data);
-                        }
+                        render: data => formatRupiah(data)
                     },
                     {
                         data: 'debit',
                         name: 'debit',
-                        render: function(data) {
-                            return formatRupiah(data);
-                        }
+                        render: data => formatRupiah(data)
                     },
                     {
                         data: 'credit',
                         name: 'credit',
-                        render: function(data) {
-                            return formatRupiah(data);
-                        }
+                        render: data => formatRupiah(data)
                     },
                     {
                         data: 'action',
@@ -166,24 +201,14 @@
                 ],
                 createdRow: function(row, data) {
                     if (parseFloat(data.debit) > 0) {
-                        $(row).css('background-color', '#d4edda'); // Hijau muda
+                        $(row).css('background-color', '#d4edda');
                     }
                 },
                 drawCallback: function(settings) {
-                    let api = this.api();
-                    let totalDebit = api.column(5, {
-                            page: 'current'
-                        }).data()
-                        .reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
-                    let totalCredit = api.column(6, {
-                            page: 'current'
-                        }).data()
-                        .reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
-                    let saldo = totalDebit - totalCredit;
-
-                    $('#totalDebit').text(formatRupiah(totalDebit));
-                    $('#totalCredit').text(formatRupiah(totalCredit));
-                    $('#totalSaldo').text(formatRupiah(saldo));
+                    let json = this.api().ajax.json();
+                    $('#totalDebit').text(formatRupiah(json.totalDebit));
+                    $('#totalCredit').text(formatRupiah(json.totalCredit));
+                    $('#totalSaldo').text(formatRupiah(json.saldo));
                 }
             });
 
@@ -191,11 +216,9 @@
                 table.ajax.reload();
             });
 
-            $('#btnReset').on('click', function() {
-                $('#filterMonth').val(bulanIni);
-                $('#filterRange').val(moment().startOf('month').format('YYYY-MM-DD') +
-                    ' s/d ' +
-                    moment().endOf('month').format('YYYY-MM-DD'));
+            $('#btnReset').click(function() {
+                $('#filterRange').data('daterangepicker').setStartDate(moment().startOf('month'));
+                $('#filterRange').data('daterangepicker').setEndDate(moment().endOf('month'));
                 table.ajax.reload();
             });
 
@@ -316,6 +339,106 @@
                 $('#zoomImage').attr('src', fileLink);
                 $('#zoomModal').modal('show');
             }
+        });
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Event saat file dipilih
+            $('#excelFile').on('change', function(e) {
+                var file = e.target.files[0];
+                if (!file) return;
+
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var data = new Uint8Array(e.target.result);
+                    var workbook = XLSX.read(data, {
+                        type: 'array'
+                    });
+                    var sheetName = workbook.SheetNames[0];
+                    var sheet = workbook.Sheets[sheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(sheet);
+
+                    // Bersihkan preview
+                    $('#previewBody').empty();
+
+                    // Tampilkan data ke tabel
+                    $.each(jsonData, function(index, row) {
+                        let tanggal = row['tanggal'] || row['Tanggal'] || '';
+                        let deskripsi = row['Description'] || row['Deskripsi'] || '';
+                        let debit = row['Debit'] || 0;
+                        let credit = row['Credit'] || 0;
+                        let saldo = row['Saldo'] || 0;
+
+                        $('#previewBody').append(`
+                        <tr>
+                            <td>${tanggal}</td>
+                            <td>${deskripsi}</td>
+                            <td>${debit}</td>
+                            <td>${credit}</td>
+                            <td>${saldo}</td>
+                        </tr>
+                    `);
+                    });
+
+
+                    $('#previewTable').show();
+                    $('#btnSaveImport').show();
+                };
+                reader.readAsArrayBuffer(file);
+            });
+
+            // Event saat klik simpan
+            $('#btnSaveImport').on('click', function() {
+                var data = [];
+                $('#previewBody tr').each(function() {
+                    var tds = $(this).find('td');
+                    data.push({
+                        tanggal: $(tds[0]).text(),
+                        deskripsi: $(tds[1]).text(),
+                        debit: $(tds[2]).text(),
+                        credit: $(tds[3]).text(),
+                        saldo: $(tds[4]).text()
+                    });
+                });
+
+                Swal.fire({
+                    title: 'Mengimpor Data...',
+                    text: 'Mohon tunggu',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: "{{ route('accounting.import') }}",
+                    method: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        data: data
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: 'Import data gagal. Periksa file atau server.'
+                        });
+                    }
+                });
+            });
         });
     </script>
 

@@ -3,11 +3,14 @@
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\JabatanController;
+use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TblProjectController;
 use App\Http\Controllers\UserController;
+use App\Models\KaryawanData;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -71,8 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/kerjaan/edit/{id}', [KerjaanController::class, 'show'])->name('kerjaan.edit');
     Route::put('/kerjaan/update/{id}', [KerjaanController::class, 'update'])->name('kerjaan.update');
 
-    //Daily
-
+    // Daily
     Route::prefix('daily')->group(function () {
         Route::get('/', [DailyController::class, 'index'])->name('daily.index');
         Route::get('/list', [DailyController::class, 'getList'])->name('daily.getList');
@@ -96,6 +98,26 @@ Route::middleware('auth')->group(function () {
     Route::post('/accounting/{accounting}/update', [AccountingController::class, 'update'])->name('accounting.update');
     Route::delete('/accounting/{accounting}/delete', [AccountingController::class, 'destroy'])->name('accounting.delete');
     Route::delete('/accounting/file/{file}', [AccountingController::class, 'deleteFile'])->name('accounting.file.delete');
+    Route::post('/accounting/import', [AccountingController::class, 'import'])->name('accounting.import');
+
+
+    // Data karyawan
+    Route::prefix('karyawan')->group(function () {
+        Route::get('/', [KaryawanController::class, 'index'])->name('karyawan.index');
+        Route::get('/data', [KaryawanController::class, 'getData'])->name('karyawan.data');
+        Route::get('/create', [KaryawanController::class, 'create'])->name('karyawan.create');
+        Route::post('/store', [KaryawanController::class, 'store'])->name('karyawan.store');
+        Route::get('/edit/{id}', [KaryawanController::class, 'edit'])->name('karyawan.edit');
+        Route::put('/update/{id}', [KaryawanController::class, 'update'])->name('karyawan.update');
+        Route::delete('/delete/{id}', [KaryawanController::class, 'destroy'])->name('karyawan.destroy');
+    });
+
+    // Jabatan
+    Route::get('/jabatan', [JabatanController::class, 'index'])->name('jabatan.index');
+    Route::get('/jabatan/data', [JabatanController::class, 'getData'])->name('jabatan.data');
+    Route::post('/jabatan', [JabatanController::class, 'store'])->name('jabatan.store');
+    Route::get('/jabatan/{id}/edit', [JabatanController::class, 'edit'])->name('jabatan.edit');
+    Route::put('/jabatan/{id}', [JabatanController::class, 'update'])->name('jabatan.update');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

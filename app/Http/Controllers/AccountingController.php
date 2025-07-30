@@ -22,19 +22,19 @@ class AccountingController extends Controller
         $query = Accounting::select('id', 'no_jurnal', 'tipe_jurnal', 'tanggal', 'deskripsi', 'debit', 'credit', 'total')
             ->orderBy('id', 'desc');
 
-        // Filter bulan
-        if ($request->month) {
-            $query->whereMonth('tanggal', '=', date('m', strtotime($request->month)))
-                ->whereYear('tanggal', '=', date('Y', strtotime($request->month)));
-        }
-
-        // Filter range tanggal
+        // Filter range tanggal saja
         if ($request->range) {
             $dates = explode(' s/d ', $request->range);
             if (count($dates) === 2) {
                 $query->whereBetween('tanggal', [$dates[0], $dates[1]]);
             }
         }
+
+        // Clone query untuk hitung total
+        $totalQuery = clone $query;
+        $totalDebit = $totalQuery->sum('debit');
+        $totalCredit = $totalQuery->sum('credit');
+        $saldo = $totalDebit - $totalCredit;
 
         return DataTables::of($query)
             ->addColumn('tanggal_format', fn($row) => \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y'))
@@ -44,6 +44,11 @@ class AccountingController extends Controller
                 <button data-id="' . $row->id . '" class="btn btn-danger btn-sm btnDelete">Hapus</button>
             ';
             })
+            ->with([
+                'totalDebit' => $totalDebit,
+                'totalCredit' => $totalCredit,
+                'saldo' => $saldo
+            ])
             ->rawColumns(['action'])
             ->make(true);
 
@@ -244,5 +249,73 @@ class AccountingController extends Controller
         $file->delete();
 
         return back()->with('success', 'File berhasil dihapus');
+    }
+
+    public function import(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($request->data as $row) {
+                // Parsing tanggal (format d/m/Y)
+                try {
+                    $tanggal = \Carbon\Carbon::createFromFormat('d/m/Y', $row['tanggal']);
+                } catch (\Exception $e) {
+                    try {
+                        $tanggal = \Carbon\Carbon::parse($row['tanggal']);
+                    } catch (\Exception $e2) {
+                        return response()->json([
+                            'message' => 'Format tanggal tidak valid: ' . $row['tanggal']
+                        ], 422);
+                    }
+                }
+
+                $deskripsi = $row['deskripsi'] ?? $row['Description'] ?? '';
+                $debit     = (float) str_replace(',', '', $row['debit']);
+                $credit    = (float) str_replace(',', '', $row['credit']);
+
+                // Tentukan tipe jurnal dan total
+                if ($debit > 0) {
+                    $tipeJurnal = 'M';
+                    $total = $debit;
+                } elseif ($credit > 0) {
+                    $tipeJurnal = 'JU';
+                    $total = $credit;
+                } else {
+                    continue; // Skip baris kosong
+                }
+
+                // Generate nomor jurnal
+                $lastJurnal = Accounting::where('tipe_jurnal', $tipeJurnal)
+                    ->lockForUpdate()
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $lastNumber = 0;
+                if ($lastJurnal) {
+                    preg_match('/\d+$/', $lastJurnal->no_jurnal, $matches);
+                    $lastNumber = isset($matches[0]) ? (int) $matches[0] : 0;
+                }
+
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+                $noJurnal  = $tipeJurnal . '-' . $newNumber;
+
+                // Simpan ke database
+                Accounting::create([
+                    'no_jurnal'   => $noJurnal,
+                    'tipe_jurnal' => $tipeJurnal,
+                    'tanggal'     => $tanggal,
+                    'deskripsi'   => $deskripsi,
+                    'total'       => $total,
+                    'debit'       => $debit,
+                    'credit'      => $credit
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Import berhasil!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal import: ' . $e->getMessage()], 500);
+        }
     }
 }
