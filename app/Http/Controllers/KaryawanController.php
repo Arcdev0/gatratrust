@@ -40,12 +40,19 @@ class KaryawanController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                    <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
-                    <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;">
-                        ' . csrf_field() . method_field('DELETE') . '
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')"><i class="fas fa-trash"></i></button>
-                    </form>
-                ';
+                <button type="button" class="btn btn-sm btn-info" onclick="showKaryawan(' . $row->id . ')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;">
+                    ' . csrf_field() . method_field('DELETE') . '
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            ';
             })
             ->rawColumns(['status', 'action'])
             ->make(true);
@@ -85,6 +92,45 @@ class KaryawanController extends Controller
         $syarat = SyaratJabatan::where('jabatan_id', $jabatanId)->pluck('nama_syarat');
 
         return response()->json($syarat);
+    }
+
+    public function show($id)
+    {
+        $karyawan = KaryawanData::with(['jabatan', 'sertifikatInhouse', 'sertifikatExternal'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'no_karyawan'       => $karyawan->no_karyawan,
+            'nama_lengkap'      => $karyawan->nama_lengkap,
+            'jenis_kelamin'     => $karyawan->jenis_kelamin,
+            'tempat_lahir'      => $karyawan->tempat_lahir,
+            'tanggal_lahir'     => $karyawan->tanggal_lahir,
+            'alamat_lengkap'    => $karyawan->alamat_lengkap,
+            'jabatan'           => $karyawan->jabatan->nama_jabatan ?? '-',
+            'status'            => $karyawan->status ? 'Aktif' : 'Tidak Aktif',
+            'nomor_telepon'     => $karyawan->nomor_telepon ?? '-',
+            'email'             => $karyawan->email ?? '-',
+            'foto'              => $karyawan->foto ? asset('storage/' . $karyawan->foto) : null,
+            'foto_ext'          => $karyawan->foto ? strtolower(pathinfo($karyawan->foto, PATHINFO_EXTENSION)) : null,
+
+            // Sertifikat Inhouse
+            'sertifikat_inhouse' => $karyawan->sertifikatInhouse->map(function ($s) {
+                return [
+                    'nama_sertifikat' => $s->nama_sertifikat,
+                    'file' => $s->file_sertifikat ? asset('storage/' . $s->file_sertifikat) : null,
+                    'ext'  => $s->file_sertifikat ? strtolower(pathinfo($s->file_sertifikat, PATHINFO_EXTENSION)) : null
+                ];
+            }),
+
+            // Sertifikat External
+            'sertifikat_external' => $karyawan->sertifikatExternal->map(function ($s) {
+                return [
+                    'nama_sertifikat' => $s->nama_sertifikat,
+                    'file' => $s->file_sertifikat ? asset('storage/' . $s->file_sertifikat) : null,
+                    'ext'  => $s->file_sertifikat ? strtolower(pathinfo($s->file_sertifikat, PATHINFO_EXTENSION)) : null
+                ];
+            }),
+        ]);
     }
 
     /**
