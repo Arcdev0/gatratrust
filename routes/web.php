@@ -110,6 +110,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/edit/{id}', [KaryawanController::class, 'edit'])->name('karyawan.edit');
         Route::put('/update/{id}', [KaryawanController::class, 'update'])->name('karyawan.update');
         Route::delete('/delete/{id}', [KaryawanController::class, 'destroy'])->name('karyawan.destroy');
+        Route::get('/jabatan/{id}/syarat', [KaryawanController::class, 'getSyaratJabatan'])->name('karyawan.getSyaratJabatan');
     });
 
     // Jabatan

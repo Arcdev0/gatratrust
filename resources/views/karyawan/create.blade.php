@@ -129,10 +129,10 @@
                             </div>
 
                             {{-- Pekerjaan --}}
-                            <div class="mb-3">
+                            {{-- <div class="mb-3">
                                 <label for="pekerjaan" class="form-label">Pekerjaan</label>
                                 <input type="text" name="pekerjaan" id="pekerjaan" class="form-control">
-                            </div>
+                            </div> --}}
 
                             {{-- DOH --}}
                             <div class="mb-3">
@@ -143,8 +143,15 @@
                             {{-- Foto --}}
                             <div class="mb-3">
                                 <label for="foto" class="form-label">Foto</label>
-                                <input type="text" name="foto" id="foto" class="form-control"
-                                    placeholder="Path foto atau URL">
+                                <input type="file" name="foto" id="foto" class="form-control"
+                                    accept="image/*">
+                            </div>
+
+                            <div id="syarat-box" class="mt-3" style="display:none;">
+                                <div class="alert alert-danger">
+                                    <strong>Syarat Jabatan:</strong>
+                                    <ul id="syarat-list"></ul>
+                                </div>
                             </div>
 
                             <hr>
@@ -242,6 +249,122 @@
 
         $(document).on('click', '.remove-external', function() {
             $(this).closest('.external-item').remove();
+        });
+
+        let syaratData = [];
+
+        function checkSyaratCompletion() {
+            let completed = 0;
+
+            $('#syarat-list li').each(function() {
+                let syaratText = $(this).data('syarat');
+                let matchFound = false;
+
+                // Cek di sertifikat Inhouse
+                $('input[name^="sertifikat_inhouse"]').each(function() {
+                    if ($(this).val().trim().toLowerCase() === syaratText.toLowerCase()) {
+                        matchFound = true;
+                    }
+                });
+
+                // Cek di sertifikat External
+                $('input[name^="sertifikat_external"]').each(function() {
+                    if ($(this).val().trim().toLowerCase() === syaratText.toLowerCase()) {
+                        matchFound = true;
+                    }
+                });
+
+                if (matchFound) {
+                    $(this).css("text-decoration", "line-through");
+                    completed++;
+                } else {
+                    $(this).css("text-decoration", "none");
+                }
+            });
+
+            // Jika semua syarat terpenuhi, ubah warna alert
+            if (completed === syaratData.length && syaratData.length > 0) {
+                $('#syarat-box .alert')
+                    .removeClass('alert-danger')
+                    .addClass('alert-success');
+            } else {
+                $('#syarat-box .alert')
+                    .removeClass('alert-success')
+                    .addClass('alert-danger');
+            }
+        }
+
+        // Event ketika pilih jabatan
+        $('#jabatan_id').on('change', function() {
+            let jabatanId = $(this).val();
+            if (jabatanId) {
+                $.get(`/karyawan/jabatan/${jabatanId}/syarat`, function(data) {
+                    syaratData = data;
+                    $('#syarat-list').empty();
+                    if (data.length > 0) {
+                        data.forEach(function(s) {
+                            $('#syarat-list').append(`<li data-syarat="${s}">${s}</li>`);
+                        });
+                        $('#syarat-box').show();
+                    } else {
+                        $('#syarat-list').html('<li>Tidak ada syarat</li>');
+                        $('#syarat-box').show();
+                    }
+                    checkSyaratCompletion();
+                });
+            } else {
+                $('#syarat-box').hide();
+            }
+        });
+
+        // Event cek ulang setiap input sertifikat berubah
+        $(document).on('input', 'input[name^="sertifikat_inhouse"], input[name^="sertifikat_external"]', function() {
+            checkSyaratCompletion();
+        });
+
+
+        $('form').on('submit', function(e) {
+            e.preventDefault();
+
+            let form = $(this)[0];
+            let formData = new FormData(form);
+
+            Swal.fire({
+                title: 'Menyimpan Data...',
+                text: 'Harap tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false, // penting untuk FormData
+                contentType: false, // penting untuk FormData
+                success: function(res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: res.message || 'Data karyawan berhasil ditambahkan'
+                    }).then(() => {
+                        window.location.href = "{{ route('karyawan.index') }}";
+                    });
+                },
+                error: function(xhr) {
+                    let errMsg = 'Terjadi kesalahan';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: errMsg
+                    });
+                }
+            });
         });
     </script>
 @endsection

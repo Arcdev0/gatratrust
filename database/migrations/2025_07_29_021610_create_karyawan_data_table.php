@@ -27,7 +27,7 @@ return new class extends Migration
             $table->enum('status_perkawinan', ['Belum Kawin', 'Kawin', 'Duda', 'Janda'])->nullable();
             $table->enum('kewarganegaraan', ['WNI', 'WNA'])->default('WNI');
             $table->enum('agama', ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'])->nullable();
-            $table->string('pekerjaan')->nullable();
+            // $table->string('pekerjaan')->nullable();
             $table->date('doh')->nullable();
             $table->string('foto')->nullable();
             $table->timestamps();

@@ -44,8 +44,8 @@
                 serverSide: true,
                 ajax: '{{ route('karyawan.data') }}',
                 columns: [{
-                        data: 'id',
-                        name: 'id'
+                        data: 'no_karyawan',
+                        name: 'no_karyawan'
                     }, // No Karyawan
                     {
                         data: 'nama_lengkap',
