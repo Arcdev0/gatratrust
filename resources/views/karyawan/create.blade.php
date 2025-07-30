@@ -15,7 +15,8 @@
                             <div class="mb-3">
                                 <label for="no_karyawan" class="form-label">No. Karyawan</label>
                                 <input type="text" name="no_karyawan" id="no_karyawan" class="form-control"
-                                    value="{{ old('no_karyawan') }}" required>
+                                    value="{{ $noKaryawan }}" readonly required>
+
                             </div>
 
                             {{-- Nama Lengkap --}}
@@ -89,7 +90,7 @@
 
                             {{-- Nomor Identitas --}}
                             <div class="mb-3">
-                                <label for="nomor_identitas" class="form-label">Nomor Identitas</label>
+                                <label for="nomor_identitas" class="form-label">Nomor Identitas (KTP)</label>
                                 <input type="text" name="nomor_identitas" id="nomor_identitas" class="form-control">
                             </div>
 
@@ -136,7 +137,7 @@
 
                             {{-- DOH --}}
                             <div class="mb-3">
-                                <label for="doh" class="form-label">DOH</label>
+                                <label for="doh" class="form-label">DOH (Date Of Hire)</label>
                                 <input type="date" name="doh" id="doh" class="form-control">
                             </div>
 

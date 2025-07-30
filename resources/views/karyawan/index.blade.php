@@ -14,7 +14,7 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="container">
-                            <table class="table table-bordered table-striped" id="karyawanTable" style="width:100%;">
+                            <table class="table table-bordered" id="karyawanTable" style="width:100%;">
                                 <thead class="thead-light">
                                     <tr>
                                         <th>No. Karyawan</th>
@@ -25,7 +25,6 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {{-- DataTables akan load otomatis via AJAX --}}
                                 </tbody>
                             </table>
                         </div>
