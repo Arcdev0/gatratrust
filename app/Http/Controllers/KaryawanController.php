@@ -39,10 +39,10 @@ class KaryawanController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                    <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
                     <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;">
                         ' . csrf_field() . method_field('DELETE') . '
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')">Hapus</button>
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')"><i class="fas fa-trash"></i></button>
                     </form>
                 ';
             })

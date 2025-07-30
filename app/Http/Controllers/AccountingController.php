@@ -40,8 +40,8 @@ class AccountingController extends Controller
             ->addColumn('tanggal_format', fn($row) => \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y'))
             ->addColumn('action', function ($row) {
                 return '
-                <button type="button" class="btn btn-sm btn-info btnShow me-1" data-id="' . $row->id . '">Show</button>
-                <button data-id="' . $row->id . '" class="btn btn-danger btn-sm btnDelete">Hapus</button>
+                <button type="button" class="btn btn-sm btn-info btnShow me-1" data-id="' . $row->id . '"><i class="fas fa-eye"></i></button>
+                <button data-id="' . $row->id . '" class="btn btn-danger btn-sm btnDelete"><i class="fas fa-trash"></i></button>
             ';
             })
             ->with([

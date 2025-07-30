@@ -194,8 +194,8 @@
                                 let actionButtons = '';
                                 if (authUserId === item.user_id) {
                                     actionButtons = `
-                            <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">Edit</button>
-                            <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">Delete</button>
+                            <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}"><i class="fas fa-trash"></i></button>
                         `;
                                 }
 

@@ -34,8 +34,8 @@ class JabatanController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                <button class="btn btn-sm btn-primary edit" data-id="' . $row->id . '">Edit</button>
-                <button class="btn btn-sm btn-danger delete" data-id="' . $row->id . '">Delete</button>
+                <button class="btn btn-sm btn-primary edit" data-id="' . $row->id . '"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger delete" data-id="' . $row->id . '"><i class="fas fa-trash"></i></button>
             ';
             })
             ->rawColumns(['syarat_list', 'action']) // supaya HTML list tampil
