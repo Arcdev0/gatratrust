@@ -21,13 +21,13 @@
                             <div class="mb-3 p-2 bg-light border rounded">
                                 <div class="row text-center fw-bold">
                                     <div class="col">
-                                        Total Debit: <span id="totalDebit"></span>
+                                        Total Debit Sesuai tanggal filter : <span id="totalDebit"></span>
                                     </div>
                                     <div class="col">
-                                        Total Credit: <span id="totalCredit"></span>
+                                        Total Credit Sesuai tanggal filter : <span id="totalCredit"></span>
                                     </div>
-                                    <div class="col">
-                                        Saldo: <span id="totalSaldo"></span>
+                                    <div class="col" style="font-weight:bold;">
+                                        Saldo saat ini : <span id="totalSaldo"></span>
                                     </div>
                                 </div>
                             </div>

@@ -19,38 +19,42 @@ class AccountingController extends Controller
 
     public function data(Request $request)
     {
+        // Query untuk tabel (hanya berdasarkan filter)
         $query = Accounting::select('id', 'no_jurnal', 'tipe_jurnal', 'tanggal', 'deskripsi', 'debit', 'credit', 'total')
             ->orderBy('id', 'desc');
 
-        // Filter range tanggal saja
         if ($request->range) {
             $dates = explode(' s/d ', $request->range);
             if (count($dates) === 2) {
-                $query->whereBetween('tanggal', [$dates[0], $dates[1]]);
+                $start = \Carbon\Carbon::createFromFormat('Y-m-d', $dates[0])->startOfDay();
+                $end = \Carbon\Carbon::createFromFormat('Y-m-d', $dates[1])->endOfDay();
+                $query->whereBetween('tanggal', [$start, $end]);
             }
         }
 
-        // Clone query untuk hitung total
-        $totalQuery = clone $query;
-        $totalDebit = $totalQuery->sum('debit');
-        $totalCredit = $totalQuery->sum('credit');
-        $saldo = $totalDebit - $totalCredit;
+        // Hitung total debit & kredit untuk data tabel
+        $totalDebit = $query->sum('debit');
+        $totalCredit = $query->sum('credit');
+
+        // Saldo dihitung dari seluruh transaksi tanpa filter
+        $saldo = Accounting::sum('debit') - Accounting::sum('credit');
 
         return DataTables::of($query)
             ->addColumn('tanggal_format', fn($row) => \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y'))
             ->addColumn('action', function ($row) {
                 return '
-                <button type="button" class="btn btn-sm btn-info btnShow me-1" data-id="' . $row->id . '"><i class="fas fa-eye"></i></button>
-                <button data-id="' . $row->id . '" class="btn btn-danger btn-sm btnDelete"><i class="fas fa-trash"></i></button>
-            ';
+            <button type="button" class="btn btn-sm btn-info btnShow me-1" data-id="' . $row->id . '"><i class="fas fa-eye"></i></button>
+            <button data-id="' . $row->id . '" class="btn btn-danger btn-sm btnDelete"><i class="fas fa-trash"></i></button>
+        ';
             })
             ->with([
                 'totalDebit' => $totalDebit,
                 'totalCredit' => $totalCredit,
-                'saldo' => $saldo
+                'saldo' => $saldo // selalu saldo keseluruhan
             ])
             ->rawColumns(['action'])
             ->make(true);
+
 
         //  <a href="' . route('accounting.edit', $row->id) . '" class="btn btn-primary btn-sm">Edit</a>
     }
