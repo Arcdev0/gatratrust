@@ -80,9 +80,8 @@
                                                     <div id="fileWrapper" class="d-flex flex-column gap-2">
                                                         <div class="input-group input-group-sm">
                                                             <input type="text" name="file_names[]" class="form-control"
-                                                                placeholder="Nama File" required>
-                                                            <input type="file" name="files[]" class="form-control"
-                                                                required>
+                                                                placeholder="Nama File">
+                                                            <input type="file" name="files[]" class="form-control">
                                                             <button type="button"
                                                                 class="btn btn-success addFileBtn">+</button>
                                                         </div>
@@ -126,8 +125,8 @@
         $(document).on('click', '.addFileBtn', function() {
             let html = `
             <div class="input-group mb-2">
-                <input type="text" name="file_names[]" class="form-control" placeholder="Nama File" required>
-                <input type="file" name="files[]" class="form-control" required>
+                <input type="text" name="file_names[]" class="form-control" placeholder="Nama File">
+                <input type="file" name="files[]" class="form-control">
                 <button type="button" class="btn btn-danger removeFileBtn">-</button>
             </div>
         `;
