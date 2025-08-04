@@ -384,7 +384,7 @@
                         ${dateLabel}
                     </h6>
                     <small class="text-${plan.is_action ? 'success' : 'warning'}">
-                        ${plan.is_action ? 'Action' : 'Non-Action'}
+                        ${plan.is_action ? 'Completed' : 'Planned '}
                     </small>
                 </div>
                 <p class="mb-1">${plan.description}</p>
