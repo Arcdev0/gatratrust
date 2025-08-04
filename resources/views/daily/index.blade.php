@@ -75,7 +75,7 @@
             <div class="col-md-9">
                 {{-- Timeline Tahunan --}}
                 <div class="timeline-box mb-3">
-                    <h4 class="text-primary font-weight-bold">Timeline Tahunan 2025</h4>
+                    <h4 class="text-primary font-weight-bold" id="timelineTitle">Timeline Tahunan</h4>
                     <div class="row g-2 mt-2" id="timelineContainer">
                         <!-- Box bulan akan dibuat otomatis oleh jQuery -->
                     </div>
@@ -115,7 +115,6 @@
                         </button>
                     </div>
                     <div id="activityDescription" class="mt-3">
-                        <p class="text-muted">Pilih aktivitas untuk melihat deskripsi.</p>
                     </div>
                 </div>
             </div>
@@ -290,6 +289,7 @@
             const timelineContainer = $("#timelineContainer");
             const activityDescription = $("#activityDescription");
             const year = new Date().getFullYear();
+            $("#timelineTitle").text(`Timeline Tahunan ${year}`);
 
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
             let plans = [];
@@ -301,9 +301,6 @@
             function loadPlans() {
                 $.get(`/timeline/get?tahun=${year}`, function(data) {
                     plans = data;
-
-                    console.log("isi timeline", plans);
-
                     renderTimeline();
                     renderPlans();
                 });
@@ -344,6 +341,15 @@
             }
 
             function renderPlans() {
+                if (!plans || plans.length === 0) {
+                    activityDescription.html(`
+            <p class="text-muted text-center mt-3">
+                Belum ada aktivitas terjadwal di tahun ini.
+            </p>
+        `);
+                    return;
+                }
+
                 let html = `<div class="list-group">`;
                 plans.forEach(plan => {
                     let start = new Date(plan.start_date);
@@ -530,8 +536,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                                                                                                                                                                                <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                                                                                                                                                            ` : ''}
+                                                                                                                                                                                                                                            <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                                                                                                                                                                        ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -593,8 +599,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                            ` : ''}
+                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                        ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
