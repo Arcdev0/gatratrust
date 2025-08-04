@@ -87,6 +87,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/daily/{daily}/comments', [DailyController::class, 'storeDailyComments']);
     Route::delete('/daily/comments/{comment}', [DailyController::class, 'destroyDailyComments']);
 
+    Route::prefix('timeline')->group(function () {
+        Route::get('/get', [DailyController::class, 'getDataTimeline'])->name('daily.timeline.get');
+        Route::post('/add', [DailyController::class, 'tambahListTimeline'])->name('daily.timeline.add');
+        Route::put('/update/{id}', [DailyController::class, 'updateListTimeline'])->name('daily.timeline.update');
+        Route::delete('/delete/{id}', [DailyController::class, 'deleteListTimeline'])->name('daily.timeline.delete');
+    });
+
     // Accounting
     Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
     Route::get('/accounting/data', [AccountingController::class, 'data'])->name('accounting.data');

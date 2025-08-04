@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Daily;
 use App\Models\DailyComment;
+use App\Models\TimelineTahunan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -156,5 +157,76 @@ class DailyController extends Controller
         $daily->delete();
 
         return response()->json(['message' => 'Daily deleted successfully']);
+    }
+
+    /**
+     * Ambil semua data timeline (opsional filter tahun)
+     */
+    public function getDataTimeline(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $timeline = TimelineTahunan::where('tahun', $tahun)
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        return response()->json($timeline);
+    }
+
+    /**
+     * Tambah data timeline baru
+     */
+    public function tambahListTimeline(Request $request)
+    {
+        $validated = $request->validate([
+            'tahun'       => 'required|integer',
+            'start_date'  => 'required|date',
+            'end_date'    => 'required|date|after_or_equal:start_date',
+            'description' => 'required|string',
+            'is_action'   => 'nullable|boolean'
+        ]);
+
+        $timeline = TimelineTahunan::create($validated);
+
+        return response()->json([
+            'message' => 'Data timeline berhasil ditambahkan',
+            'data'    => $timeline
+        ]);
+    }
+
+    /**
+     * Update data timeline berdasarkan ID
+     */
+    public function updateListTimeline(Request $request, $id)
+    {
+        $timeline = TimelineTahunan::findOrFail($id);
+
+        $validated = $request->validate([
+            'tahun'       => 'required|integer',
+            'start_date'  => 'required|date',
+            'end_date'    => 'required|date|after_or_equal:start_date',
+            'description' => 'required|string',
+            'is_action'   => 'nullable|boolean'
+        ]);
+
+        $timeline->update($validated);
+
+        return response()->json([
+            'message' => 'Data timeline berhasil diperbarui',
+            'data'    => $timeline
+        ]);
+    }
+
+    /**
+     * Hapus data timeline berdasarkan ID
+     */
+    public function deleteListTimeline($id)
+    {
+        $timeline = TimelineTahunan::findOrFail($id);
+        $timeline->delete();
+
+        return response()->json([
+            'message' => 'Data timeline berhasil dihapus'
+        ]);
     }
 }

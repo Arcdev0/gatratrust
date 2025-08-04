@@ -272,7 +272,10 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger d-none" id="deleteActivityBtn"
+                        data-id="">Hapus</button>
+                    <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal"
+                        aria-label="Close">Batal</button>
                     <button type="button" id="saveActivityBtn" class="btn btn-primary">Simpan</button>
                 </div>
             </div>
@@ -288,82 +291,47 @@
             const activityDescription = $("#activityDescription");
             const year = new Date().getFullYear();
 
-            const monthNames = [
-                "Jan", "Feb", "Mar", "Apr",
-                "Mei", "Jun", "Jul", "Agu",
-                "Sep", "Okt", "Nov", "Des"
-            ];
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            let plans = [];
 
-            // Gabungkan semua jadi satu array plans
-            let plans = [{
-                    id: 1,
-                    month: 0,
-                    start: 5,
-                    end: 8,
-                    desc: "Maintenance Server di Jakarta",
-                    is_action: 0
-                },
-                {
-                    id: 2,
-                    month: 1,
-                    start: 10,
-                    end: 12,
-                    desc: "Audit Internal Project Alpha",
-                    is_action: 1
-                },
-                {
-                    id: 3,
-                    month: 2,
-                    start: 3,
-                    end: 7,
-                    desc: "Pelatihan Staff Baru",
-                    is_action: 0
-                },
-                {
-                    id: 4,
-                    month: 3,
-                    start: 8,
-                    end: 13,
-                    desc: "Pemasangan Sistem IoT di Batam",
-                    is_action: 1
-                },
-                {
-                    id: 5,
-                    month: 4,
-                    start: 20,
-                    end: 25,
-                    desc: "Review Laporan Keuangan Q2",
-                    is_action: 0
-                }
-            ];
-
-            // Fungsi jumlah hari per bulan
             function getDaysInMonth(month, year) {
                 return new Date(year, month + 1, 0).getDate();
             }
 
-            // Fungsi render timeline
+            function loadPlans() {
+                $.get(`/timeline/get?tahun=${year}`, function(data) {
+                    plans = data;
+
+                    console.log("isi timeline", plans);
+
+                    renderTimeline();
+                    renderPlans();
+                });
+            }
+
             function renderTimeline() {
                 timelineContainer.empty();
-
                 for (let month = 0; month < 12; month++) {
                     let daysInMonth = getDaysInMonth(month, year);
                     let monthBox = $(`
-                <div class="col-2 mb-2">
-                    <div class="month-box">
-                        <div class="month-title">${monthNames[month]}</div>
-                        <div class="d-flex flex-wrap days-container"></div>
-                    </div>
+            <div class="col-2 mb-2">
+                <div class="month-box">
+                    <div class="month-title">${monthNames[month]}</div>
+                    <div class="d-flex flex-wrap days-container"></div>
                 </div>
-            `);
-
+            </div>
+        `);
                     let daysContainer = monthBox.find(".days-container");
 
                     for (let day = 1; day <= daysInMonth; day++) {
-                        // Cek apakah ada plan di tanggal ini
-                        let planFound = plans.find(p => p.month === month && day >= p.start && day <= p.end);
-
                         let classPlan = "";
+                        let planFound = plans.find(p => {
+                            let start = new Date(p.start_date);
+                            let end = new Date(p.end_date);
+                            let current = new Date(year, month, day);
+                            return current >= start && current <= end;
+                        });
+
                         if (planFound) {
                             classPlan = planFound.is_action === 1 ? "day-plan-green" : "day-plan-orange";
                         }
@@ -375,21 +343,24 @@
                 }
             }
 
-            // Fungsi render deskripsi
             function renderPlans() {
                 let html = `<div class="list-group">`;
                 plans.forEach(plan => {
+                    let start = new Date(plan.start_date);
+                    let end = new Date(plan.end_date);
                     html += `
             <a href="javascript:void(0)" 
                class="list-group-item list-group-item-action planItem" 
                data-id="${plan.id}">
                 <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1 font-weight-bold">${plan.start}-${plan.end} ${monthNames[plan.month]} ${year}</h6>
+                    <h6 class="mb-1 font-weight-bold">
+                        ${start.getDate()}-${end.getDate()} ${monthNames[start.getMonth()]} ${year}
+                    </h6>
                     <small class="text-${plan.is_action ? 'success' : 'warning'}">
                         ${plan.is_action ? 'Action' : 'Non-Action'}
                     </small>
                 </div>
-                <p class="mb-1">${plan.desc}</p>
+                <p class="mb-1">${plan.description}</p>
             </a>
         `;
                 });
@@ -397,20 +368,14 @@
                 activityDescription.html(html);
             }
 
-
-            // Render awal
-            renderTimeline();
-            renderPlans();
-
-            // Tambah plan
             $("#openModalBtnDesc").on("click", function() {
                 $("#activityModalLabel").text("Tambah Aktivitas");
                 $("#activityForm")[0].reset();
                 $("#planIndex").val("");
+                $("#deleteActivityBtn").addClass("d-none").attr("data-id", ""); // hide delete
                 $("#activityModal").modal("show");
             });
 
-            // Simpan plan (Tambah/Edit)
             $("#saveActivityBtn").on("click", function() {
                 const startDate = $("#startDate").val();
                 const endDate = $("#endDate").val();
@@ -423,63 +388,91 @@
                     return;
                 }
 
-                // Konversi ke format month dan day
-                let start = new Date(startDate);
-                let end = new Date(endDate);
+                const payload = {
+                    tahun: year,
+                    start_date: startDate,
+                    end_date: endDate,
+                    description: desc,
+                    is_action: isAction,
+                    _token: '{{ csrf_token() }}'
+                };
 
                 if (planId) {
-                    // Edit
-                    let planIndex = plans.findIndex(p => p.id == planId);
-                    plans[planIndex] = {
-                        ...plans[planIndex],
-                        month: start.getMonth(),
-                        start: start.getDate(),
-                        end: end.getDate(),
-                        desc,
-                        is_action: isAction
-                    };
-                    Swal.fire("Berhasil!", "Aktivitas berhasil diperbarui.", "success");
-                } else {
-                    // Tambah
-                    let newId = plans.length ? Math.max(...plans.map(p => p.id)) + 1 : 1;
-                    plans.push({
-                        id: newId,
-                        month: start.getMonth(),
-                        start: start.getDate(),
-                        end: end.getDate(),
-                        desc,
-                        is_action: isAction
+                    // Edit (PUT)
+                    $.ajax({
+                        url: `/timeline/update/${planId}`,
+                        type: 'PUT',
+                        data: payload,
+                        success: function(res) {
+                            Swal.fire("Berhasil!", res.message, "success");
+                            $("#activityModal").modal("hide");
+                            loadPlans();
+                        }
                     });
-                    Swal.fire("Berhasil!", "Aktivitas berhasil ditambahkan.", "success");
+                } else {
+                    // Tambah (POST)
+                    $.post(`/timeline/add`, payload, function(res) {
+                        Swal.fire("Berhasil!", res.message, "success");
+                        $("#activityModal").modal("hide");
+                        loadPlans();
+                    });
                 }
-
-                $("#activityModal").modal("hide");
-                renderTimeline();
-                renderPlans();
             });
 
-            // Edit plan
             $(document).on("click", ".planItem", function() {
                 const id = $(this).data("id");
                 const plan = plans.find(p => p.id === id);
 
-                if (!plan) return;
-
                 $("#activityModalLabel").text("Edit Aktivitas");
-                $("#startDate").val(
-                    `${year}-${String(plan.month + 1).padStart(2, '0')}-${String(plan.start).padStart(2, '0')}`
-                );
-                $("#endDate").val(
-                    `${year}-${String(plan.month + 1).padStart(2, '0')}-${String(plan.end).padStart(2, '0')}`
-                );
-                $("#desc").val(plan.desc);
+                $("#startDate").val(plan.start_date);
+                $("#endDate").val(plan.end_date);
+                $("#desc").val(plan.description);
                 $("#isAction").prop("checked", plan.is_action === 1);
                 $("#planIndex").val(plan.id);
+
+                // Show delete button saat edit
+                $("#deleteActivityBtn").removeClass("d-none").attr("data-id", plan.id);
 
                 $("#activityModal").modal("show");
             });
 
+            $("#deleteActivityBtn").on("click", function() {
+                const id = $(this).data("id");
 
+                if (!id) return;
+
+                Swal.fire({
+                    title: "Yakin ingin menghapus?",
+                    text: "Data yang dihapus tidak bisa dikembalikan.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Ya, hapus!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/timeline/delete/${id}`,
+                            type: "DELETE",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function() {
+                                Swal.fire("Berhasil!", "Data berhasil dihapus.",
+                                    "success");
+                                $("#activityModal").modal("hide");
+                                loadPlans();
+                            },
+                            error: function() {
+                                Swal.fire("Gagal!", "Terjadi kesalahan saat menghapus.",
+                                    "error");
+                            }
+                        });
+                    }
+                });
+            });
+
+            loadPlans();
         });
     </script>
 
@@ -537,8 +530,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                                                                                                                            <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                                                                                                        ` : ''}
+                                                                                                                                                                                                                                <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                                                                                                                                                            ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -600,8 +593,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                        ` : ''}
+                                                                                                                                                                                                                                <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                            ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
@@ -664,7 +657,7 @@
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
-                    cancelButtonColor: '#6c757d',
+                    cancelButtonColor: '#3085d6',
                     confirmButtonText: 'Ya, hapus!',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
@@ -909,6 +902,8 @@
                     text: "Data tidak dapat dikembalikan setelah dihapus!",
                     icon: 'warning',
                     showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
                     confirmButtonText: 'Ya, hapus!',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
