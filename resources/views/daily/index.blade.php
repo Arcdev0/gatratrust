@@ -75,7 +75,7 @@
             <div class="col-md-9">
                 {{-- Timeline Tahunan --}}
                 <div class="timeline-box mb-3">
-                    <h4 class="text-primary font-weight-bold" id="timelineTitle">Timeline Tahunan</h4>
+                    <h5 class="text-primary font-weight-bold" id="timelineTitle">Timeline Tahunan</h5>
                     <div class="row g-2 mt-2" id="timelineContainer">
                         <!-- Box bulan akan dibuat otomatis oleh jQuery -->
                     </div>
@@ -84,7 +84,7 @@
                 {{-- Daily Activity --}}
                 <div class="daily-box">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="text-primary font-weight-bold">Daily Activity</h4>
+                        <h5 class="text-primary font-weight-bold">Daily Activity</h5>
                         <button id="openModalBtn" class="btn btn-success">
                             Tambah Daily Activity
                         </button>
@@ -109,7 +109,7 @@
             <div class="col-md-3">
                 <div class="desc-box">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="text-primary font-weight-bold">Deskripsi Aktivitas</h4>
+                        <h5 class="text-primary font-weight-bold">Deskripsi Aktivitas</h5>
                         <button id="openModalBtnDesc" class="btn btn-sm btn-success">
                             +
                         </button>
