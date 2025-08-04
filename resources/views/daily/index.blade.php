@@ -74,7 +74,7 @@
             {{-- Bagian tengah: Timeline Tahunan & Daily Activity --}}
             <div class="col-md-9">
                 {{-- Timeline Tahunan --}}
-                <div class="timeline-box mb-3">
+                <div class="timeline-box mb-3 d-none d-md-block">
                     <h5 class="text-primary font-weight-bold" id="timelineTitle">Timeline Tahunan</h5>
                     <div class="row g-2 mt-2" id="timelineContainer">
                         <!-- Box bulan akan dibuat otomatis oleh jQuery -->
@@ -106,7 +106,7 @@
             </div>
 
             {{-- Bagian kanan: Deskripsi Aktivitas --}}
-            <div class="col-md-3">
+            <div class="col-md-3 d-none d-md-block">
                 <div class="desc-box">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="text-primary font-weight-bold">Deskripsi Timeline</h5>
@@ -551,8 +551,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                                                                                                                                                                                                        <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                                                                                                                                                                                    ` : ''}
+                                                                                                                                                                                                                                                            <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                                                                                                                                                                                        ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -614,8 +614,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                    ` : ''}
+                                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                        ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
