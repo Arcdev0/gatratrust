@@ -109,7 +109,7 @@
             <div class="col-md-3">
                 <div class="desc-box">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="text-primary font-weight-bold">Deskripsi Aktivitas</h5>
+                        <h5 class="text-primary font-weight-bold">Deskripsi Timeline</h5>
                         <button id="openModalBtnDesc" class="btn btn-sm btn-success">
                             +
                         </button>
