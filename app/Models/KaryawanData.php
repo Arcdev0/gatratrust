@@ -33,7 +33,7 @@ class KaryawanData extends Model
 
     public function sertifikatInhouse()
     {
-        return $this->hasMany(SertifikatInhouse::class, 'karyawan_id');
+        return $this->hasMany(SertifikatInHouse::class, 'karyawan_id');
     }
 
     public function sertifikatExternal()
