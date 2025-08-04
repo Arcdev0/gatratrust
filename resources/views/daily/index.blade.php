@@ -301,6 +301,7 @@
             function loadPlans() {
                 $.get(`/timeline/get?tahun=${year}`, function(data) {
                     plans = data;
+                    console.log("Isi timeline", plans);
                     renderTimeline();
                     renderPlans();
                 });
@@ -323,8 +324,15 @@
                     for (let day = 1; day <= daysInMonth; day++) {
                         let classPlan = "";
                         let planFound = plans.find(p => {
-                            let start = new Date(p.start_date);
-                            let end = new Date(p.end_date);
+                            let startParts = p.start_date.split('-');
+                            let endParts = p.end_date.split('-');
+
+                            // Buat date tanpa jam
+                            let start = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1,
+                                parseInt(startParts[2]));
+                            let end = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(
+                                endParts[2]));
+
                             let current = new Date(year, month, day);
                             return current >= start && current <= end;
                         });
@@ -536,8 +544,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                                                                                                                                                                                            <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                                                                                                                                                                        ` : ''}
+                                                                                                                                                                                                                                                <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                                                                                                                                                                            ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -599,8 +607,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                        ` : ''}
+                                                                                                                                                                                                                                                <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                            ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
