@@ -10,18 +10,85 @@
             border-radius: 50%;
             border: 2px solid #ddd;
         }
+
+        .timeline-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .month-box {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 5px;
+        }
+
+        .month-title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+
+        .day-box {
+            width: 20px;
+            height: 20px;
+            margin: 1px;
+            text-align: center;
+            line-height: 20px;
+            border-radius: 3px;
+            font-size: 10px;
+            border: 1px solid #ccc;
+            background-color: #f8f9fa;
+        }
+
+        .day-plan-orange {
+            background-color: orange;
+            color: white;
+            border-color: orange;
+        }
+
+        .day-plan-green {
+            background-color: green;
+            color: white;
+            border-color: green;
+        }
+
+        .daily-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .desc-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            height: 100%;
+        }
     </style>
 
     <div class="container-fluid">
         <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="text-primary font-weight-bold">Daily Activity</h3>
-                    <button id="openModalBtn" class="btn btn-success">
-                        Tambah Daily Activity
-                    </button>
+            {{-- Bagian tengah: Timeline Tahunan & Daily Activity --}}
+            <div class="col-md-9">
+                {{-- Timeline Tahunan --}}
+                <div class="timeline-box mb-3">
+                    <h4 class="text-primary font-weight-bold">Timeline Tahunan 2025</h4>
+                    <div class="row g-2 mt-2" id="timelineContainer">
+                        <!-- Box bulan akan dibuat otomatis oleh jQuery -->
+                    </div>
                 </div>
-                <div class="card">
+
+                {{-- Daily Activity --}}
+                <div class="daily-box">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="text-primary font-weight-bold">Daily Activity</h4>
+                        <button id="openModalBtn" class="btn btn-success">
+                            Tambah Daily Activity
+                        </button>
+                    </div>
                     <div class="card mb-3">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Filter Tanggal</h5>
@@ -34,6 +101,21 @@
                                 <span class="sr-only">Loading...</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Bagian kanan: Deskripsi Aktivitas --}}
+            <div class="col-md-3">
+                <div class="desc-box">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="text-primary font-weight-bold">Deskripsi Aktivitas</h4>
+                        <button id="openModalBtnDesc" class="btn btn-sm btn-success">
+                            +
+                        </button>
+                    </div>
+                    <div id="activityDescription" class="mt-3">
+                        <p class="text-muted">Pilih aktivitas untuk melihat deskripsi.</p>
                     </div>
                 </div>
             </div>
@@ -158,10 +240,250 @@
         </div>
     </div>
 
+    <!-- Modal -->
+    <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activityModalLabel">Tambah Aktivitas</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="activityForm">
+                        <input type="hidden" id="planIndex">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Tanggal Mulai</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Tanggal Selesai</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="desc" class="form-label">Deskripsi</label>
+                            <textarea class="form-control" id="desc" rows="2" required></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="isAction">
+                            <label class="form-check-label" for="isAction">Is Action?</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" id="saveActivityBtn" class="btn btn-primary">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
 @endsection
 @section('script')
+    <script>
+        $(document).ready(function() {
+            const timelineContainer = $("#timelineContainer");
+            const activityDescription = $("#activityDescription");
+            const year = new Date().getFullYear();
+
+            const monthNames = [
+                "Jan", "Feb", "Mar", "Apr",
+                "Mei", "Jun", "Jul", "Agu",
+                "Sep", "Okt", "Nov", "Des"
+            ];
+
+            // Gabungkan semua jadi satu array plans
+            let plans = [{
+                    id: 1,
+                    month: 0,
+                    start: 5,
+                    end: 8,
+                    desc: "Maintenance Server di Jakarta",
+                    is_action: 0
+                },
+                {
+                    id: 2,
+                    month: 1,
+                    start: 10,
+                    end: 12,
+                    desc: "Audit Internal Project Alpha",
+                    is_action: 1
+                },
+                {
+                    id: 3,
+                    month: 2,
+                    start: 3,
+                    end: 7,
+                    desc: "Pelatihan Staff Baru",
+                    is_action: 0
+                },
+                {
+                    id: 4,
+                    month: 3,
+                    start: 8,
+                    end: 13,
+                    desc: "Pemasangan Sistem IoT di Batam",
+                    is_action: 1
+                },
+                {
+                    id: 5,
+                    month: 4,
+                    start: 20,
+                    end: 25,
+                    desc: "Review Laporan Keuangan Q2",
+                    is_action: 0
+                }
+            ];
+
+            // Fungsi jumlah hari per bulan
+            function getDaysInMonth(month, year) {
+                return new Date(year, month + 1, 0).getDate();
+            }
+
+            // Fungsi render timeline
+            function renderTimeline() {
+                timelineContainer.empty();
+
+                for (let month = 0; month < 12; month++) {
+                    let daysInMonth = getDaysInMonth(month, year);
+                    let monthBox = $(`
+                <div class="col-2 mb-2">
+                    <div class="month-box">
+                        <div class="month-title">${monthNames[month]}</div>
+                        <div class="d-flex flex-wrap days-container"></div>
+                    </div>
+                </div>
+            `);
+
+                    let daysContainer = monthBox.find(".days-container");
+
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        // Cek apakah ada plan di tanggal ini
+                        let planFound = plans.find(p => p.month === month && day >= p.start && day <= p.end);
+
+                        let classPlan = "";
+                        if (planFound) {
+                            classPlan = planFound.is_action === 1 ? "day-plan-green" : "day-plan-orange";
+                        }
+
+                        daysContainer.append(`<div class="day-box ${classPlan}">${day}</div>`);
+                    }
+
+                    timelineContainer.append(monthBox);
+                }
+            }
+
+            // Fungsi render deskripsi
+            function renderPlans() {
+                let html = `<div class="list-group">`;
+                plans.forEach(plan => {
+                    html += `
+            <a href="javascript:void(0)" 
+               class="list-group-item list-group-item-action planItem" 
+               data-id="${plan.id}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 font-weight-bold">${plan.start}-${plan.end} ${monthNames[plan.month]} ${year}</h6>
+                    <small class="text-${plan.is_action ? 'success' : 'warning'}">
+                        ${plan.is_action ? 'Action' : 'Non-Action'}
+                    </small>
+                </div>
+                <p class="mb-1">${plan.desc}</p>
+            </a>
+        `;
+                });
+                html += `</div>`;
+                activityDescription.html(html);
+            }
+
+
+            // Render awal
+            renderTimeline();
+            renderPlans();
+
+            // Tambah plan
+            $("#openModalBtnDesc").on("click", function() {
+                $("#activityModalLabel").text("Tambah Aktivitas");
+                $("#activityForm")[0].reset();
+                $("#planIndex").val("");
+                $("#activityModal").modal("show");
+            });
+
+            // Simpan plan (Tambah/Edit)
+            $("#saveActivityBtn").on("click", function() {
+                const startDate = $("#startDate").val();
+                const endDate = $("#endDate").val();
+                const desc = $("#desc").val();
+                const isAction = $("#isAction").is(":checked") ? 1 : 0;
+                const planId = $("#planIndex").val();
+
+                if (!startDate || !endDate || !desc) {
+                    Swal.fire("Gagal!", "Mohon isi semua field!", "error");
+                    return;
+                }
+
+                // Konversi ke format month dan day
+                let start = new Date(startDate);
+                let end = new Date(endDate);
+
+                if (planId) {
+                    // Edit
+                    let planIndex = plans.findIndex(p => p.id == planId);
+                    plans[planIndex] = {
+                        ...plans[planIndex],
+                        month: start.getMonth(),
+                        start: start.getDate(),
+                        end: end.getDate(),
+                        desc,
+                        is_action: isAction
+                    };
+                    Swal.fire("Berhasil!", "Aktivitas berhasil diperbarui.", "success");
+                } else {
+                    // Tambah
+                    let newId = plans.length ? Math.max(...plans.map(p => p.id)) + 1 : 1;
+                    plans.push({
+                        id: newId,
+                        month: start.getMonth(),
+                        start: start.getDate(),
+                        end: end.getDate(),
+                        desc,
+                        is_action: isAction
+                    });
+                    Swal.fire("Berhasil!", "Aktivitas berhasil ditambahkan.", "success");
+                }
+
+                $("#activityModal").modal("hide");
+                renderTimeline();
+                renderPlans();
+            });
+
+            // Edit plan
+            $(document).on("click", ".planItem", function() {
+                const id = $(this).data("id");
+                const plan = plans.find(p => p.id === id);
+
+                if (!plan) return;
+
+                $("#activityModalLabel").text("Edit Aktivitas");
+                $("#startDate").val(
+                    `${year}-${String(plan.month + 1).padStart(2, '0')}-${String(plan.start).padStart(2, '0')}`
+                );
+                $("#endDate").val(
+                    `${year}-${String(plan.month + 1).padStart(2, '0')}-${String(plan.end).padStart(2, '0')}`
+                );
+                $("#desc").val(plan.desc);
+                $("#isAction").prop("checked", plan.is_action === 1);
+                $("#planIndex").val(plan.id);
+
+                $("#activityModal").modal("show");
+            });
+
+
+        });
+    </script>
+
+
     <script>
         $(document).ready(function() {
             // Default tanggal hari ini
@@ -215,8 +537,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                        <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                    ` : ''}
+                                                                                                                                                                            <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                                                                                                        ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -278,8 +600,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                    ` : ''}
+                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                        ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
