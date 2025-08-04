@@ -362,13 +362,20 @@
                 plans.forEach(plan => {
                     let start = new Date(plan.start_date);
                     let end = new Date(plan.end_date);
+                    let dateLabel;
+                    if (start.getTime() === end.getTime()) {
+                        dateLabel = `${start.getDate()} ${monthNames[start.getMonth()]} ${year}`;
+                    } else {
+                        dateLabel =
+                            `${start.getDate()}-${end.getDate()} ${monthNames[start.getMonth()]} ${year}`;
+                    }
                     html += `
             <a href="javascript:void(0)" 
                class="list-group-item list-group-item-action planItem" 
                data-id="${plan.id}">
                 <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1 font-weight-bold">
-                        ${start.getDate()}-${end.getDate()} ${monthNames[start.getMonth()]} ${year}
+                   <h6 class="mb-1 font-weight-bold">
+                        ${dateLabel}
                     </h6>
                     <small class="text-${plan.is_action ? 'success' : 'warning'}">
                         ${plan.is_action ? 'Action' : 'Non-Action'}
@@ -544,8 +551,8 @@
                                 <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
                                 <p><strong>Problem:</strong> ${item.problem || '-'}</p>
                                 ${item.upload_file ? `
-                                                                                                                                                                                                                                                <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                                                                                                                                                                            ` : ''}
+                                                                                                                                                                                                                                                        <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                                                                                                                                                                                                                                                    ` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -607,8 +614,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                            ` : ''}
+                                                                                                                                                                                                                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                    ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
