@@ -282,9 +282,9 @@ class TblProjectController extends Controller
                     c.end_action
                 FROM kerjaan_list_proses a
                 JOIN list_proses b ON a.list_proses_id = b.id
-                LEFT JOIN project_details c 
-                    ON a.list_proses_id = c.kerjaan_list_proses_id 
-                    AND a.urutan = c.urutan_id 
+                LEFT JOIN project_details c
+                    ON a.list_proses_id = c.kerjaan_list_proses_id
+                    AND a.urutan = c.urutan_id
                     AND c.project_id = '$projectId'
                 WHERE a.kerjaan_id = '$kerjaanId'
                 ORDER BY a.urutan ASC";

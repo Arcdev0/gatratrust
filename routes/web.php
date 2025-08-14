@@ -8,6 +8,7 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\TblProjectController;
 use App\Http\Controllers\UserController;
 use App\Models\KaryawanData;
@@ -128,6 +129,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/jabatan/{id}/edit', [JabatanController::class, 'edit'])->name('jabatan.edit');
     Route::put('/jabatan/{id}', [JabatanController::class, 'update'])->name('jabatan.update');
 
+    Route::prefix('quotations')->group(function () {
+        Route::get('/', [QuotationController::class, 'index'])->name('quotations.index');
+        Route::get('/data', [QuotationController::class, 'getDataTable'])->name('quotations.getDataTable');
+        Route::get('/create', [QuotationController::class, 'create'])->name('quotations.create');
+        Route::post('/store', [QuotationController::class, 'store'])->name('quotations.store');
+        Route::get('/edit/{id}', [QuotationController::class, 'edit'])->name('quotations.edit');
+        Route::post('/update/{id}', [QuotationController::class, 'update'])->name('quotations.update');
+        Route::delete('/delete/{id}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
+        Route::get('/export-pdf/{id}', [QuotationController::class, 'exportPdf'])->name('quotations.exportPdf');
+    });
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

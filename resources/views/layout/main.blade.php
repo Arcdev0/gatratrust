@@ -158,9 +158,19 @@
                             <i class="ik ik-folder"></i><span>Project</span>
                         </a>
                     </div>
-
                     @if (Auth::user()->role_id == 1)
                         {{-- Master Data --}}
+
+                        <div class="nav-item has-sub ">
+                            <a href="javascript:void(0)">
+                                <i class="fas fa-retweet"></i><span>Simulasi</span>
+                            </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('quotations.index') }}" class="menu-item">Quotation</a>
+                                <a href="#" class="menu-item">PAK</a>
+
+                            </div>
+                        </div>
                         <div
                             class="nav-item has-sub {{ request()->routeIs('user.tampilan') || request()->routeIs('listproses.index') || request()->routeIs('kerjaan.show') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
@@ -178,7 +188,7 @@
                             </div>
                         </div>
 
-                          <div class="nav-lavel">Data Company</div>
+                        <div class="nav-lavel">Data Company</div>
 
                         {{-- Daily Activity --}}
                         <div class="nav-item {{ request()->routeIs('daily.index') ? 'active' : '' }}">
