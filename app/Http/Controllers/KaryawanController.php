@@ -201,10 +201,11 @@ class KaryawanController extends Controller
                         if (isset($sertifikat['file_sertifikat']) && $sertifikat['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
                             $filePath = $sertifikat['file_sertifikat']->store('sertifikat_inhouse', 'public');
                         }
-                        SertifikatInhouse::create([
-                            'karyawan_id' => $karyawan->id,
+                        DB::table('sertifikat_inhouse')->insert([
+                            'karyawan_id'     => $karyawan->id,
                             'nama_sertifikat' => $sertifikat['nama_sertifikat'],
                             'file_sertifikat' => $filePath,
+                            'created_at'      => now(),
                         ]);
                     }
                 }
