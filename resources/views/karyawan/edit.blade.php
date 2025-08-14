@@ -180,12 +180,26 @@
                                     accept="image/*">
                             </div>
 
+                            <div id="syarat-box" class="mt-3" style="display:none;">
+                                <div class="alert alert-danger">
+                                    <strong>Syarat Jabatan:</strong>
+                                    <ul id="syarat-list"></ul>
+                                </div>
+                            </div>
+
                             {{-- Sertifikat Inhouse --}}
                             <hr>
                             <h5 class="text-primary">Sertifikat Inhouse</h5>
                             <div id="inhouse-wrapper">
                                 @foreach ($karyawan->sertifikatInhouse as $i => $sertifikat)
                                     <div class="row mb-2 inhouse-item">
+                                        {{-- ID sertifikat lama --}}
+                                        <input type="hidden" name="sertifikat_inhouse[{{ $i }}][id]"
+                                            value="{{ $sertifikat->id }}">
+                                        <input type="hidden"
+                                            name="sertifikat_inhouse[{{ $i }}][file_sertifikat_lama]"
+                                            value="{{ $sertifikat->file_sertifikat }}">
+
                                         <div class="col">
                                             <input type="text"
                                                 name="sertifikat_inhouse[{{ $i }}][nama_sertifikat]"
@@ -201,11 +215,13 @@
                                             @endif
                                         </div>
                                         <div class="col-auto">
-                                            <button type="button" class="btn btn-danger remove-inhouse">-</button>
+                                            <button type="button" class="btn btn-danger remove-inhouse"
+                                                data-id="{{ $sertifikat->id }}">-</button>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
+                            <button type="button" class="btn btn-success btn-sm add-inhouse">+ Tambah Inhouse</button>
 
                             {{-- Sertifikat External --}}
                             <hr>
@@ -213,6 +229,13 @@
                             <div id="external-wrapper">
                                 @foreach ($karyawan->sertifikatExternal as $i => $sertifikat)
                                     <div class="row mb-2 external-item">
+                                        {{-- ID sertifikat lama --}}
+                                        <input type="hidden" name="sertifikat_external[{{ $i }}][id]"
+                                            value="{{ $sertifikat->id }}">
+                                        <input type="hidden"
+                                            name="sertifikat_external[{{ $i }}][file_sertifikat_lama]"
+                                            value="{{ $sertifikat->file_sertifikat }}">
+
                                         <div class="col">
                                             <input type="text"
                                                 name="sertifikat_external[{{ $i }}][nama_sertifikat]"
@@ -228,11 +251,17 @@
                                             @endif
                                         </div>
                                         <div class="col-auto">
-                                            <button type="button" class="btn btn-danger remove-external">-</button>
+                                            <button type="button" class="btn btn-danger remove-external"
+                                                data-id="{{ $sertifikat->id }}">-</button>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
+                            <button type="button" class="btn btn-success btn-sm add-external">+ Tambah External</button>
+
+                            {{-- Hidden untuk menampung ID sertifikat yang dihapus --}}
+                            <input type="hidden" name="deleted_inhouse" id="deleted_inhouse">
+                            <input type="hidden" name="deleted_external" id="deleted_external">
 
                             <div class="mt-4">
                                 <button type="submit" class="btn btn-primary">Update</button>
@@ -249,57 +278,65 @@
 
 @section('script')
     <script>
-        // Set awal index dari jumlah sertifikat yang sudah ada
         let inhouseIndex = {{ $karyawan->sertifikatInhouse->count() }};
         let externalIndex = {{ $karyawan->sertifikatExternal->count() }};
-        let syaratData = [];
+        let deletedInhouse = [];
+        let deletedExternal = [];
 
-        // --- Tambah & Hapus Sertifikat Inhouse ---
+        // Tambah Inhouse baru
         $(document).on('click', '.add-inhouse', function() {
             $('#inhouse-wrapper').append(`
-            <div class="row mb-2 inhouse-item">
-                <div class="col">
-                    <input type="text" name="sertifikat_inhouse[${inhouseIndex}][nama_sertifikat]" class="form-control" placeholder="Nama Sertifikat">
-                </div>
-                <div class="col">
-                    <input type="file" name="sertifikat_inhouse[${inhouseIndex}][file_sertifikat]" class="form-control">
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-danger remove-inhouse">-</button>
-                </div>
+        <div class="row mb-2 inhouse-item">
+            <div class="col">
+                <input type="text" name="sertifikat_inhouse[${inhouseIndex}][nama_sertifikat]" class="form-control" placeholder="Nama Sertifikat">
             </div>
-        `);
+            <div class="col">
+                <input type="file" name="sertifikat_inhouse[${inhouseIndex}][file_sertifikat]" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-inhouse">-</button>
+            </div>
+        </div>
+    `);
             inhouseIndex++;
-            checkSyaratCompletion();
+            checkSyaratCompletion()
         });
 
-        $(document).on('click', '.remove-inhouse', function() {
-            $(this).closest('.inhouse-item').remove();
-            checkSyaratCompletion();
-        });
-
-        // --- Tambah & Hapus Sertifikat External ---
+        // Tambah External baru
         $(document).on('click', '.add-external', function() {
             $('#external-wrapper').append(`
-            <div class="row mb-2 external-item">
-                <div class="col">
-                    <input type="text" name="sertifikat_external[${externalIndex}][nama_sertifikat]" class="form-control" placeholder="Nama Sertifikat">
-                </div>
-                <div class="col">
-                    <input type="file" name="sertifikat_external[${externalIndex}][file_sertifikat]" class="form-control">
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-danger remove-external">-</button>
-                </div>
+        <div class="row mb-2 external-item">
+            <div class="col">
+                <input type="text" name="sertifikat_external[${externalIndex}][nama_sertifikat]" class="form-control" placeholder="Nama Sertifikat">
             </div>
-        `);
+            <div class="col">
+                <input type="file" name="sertifikat_external[${externalIndex}][file_sertifikat]" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-external">-</button>
+            </div>
+        </div>
+    `);
             externalIndex++;
-            checkSyaratCompletion();
+            checkSyaratCompletion()
         });
 
+        // Hapus inhouse
+        $(document).on('click', '.remove-inhouse', function() {
+            let id = $(this).data('id');
+            if (id) deletedInhouse.push(id);
+            $(this).closest('.inhouse-item').remove();
+            $('#deleted_inhouse').val(JSON.stringify(deletedInhouse));
+            checkSyaratCompletion()
+        });
+
+        // Hapus external
         $(document).on('click', '.remove-external', function() {
+            let id = $(this).data('id');
+            if (id) deletedExternal.push(id);
             $(this).closest('.external-item').remove();
-            checkSyaratCompletion();
+            $('#deleted_external').val(JSON.stringify(deletedExternal));
+            checkSyaratCompletion()
         });
 
         // --- Cek Syarat Jabatan ---
@@ -414,4 +451,66 @@
             });
         });
     </script>
+
+
+
+    <script>
+        let inhouseIndex = {{ $karyawan->sertifikatInhouse->count() }};
+        let externalIndex = {{ $karyawan->sertifikatExternal->count() }};
+        let deletedInhouse = [];
+        let deletedExternal = [];
+
+        // Tambah Inhouse baru
+        $(document).on('click', '.add-inhouse', function() {
+            $('#inhouse-wrapper').append(`
+        <div class="row mb-2 inhouse-item">
+            <div class="col">
+                <input type="text" name="sertifikat_inhouse[${inhouseIndex}][nama_sertifikat]" class="form-control" placeholder="Nama Sertifikat">
+            </div>
+            <div class="col">
+                <input type="file" name="sertifikat_inhouse[${inhouseIndex}][file_sertifikat]" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-inhouse">-</button>
+            </div>
+        </div>
+    `);
+            inhouseIndex++;
+        });
+
+        // Tambah External baru
+        $(document).on('click', '.add-external', function() {
+            $('#external-wrapper').append(`
+        <div class="row mb-2 external-item">
+            <div class="col">
+                <input type="text" name="sertifikat_external[${externalIndex}][nama_sertifikat]" class="form-control" placeholder="Nama Sertifikat">
+            </div>
+            <div class="col">
+                <input type="file" name="sertifikat_external[${externalIndex}][file_sertifikat]" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-external">-</button>
+            </div>
+        </div>
+    `);
+            externalIndex++;
+        });
+
+        // Hapus inhouse
+        $(document).on('click', '.remove-inhouse', function() {
+            let id = $(this).data('id');
+            if (id) deletedInhouse.push(id);
+            $(this).closest('.inhouse-item').remove();
+            $('#deleted_inhouse').val(JSON.stringify(deletedInhouse));
+        });
+
+        // Hapus external
+        $(document).on('click', '.remove-external', function() {
+            let id = $(this).data('id');
+            if (id) deletedExternal.push(id);
+            $(this).closest('.external-item').remove();
+            $('#deleted_external').val(JSON.stringify(deletedExternal));
+        });
+    </script>
+
 @endsection
