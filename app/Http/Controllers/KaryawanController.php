@@ -66,22 +66,18 @@ class KaryawanController extends Controller
         $jabatan = Jabatan::all();
 
         // Tahun & bulan sekarang
-        $year = date('y'); // Contoh: 25
-        $month = date('m'); // Contoh: 07
+        $year = date('y');
+        $month = date('m');
         $prefix = $year . $month;
 
-        // Ambil nomor terakhir dari model KaryawanData
-        $lastNumber = KaryawanData::where('no_karyawan', 'like', $prefix . '%')
-            ->orderBy('no_karyawan', 'desc')
+        $lastNumber = KaryawanData::orderBy('no_karyawan', 'desc')
             ->value('no_karyawan');
 
-        // Ambil urutan terakhir
+
         $lastSequence = $lastNumber ? (int) substr($lastNumber, -4) : 0;
 
-        // Nomor baru
         $newSequence = str_pad($lastSequence + 1, 4, '0', STR_PAD_LEFT);
 
-        // Gabungkan
         $noKaryawan = $prefix . $newSequence;
 
         return view('karyawan.create', compact('jabatan', 'noKaryawan'));
