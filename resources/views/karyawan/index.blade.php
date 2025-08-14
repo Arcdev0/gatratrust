@@ -135,6 +135,15 @@
 
         function showKaryawan(id) {
             $.get('karyawan/show/' + id, function(res) {
+
+                // Status badge
+                let statusBadge = '';
+                if (res.status && res.status.toLowerCase() === 'aktif') {
+                    statusBadge = `<span class="badge badge-success">Aktif</span>`;
+                } else {
+                    statusBadge = `<span class="badge badge-secondary">Tidak Aktif</span>`;
+                }
+
                 // Foto
                 let fotoPreview = `
             <div class="border rounded p-2 d-flex align-items-center justify-content-center" style="min-height:250px;">
@@ -213,7 +222,7 @@
                     <p><strong>Tempat, Tanggal Lahir:</strong> ${res.tempat_lahir}, ${res.tanggal_lahir}</p>
                     <p><strong>Alamat:</strong> ${res.alamat_lengkap}</p>
                     <p><strong>Jabatan:</strong> ${res.jabatan}</p>
-                    <p><strong>Status:</strong> ${res.status}</p>
+                   <p><strong>Status:</strong> ${statusBadge}</p>
                     <p><strong>Nomor Telepon:</strong> ${res.nomor_telepon ?? '-'}</p>
                     <p><strong>Email:</strong> ${res.email ?? '-'}</p>
                 </div>
