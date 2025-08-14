@@ -55,14 +55,14 @@
 @section('script')
     <script>
         $(function() {
-            $('#karyawanTable').DataTable({
+            let table = $('#karyawanTable').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: '{{ route('karyawan.data') }}',
                 columns: [{
                         data: 'no_karyawan',
                         name: 'no_karyawan'
-                    }, // No Karyawan
+                    },
                     {
                         data: 'nama_lengkap',
                         name: 'nama_lengkap'
@@ -85,7 +85,53 @@
                     }
                 ]
             });
+
+            $(document).on('click', '.btn-delete', function(e) {
+                e.preventDefault();
+
+                let form = $(this).closest('form');
+                let actionUrl = form.attr('action'); // URL delete
+                let formData = form.serialize(); // Ambil token & method
+
+                Swal.fire({
+                    title: 'Yakin ingin menghapus?',
+                    text: "Data ini akan hilang permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: actionUrl,
+                            type: 'POST',
+                            data: formData,
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: 'Data berhasil dihapus',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                table.ajax.reload(null,
+                                false);
+                            },
+                            error: function(err) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal!',
+                                    text: 'Terjadi kesalahan saat menghapus data'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
         });
+
 
         function showKaryawan(id) {
             $.get('karyawan/show/' + id, function(res) {
@@ -166,7 +212,7 @@
                     <p><strong>Nomor Telepon:</strong> ${res.nomor_telepon ?? '-'}</p>
                     <p><strong>Email:</strong> ${res.email ?? '-'}</p>
                 </div>
-                
+
                 <!-- Kolom kanan: Foto -->
                 <div class="col-md-6 text-center">
                     ${fotoPreview}

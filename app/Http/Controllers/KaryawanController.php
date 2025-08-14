@@ -40,19 +40,19 @@ class KaryawanController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                <button type="button" class="btn btn-sm btn-info" onclick="showKaryawan(' . $row->id . ')">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary">
-                    <i class="fas fa-edit"></i>
-                </a>
-                <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;">
-                    ' . csrf_field() . method_field('DELETE') . '
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')">
-                        <i class="fas fa-trash"></i>
+                    <button type="button" class="btn btn-sm btn-info" onclick="showKaryawan(' . $row->id . ')">
+                        <i class="fas fa-eye"></i>
                     </button>
-                </form>
-            ';
+                    <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;" class="delete-form">
+                        ' . csrf_field() . method_field('DELETE') . '
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="' . $row->id . '">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                ';
             })
             ->rawColumns(['status', 'action'])
             ->make(true);
