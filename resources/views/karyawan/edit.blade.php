@@ -16,8 +16,10 @@
                             {{-- No Karyawan --}}
                             <div class="mb-3">
                                 <label for="no_karyawan" class="form-label">No. Karyawan</label>
-                                <input type="text" name="no_karyawan" id="no_karyawan" class="form-control"
-                                    value="{{ old('no_karyawan', $karyawan->no_karyawan) }}" readonly required>
+                                {{-- <input type="text" name="no_karyawan" id="no_karyawan" class="form-control"
+                                    value="{{ old('no_karyawan', $karyawan->no_karyawan) }}" readonly required> --}}
+
+                                <h2>{{ old('no_karyawan', $karyawan->no_karyawan) }}</h2>
                             </div>
 
                             {{-- Nama Lengkap --}}

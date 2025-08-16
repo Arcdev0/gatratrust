@@ -249,6 +249,8 @@ class KaryawanController extends Controller
     public function update(Request $request, $id)
     {
         DB::beginTransaction();
+
+        // dd( $request->all());
         try {
             $karyawan = KaryawanData::findOrFail($id);
 
@@ -339,7 +341,30 @@ class KaryawanController extends Controller
             }
 
             // ===== Update data karyawan lainnya kalau ada =====
-            $karyawan->update($request->only(['nama', 'jabatan_id', '...']));
+            $karyawan->update([
+                'nama_lengkap'      => $request->nama_lengkap,
+                'jenis_kelamin'     => $request->jenis_kelamin,
+                'tempat_lahir'      => $request->tempat_lahir,
+                'tanggal_lahir'     => $request->tanggal_lahir,
+                'alamat_lengkap'    => $request->alamat_lengkap,
+                'jabatan_id'        => $request->jabatan_id,
+                'status'            => $request->status,
+                'nomor_telepon'     => $request->nomor_telepon,
+                'email'             => $request->email,
+                'nomor_identitas'   => $request->nomor_identitas,
+                'status_perkawinan' => $request->status_perkawinan,
+                'kewarganegaraan'   => $request->kewarganegaraan,
+                'agama'             => $request->agama,
+                'doh'               => $request->doh,
+            ]);
+
+            if ($request->hasFile('foto')) {
+                if ($karyawan->foto && Storage::exists('public/' . $karyawan->foto)) {
+                    Storage::delete('public/' . $karyawan->foto);
+                }
+                $path = $request->file('foto')->store('foto_karyawan', 'public');
+                $karyawan->update(['foto' => $path]);
+            }
 
             DB::commit();
 
