@@ -40,19 +40,19 @@ class KaryawanController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
-                <button type="button" class="btn btn-sm btn-info" onclick="showKaryawan(' . $row->id . ')">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary">
-                    <i class="fas fa-edit"></i>
-                </a>
-                <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;">
-                    ' . csrf_field() . method_field('DELETE') . '
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')">
-                        <i class="fas fa-trash"></i>
+                    <button type="button" class="btn btn-sm btn-info" onclick="showKaryawan(' . $row->id . ')">
+                        <i class="fas fa-eye"></i>
                     </button>
-                </form>
-            ';
+                    <a href="' . route('karyawan.edit', $row->id) . '" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <form action="' . route('karyawan.destroy', $row->id) . '" method="POST" style="display:inline;" class="delete-form">
+                        ' . csrf_field() . method_field('DELETE') . '
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="' . $row->id . '">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                ';
             })
             ->rawColumns(['status', 'action'])
             ->make(true);
@@ -66,22 +66,18 @@ class KaryawanController extends Controller
         $jabatan = Jabatan::all();
 
         // Tahun & bulan sekarang
-        $year = date('y'); // Contoh: 25
-        $month = date('m'); // Contoh: 07
+        $year = date('y');
+        $month = date('m');
         $prefix = $year . $month;
 
-        // Ambil nomor terakhir dari model KaryawanData
-        $lastNumber = KaryawanData::where('no_karyawan', 'like', $prefix . '%')
-            ->orderBy('no_karyawan', 'desc')
+        $lastNumber = KaryawanData::orderBy('no_karyawan', 'desc')
             ->value('no_karyawan');
 
-        // Ambil urutan terakhir
+
         $lastSequence = $lastNumber ? (int) substr($lastNumber, -4) : 0;
 
-        // Nomor baru
         $newSequence = str_pad($lastSequence + 1, 4, '0', STR_PAD_LEFT);
 
-        // Gabungkan
         $noKaryawan = $prefix . $newSequence;
 
         return view('karyawan.create', compact('jabatan', 'noKaryawan'));
@@ -201,10 +197,11 @@ class KaryawanController extends Controller
                         if (isset($sertifikat['file_sertifikat']) && $sertifikat['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
                             $filePath = $sertifikat['file_sertifikat']->store('sertifikat_inhouse', 'public');
                         }
-                        SertifikatInhouse::create([
-                            'karyawan_id' => $karyawan->id,
+                        DB::table('sertifikat_inhouse')->insert([
+                            'karyawan_id'     => $karyawan->id,
                             'nama_sertifikat' => $sertifikat['nama_sertifikat'],
                             'file_sertifikat' => $filePath,
+                            'created_at'      => now(),
                         ]);
                     }
                 }
@@ -251,49 +248,100 @@ class KaryawanController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $karyawan = KaryawanData::findOrFail($id);
-
-        $request->validate([
-            'no_karyawan'      => 'required|string|unique:karyawan_data,no_karyawan,' . $id,
-            'nama_lengkap'     => 'required|string|max:255',
-            'jenis_kelamin'    => 'required|in:Laki-laki,Perempuan',
-            'tempat_lahir'     => 'required|string|max:255',
-            'tanggal_lahir'    => 'required|date',
-            'alamat_lengkap'   => 'required|string',
-            'jabatan_id'       => 'required|exists:jabatan,id',
-            'status'           => 'required|boolean',
-            'nomor_telepon'    => 'nullable|string|max:20',
-            'email'            => 'nullable|email|unique:karyawan_data,email,' . $id,
-            'nomor_identitas'  => 'nullable|string|unique:karyawan_data,nomor_identitas,' . $id,
-            'status_perkawinan' => 'nullable|string',
-            'kewarganegaraan'  => 'nullable|string',
-            'agama'            => 'nullable|string',
-            'doh'              => 'nullable|date',
-            'foto'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
-
-            'sertifikat_inhouse.*.nama_sertifikat' => 'nullable|string|max:255',
-            'sertifikat_inhouse.*.file_sertifikat' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'sertifikat_external.*.nama_sertifikat' => 'nullable|string|max:255',
-            'sertifikat_external.*.file_sertifikat' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-        ]);
-
         DB::beginTransaction();
 
+        // dd( $request->all());
         try {
-            // Handle foto baru
-            if ($request->hasFile('foto')) {
-                // Hapus foto lama jika ada
-                if ($karyawan->foto && Storage::disk('public')->exists($karyawan->foto)) {
-                    Storage::disk('public')->delete($karyawan->foto);
+            $karyawan = KaryawanData::findOrFail($id);
+
+            // ===== Hapus sertifikat yang dihapus dari frontend =====
+            $deletedInhouse = json_decode($request->deleted_inhouse, true) ?? [];
+            $deletedExternal = json_decode($request->deleted_external, true) ?? [];
+
+            if (!empty($deletedInhouse)) {
+                $sertifikatInhouse = SertifikatInhouse::whereIn('id', $deletedInhouse)->get();
+                foreach ($sertifikatInhouse as $sertifikat) {
+                    if ($sertifikat->file_sertifikat && Storage::exists('public/' . $sertifikat->file_sertifikat)) {
+                        Storage::delete('public/' . $sertifikat->file_sertifikat);
+                    }
+                    $sertifikat->delete();
                 }
-                $fotoPath = $request->file('foto')->store('foto_karyawan', 'public');
-            } else {
-                $fotoPath = $karyawan->foto;
             }
 
-            // Update data karyawan
+            if (!empty($deletedExternal)) {
+                $sertifikatExternal = SertifikatExternal::whereIn('id', $deletedExternal)->get();
+                foreach ($sertifikatExternal as $sertifikat) {
+                    if ($sertifikat->file_sertifikat && Storage::exists('public/' . $sertifikat->file_sertifikat)) {
+                        Storage::delete('public/' . $sertifikat->file_sertifikat);
+                    }
+                    $sertifikat->delete();
+                }
+            }
+
+            // ===== Update / Tambah Sertifikat Inhouse =====
+            if ($request->has('sertifikat_inhouse')) {
+                foreach ($request->sertifikat_inhouse as $data) {
+                    if (!empty($data['id'])) {
+                        $sertifikat = SertifikatInhouse::find($data['id']);
+                        if ($sertifikat) {
+                            $sertifikat->nama_sertifikat = $data['nama_sertifikat'] ?? '';
+
+                            if (isset($data['file_sertifikat']) && $data['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
+                                if ($sertifikat->file_sertifikat && Storage::exists('public/' . $sertifikat->file_sertifikat)) {
+                                    Storage::delete('public/' . $sertifikat->file_sertifikat);
+                                }
+                                $sertifikat->file_sertifikat = $data['file_sertifikat']->store('sertifikat_inhouse', 'public');
+                            } elseif (!empty($data['file_sertifikat_lama'])) {
+                                $sertifikat->file_sertifikat = $data['file_sertifikat_lama'];
+                            }
+
+                            $sertifikat->save();
+                        }
+                    } else {
+                        $new = new SertifikatInhouse();
+                        $new->karyawan_id = $karyawan->id;
+                        $new->nama_sertifikat = $data['nama_sertifikat'] ?? '';
+                        if (isset($data['file_sertifikat']) && $data['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
+                            $new->file_sertifikat = $data['file_sertifikat']->store('sertifikat_inhouse', 'public');
+                        }
+                        $new->save();
+                    }
+                }
+            }
+
+            // ===== Update / Tambah Sertifikat External =====
+            if ($request->has('sertifikat_external')) {
+                foreach ($request->sertifikat_external as $data) {
+                    if (!empty($data['id'])) {
+                        $sertifikat = SertifikatExternal::find($data['id']);
+                        if ($sertifikat) {
+                            $sertifikat->nama_sertifikat = $data['nama_sertifikat'] ?? '';
+
+                            if (isset($data['file_sertifikat']) && $data['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
+                                if ($sertifikat->file_sertifikat && Storage::exists('public/' . $sertifikat->file_sertifikat)) {
+                                    Storage::delete('public/' . $sertifikat->file_sertifikat);
+                                }
+                                $sertifikat->file_sertifikat = $data['file_sertifikat']->store('sertifikat_external', 'public');
+                            } elseif (!empty($data['file_sertifikat_lama'])) {
+                                $sertifikat->file_sertifikat = $data['file_sertifikat_lama'];
+                            }
+
+                            $sertifikat->save();
+                        }
+                    } else {
+                        $new = new SertifikatExternal();
+                        $new->karyawan_id = $karyawan->id;
+                        $new->nama_sertifikat = $data['nama_sertifikat'] ?? '';
+                        if (isset($data['file_sertifikat']) && $data['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
+                            $new->file_sertifikat = $data['file_sertifikat']->store('sertifikat_external', 'public');
+                        }
+                        $new->save();
+                    }
+                }
+            }
+
+            // ===== Update data karyawan lainnya kalau ada =====
             $karyawan->update([
-                'no_karyawan'       => $request->no_karyawan,
                 'nama_lengkap'      => $request->nama_lengkap,
                 'jenis_kelamin'     => $request->jenis_kelamin,
                 'tempat_lahir'      => $request->tempat_lahir,
@@ -308,50 +356,27 @@ class KaryawanController extends Controller
                 'kewarganegaraan'   => $request->kewarganegaraan,
                 'agama'             => $request->agama,
                 'doh'               => $request->doh,
-                'foto'              => $fotoPath
             ]);
 
-            // Update sertifikat Inhouse
-            if ($request->has('sertifikat_inhouse')) {
-                SertifikatInhouse::where('karyawan_id', $karyawan->id)->delete();
-                foreach ($request->sertifikat_inhouse as $sertifikat) {
-                    if (!empty($sertifikat['nama_sertifikat'])) {
-                        $filePath = null;
-                        if (isset($sertifikat['file_sertifikat']) && $sertifikat['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
-                            $filePath = $sertifikat['file_sertifikat']->store('sertifikat_inhouse', 'public');
-                        }
-                        SertifikatInhouse::create([
-                            'karyawan_id' => $karyawan->id,
-                            'nama_sertifikat' => $sertifikat['nama_sertifikat'],
-                            'file_sertifikat' => $filePath,
-                        ]);
-                    }
+            if ($request->hasFile('foto')) {
+                if ($karyawan->foto && Storage::exists('public/' . $karyawan->foto)) {
+                    Storage::delete('public/' . $karyawan->foto);
                 }
-            }
-
-            // Update sertifikat External
-            if ($request->has('sertifikat_external')) {
-                SertifikatExternal::where('karyawan_id', $karyawan->id)->delete();
-                foreach ($request->sertifikat_external as $sertifikat) {
-                    if (!empty($sertifikat['nama_sertifikat'])) {
-                        $filePath = null;
-                        if (isset($sertifikat['file_sertifikat']) && $sertifikat['file_sertifikat'] instanceof \Illuminate\Http\UploadedFile) {
-                            $filePath = $sertifikat['file_sertifikat']->store('sertifikat_external', 'public');
-                        }
-                        SertifikatExternal::create([
-                            'karyawan_id' => $karyawan->id,
-                            'nama_sertifikat' => $sertifikat['nama_sertifikat'],
-                            'file_sertifikat' => $filePath,
-                        ]);
-                    }
-                }
+                $path = $request->file('foto')->store('foto_karyawan', 'public');
+                $karyawan->update(['foto' => $path]);
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Data karyawan berhasil diperbarui']);
+
+            return response()->json([
+                'message' => 'Data karyawan berhasil diperbarui'
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Gagal memperbarui data: ' . $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
     }
 
