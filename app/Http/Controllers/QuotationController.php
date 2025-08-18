@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Quotation;
@@ -30,11 +31,11 @@ class QuotationController extends Controller
                     return '
                         <button class="btn btn-sm btn-primary editBtn" data-id="'.$row->id.'">Edit</button>
                         <button class="btn btn-sm btn-danger deleteBtn" data-id="'.$row->id.'">Delete</button>
-                        <a href="'.route('quotations.exportPdf', $row->id).'" class="btn btn-sm btn-secondary">PDF</a>
+                        <a href="'.route('quotations.exportPdf', $row->id).'" class="btn btn-sm btn-secondary" target="_blank">PDF</a>
                     ';
                 })
-                ->editColumn('date', function ($row) {
-                    return $row->date ? $row->date->format('d-m-Y') : '';
+               ->editColumn('date', function ($row) {
+                    return $row->date ? Carbon::parse($row->date)->format('d-m-Y') : '';
                 })
                 ->make(true);
         }
@@ -51,7 +52,7 @@ class QuotationController extends Controller
             DB::beginTransaction();
 
 
-            dd($request->all());
+            // dd($request->all());
 
 
             try {
@@ -109,7 +110,7 @@ class QuotationController extends Controller
                 foreach ($validated['items'] as $item) {
                     $quotation->items()->create([
                         'description' => $item['description'],
-                        'quantity' => $item['qty'],
+                        'qty' => $item['qty'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['qty'] * $item['unit_price'],
                     ]);
@@ -120,40 +121,25 @@ class QuotationController extends Controller
                     foreach ($validated['scopes'] as $scope) {
                         $quotation->scopes()->create([
                             'description' => $scope['description'],
-                            'responsible_pt_gpt' => $scope['responsible_pt_gpt'] ?? false,
-                            'responsible_client' => $scope['responsible_client'] ?? false,
+                            'responsible_pt_gpt' => !empty($scope['responsible_pt_gpt']) ? 1 : 0,
+                            'responsible_client' => !empty($scope['responsible_client']) ? 1 : 0,
                         ]);
                     }
                 }
 
                 DB::commit();
 
-                return response()->json([
+             return response()->json([
                     'success' => true,
-                    'message' => 'Quotation berhasil dibuat',
-                    'data' => [
-                        'quotation_id' => $quotation->id,
-                        'quo_no' => $quotation->quo_no,
-                        'redirect_url' => route('quotations.show', $quotation->id)
-                    ]
+                    'status'  => 201,
+                    'message' => 'Quotation berhasil dibuat'
                 ], 201);
 
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $e->errors()
-                ], 422);
-
             } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error('Quotation store error: '.$e->getMessage());
-
                 return response()->json([
                     'success' => false,
-                    'message' => 'Terjadi kesalahan server',
-                    'error' => env('APP_DEBUG') ? $e->getMessage() : 'Silakan coba lagi nanti'
+                    'status'  => 500,
+                    'message' => 'Terjadi kesalahan saat menyimpan quotation'
                 ], 500);
             }
         }

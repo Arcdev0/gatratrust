@@ -40,4 +40,8 @@ class Quotation extends Model
     {
         return $this->hasMany(QuotationScope::class);
     }
+
+      protected $casts = [
+        'date' => 'date',
+    ];
 }

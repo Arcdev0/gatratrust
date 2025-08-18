@@ -243,38 +243,30 @@
                             method: 'POST',
                             data: form.serialize(),
                             success: function(response) {
-                                Swal.fire({
-                                    title: 'Berhasil!',
-                                    text: 'Quotation berhasil dibuat',
-                                    icon: 'success',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    window.location.href = response
-                                        .redirect_url || '/quotations';
-                                });
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: 'Berhasil!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        location
+                                    .reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Gagal!',
+                                        text: response.message,
+                                        icon: 'error'
+                                    });
+                                }
                             },
                             error: function(xhr) {
-                                btn.prop('disabled', false).html(btnOriginalText);
-
-                                if (xhr.status === 422) {
-                                    const errors = xhr.responseJSON.errors;
-                                    $('.is-invalid').removeClass('is-invalid');
-                                    $('.invalid-feedback').remove();
-
-                                    $.each(errors, function(key, val) {
-                                        const input = $(`[name="${key}"]`);
-                                        input.addClass('is-invalid');
-                                        input.after(
-                                            `<div class="invalid-feedback">${val[0]}</div>`
-                                        );
-                                    });
-
-                                    Swal.fire('Error!', 'Terdapat kesalahan pada input',
-                                        'error');
-                                } else {
-                                    Swal.fire('Error!', 'Terjadi kesalahan server',
-                                        'error');
-                                }
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: 'Terjadi kesalahan pada server.',
+                                    icon: 'error'
+                                });
                             }
                         });
                     }
