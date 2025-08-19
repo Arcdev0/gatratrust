@@ -133,12 +133,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [QuotationController::class, 'index'])->name('quotations.index');
         Route::get('/data', [QuotationController::class, 'getDataTable'])->name('quotations.getDataTable');
         Route::get('/create', [QuotationController::class, 'create'])->name('quotations.create');
+        Route::get('/show/{id}', [QuotationController::class, 'show'])->name('quotations.show');
         Route::post('/store', [QuotationController::class, 'store'])->name('quotations.store');
         Route::get('/edit/{id}', [QuotationController::class, 'edit'])->name('quotations.edit');
         Route::post('/update/{id}', [QuotationController::class, 'update'])->name('quotations.update');
         Route::delete('/delete/{id}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
         Route::get('/export-pdf/{id}', [QuotationController::class, 'exportPdf'])->name('quotations.exportPdf');
     });
+    Route::post('/quotations/{id}/approve', [QuotationController::class, 'approve'])->name('quotations.approve');
+    Route::post('/quotations/{id}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
+
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Models\Quotation;
-use App\Models\QuotationItem;
-use App\Models\QuotationScope;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -21,22 +20,59 @@ class QuotationController extends Controller
     }
 
     // 2. Ambil data untuk DataTables
-    public function getDataTable(Request $request)
+   public function getDataTable(Request $request)
     {
         if ($request->ajax()) {
-            $data = Quotation::latest();
+            $data = Quotation::with('status')->latest();
+
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->editColumn('date', function ($row) {
+                    return $row->date
+                        ? \Carbon\Carbon::parse($row->date)->format('d-m-Y')
+                        : '';
+                })
+                ->addColumn('status_name', function ($row) {
+                    if (!$row->status) {
+                        return '<span class="badge bg-secondary">-</span>';
+                    }
+
+                    return match (strtolower($row->status->name)) {
+                        'pending'  => '<span class="badge bg-yellow text-white">Pending</span>',
+                        'approve'  => '<span class="badge bg-success text-white">Approve</span>',
+                        'rejected' => '<span class="badge bg-danger text-white">Rejected</span>',
+                        default    => '<span class="badge bg-secondary text-white">'.$row->status->name.'</span>',
+                    };
+                })
                 ->addColumn('action', function ($row) {
-                    return '
-                        <button class="btn btn-sm btn-primary editBtn" data-id="'.$row->id.'">Edit</button>
-                        <button class="btn btn-sm btn-danger deleteBtn" data-id="'.$row->id.'">Delete</button>
-                        <a href="'.route('quotations.exportPdf', $row->id).'" class="btn btn-sm btn-secondary" target="_blank">PDF</a>
+                    $btns = '
+                        <button class="btn btn-sm btn-info showBtn"
+                                data-id="'.$row->id.'">Show</button>
                     ';
+
+                    if ((int) $row->status_id === 2) {
+                        // Approved → hanya PDF
+                        $btns .= ' <a href="'.route('quotations.exportPdf', $row->id).'"
+                                    class="btn btn-sm btn-secondary" target="_blank">PDF</a>';
+                    } elseif ((int) $row->status_id === 3) {
+                        // Rejected → hanya Delete
+                        $btns .= ' <button class="btn btn-sm btn-danger deleteBtn"
+                                            data-id="'.$row->id.'">Delete</button>';
+                    } else {
+                        // Pending → bisa approve, reject, delete
+                        $btns .= '
+                            <button class="btn btn-sm btn-success approveBtn"
+                                    data-id="'.$row->id.'">Approve</button>
+                            <button class="btn btn-sm btn-warning rejectBtn"
+                                    data-id="'.$row->id.'">Reject</button>
+                            <button class="btn btn-sm btn-danger deleteBtn"
+                                    data-id="'.$row->id.'">Delete</button>
+                        ';
+                    }
+
+                    return $btns;
                 })
-               ->editColumn('date', function ($row) {
-                    return $row->date ? Carbon::parse($row->date)->format('d-m-Y') : '';
-                })
+                ->rawColumns(['action', 'status_name'])
                 ->make(true);
         }
     }
@@ -46,7 +82,6 @@ class QuotationController extends Controller
         return view('quotations.create');
     }
 
-    // 3. Simpan quotation baru
      public function store(Request $request)
         {
             DB::beginTransaction();
@@ -75,8 +110,9 @@ class QuotationController extends Controller
                     'items.*.description' => 'required|string',
                     'items.*.qty' => 'required|numeric|min:1',
                     'items.*.unit_price' => 'required|numeric|min:0',
-                    'scopes' => 'nullable|array',
                     'scopes.*.description' => 'required_with:scopes|string',
+                    'scopes.*.responsible_pt_gpt' => 'nullable|boolean',
+                    'scopes.*.responsible_client' => 'nullable|boolean',
                 ]);
 
                 // Hitung total amount
@@ -103,7 +139,7 @@ class QuotationController extends Controller
                     'payment_terms' => $validated['payment_terms'] ?? null,
                     'bank_account' => $validated['bank_account'] ?? null,
                     'tax_included' => $validated['tax_included'] ?? false,
-                    // 'status' => 'draft',
+                    'status_id' => 1,
                 ]);
 
                 // Simpan items
@@ -116,7 +152,6 @@ class QuotationController extends Controller
                     ]);
                 }
 
-                // Simpan scopes jika ada
                 if (!empty($validated['scopes'])) {
                     foreach ($validated['scopes'] as $scope) {
                         $quotation->scopes()->create([
@@ -151,48 +186,6 @@ class QuotationController extends Controller
         return view('quotations.edit', compact('quotation'));
     }
 
-    // 5. Update quotation
-    public function update(Request $request, $id)
-    {
-        $quotation = Quotation::findOrFail($id);
-
-        $quotation->update($request->only([
-            'quo_no', 'date', 'customer_name', 'customer_address',
-            'attention', 'your_reference', 'terms', 'job_no',
-            'rev', 'total_amount', 'discount', 'sub_total',
-            'payment_terms', 'bank_account', 'tax_included'
-        ]));
-
-        // Hapus item lama & buat baru
-        $quotation->items()->delete();
-        if ($request->items) {
-            foreach ($request->items as $item) {
-                QuotationItem::create([
-                    'quotation_id' => $quotation->id,
-                    'description' => $item['description'],
-                    'qty' => $item['qty'],
-                    'unit_price' => $item['unit_price'],
-                    'total_price' => $item['total_price'],
-                ]);
-            }
-        }
-
-        // Hapus scope lama & buat baru
-        $quotation->scopes()->delete();
-        if ($request->scopes) {
-            foreach ($request->scopes as $scope) {
-                QuotationScope::create([
-                    'quotation_id' => $quotation->id,
-                    'description' => $scope['description'],
-                    'responsible_pt_gpt' => $scope['responsible_pt_gpt'] ?? false,
-                    'responsible_client' => $scope['responsible_client'] ?? false,
-                ]);
-            }
-        }
-
-        return response()->json(['success' => true]);
-    }
-
     // 6. Hapus quotation
     public function destroy($id)
     {
@@ -205,9 +198,81 @@ class QuotationController extends Controller
     public function exportPdf($id)
     {
         $quotation = Quotation::with(['items', 'scopes'])->findOrFail($id);
-        $pdf = Pdf::loadView('quotations.pdf', compact('quotation'))
-            ->setPaper('A4', 'portrait');
 
-        return $pdf->stream('quotation_'.$quotation->quo_no.'.pdf');
+        // dd( $quotation->approved_qr);
+
+        // Konversi gambar QR code ke base64
+         $qrCodeBase64 = null;
+            if ($quotation->approved_qr) {
+                try {
+                    if (Storage::disk('public')->exists($quotation->approved_qr)) {
+                        $qrCodeData = Storage::disk('public')->get($quotation->approved_qr);
+                        $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeData);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('QR Code Error: '.$e->getMessage());
+                }
+            }
+
+        $pdf = Pdf::loadView('quotations.pdf', [
+            'quotation' => $quotation,
+            'qrCodeBase64' => $qrCodeBase64
+        ])->setPaper('A4', 'portrait');
+
+        return $pdf->stream('quotation.pdf');
     }
+
+    public function show($id)
+    {
+        $quotation = Quotation::with(['items', 'scopes', 'status'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $quotation
+        ]);
+    }
+
+
+   public function approve($id)
+    {
+        $quotation = Quotation::findOrFail($id);
+
+        // Simpan siapa yang approve
+        $user = auth()->user();
+
+        // Data untuk QR
+        $qrData = "Approved by: {$user->name} | Quotation No: {$quotation->quo_no} | Date: ".now()->format('d-m-Y H:i');
+
+        // Generate QR (PNG)
+        $qrImage = QrCode::format('svg')->size(200)->generate($qrData);
+
+        // Simpan di storage
+        $fileName = 'qrcodes/quotation_'.$quotation->id.'_approved.svg';
+        Storage::disk('public')->put($fileName, $qrImage);
+
+        // Update quotation
+        $quotation->status_id = 2; // approved
+        $quotation->approved_by = $user->id;
+        $quotation->approved_qr = $fileName;
+        $quotation->approved_at = now();
+        $quotation->save();
+
+        return back()->with('success', 'Quotation approved & QR generated!');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $quotation = Quotation::findOrFail($id);
+        $quotation->update([
+            'rejected_reason' => $request->reason,
+            'status_id' => 3
+        ]);
+
+        return response()->json(['message' => 'Quotation rejected with reason saved']);
+    }
+
 }

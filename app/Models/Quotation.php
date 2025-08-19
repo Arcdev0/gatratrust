@@ -27,6 +27,8 @@ class Quotation extends Model
         'payment_terms',
         'bank_account',
         'tax_included',
+        'status_id',
+        'rejected_reason',
     ];
 
     // Relasi ke item quotation
@@ -39,6 +41,11 @@ class Quotation extends Model
     public function scopes()
     {
         return $this->hasMany(QuotationScope::class);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'status_id');
     }
 
       protected $casts = [

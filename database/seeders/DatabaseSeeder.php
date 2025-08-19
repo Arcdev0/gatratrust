@@ -12,5 +12,6 @@ class DatabaseSeeder extends Seeder
         $this->call([ProsesSeeder::class,]);
         $this->call([KerjaanSeeder::class,]);
         $this->call([KerjaanListProsesSeeder::class,]);
+        $this->call([StatusSeeder::class,]);
     }
 }

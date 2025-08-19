@@ -232,21 +232,30 @@
     </p>
 
     <table style="width:100%; margin-top:50px;" class="no-border">
-        <br><br>
-        <table style="width:100%; margin-top:50px;" class="no-border">
-            <tr>
-                <td style="width:50%; text-align:left;">
-                    <p>Approval,</p>
-                    <br><br><br><br>
-                    <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
-                </td>
-                {{-- <td style="width:50%;">
-                    <p>Prepared By</p>
-                    <br><br><br><br>
-                    <p><b>{{ $quotation->prepared_by ?? '__________________' }}</b></p>
-                </td> --}}
-            </tr>
-        </table>
+        <tr>
+            <td style="width:50%; text-align:left;">
+                <p>Approval,</p>
+                <br><br>
+
+                @if (isset($qrCodeBase64) && $qrCodeBase64)
+                    <div style="width: 100px; height: 100px;">
+                        <img src="{{ $qrCodeBase64 }}" style="width: 100%; height: auto;" alt="Approval QR Code">
+                    </div>
+                @else
+                    <div
+                        style="width: 100px; height: 100px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                        No QR Code
+                    </div>
+                @endif
+
+                <br>
+                <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
+                <p>Date:
+                    {{ $quotation->approved_at ? \Carbon\Carbon::parse($quotation->approved_at)->format('d M Y') : '__________________' }}
+                </p>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

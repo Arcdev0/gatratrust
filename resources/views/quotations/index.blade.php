@@ -21,6 +21,7 @@
                                     <th>Date</th>
                                     <th>Customer</th>
                                     <th>Total Amount</th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -30,6 +31,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Show Modal -->
+    <div class="modal fade" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="showModalLabel">Quotation Detail</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="showModalBody">
+                    <!-- content dari ajax -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reject -->
+    {{-- <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="rejectForm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Reject Quotation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="quotation_id" id="rejectQuotationId">
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason</label>
+                            <textarea class="form-control" id="reason" name="reason" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning">Submit Reject</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div> --}}
+
+
 @endsection
 
 @section('script')
@@ -63,6 +110,12 @@
                         render: $.fn.dataTable.render.number(',', '.', 2, 'Rp ')
                     },
                     {
+                        data: 'status_name',
+                        name: 'status_name',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
@@ -73,20 +126,232 @@
 
             // Delete quotation
             $(document).on('click', '.deleteBtn', function() {
-                if (confirm('Are you sure you want to delete this quotation?')) {
-                    let id = $(this).data('id');
-                    $.ajax({
-                        url: '/quotations/delete/' + id,
-                        type: 'DELETE',
-                        data: {
-                            _token: '{{ csrf_token() }}'
-                        },
-                        success: function(res) {
-                            table.ajax.reload();
-                        }
+                let id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You want to delete this quotation?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/quotations/delete/' + id,
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Deleted!',
+                                        text: res.message ??
+                                            'Quotation has been deleted.',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    table.ajax.reload();
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Failed!',
+                                        text: res.message ??
+                                            'Quotation could not be deleted.'
+                                    });
+                                }
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Oops!',
+                                    text: 'Something went wrong.'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Show quotation
+            $(document).on('click', '.showBtn', function() {
+                let id = $(this).data('id');
+
+                // fungsi format rupiah
+                function formatRupiah(value) {
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0
+                    }).format(value);
+                }
+
+                // fungsi format tanggal
+                function formatDate(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
                     });
                 }
+
+
+                $.get('/quotations/show/' + id, function(res) {
+                    if (res.success) {
+                        let q = res.data;
+
+                        $('#showModalLabel').text("Quotation " + q.quo_no);
+                        $('#showModalBody').html(`
+                <p><strong>Date:</strong> ${formatDate(q.date)}</p>
+                <p><strong>Customer:</strong> ${q.customer_name}</p>
+                <p><strong>Address:</strong> ${q.customer_address ?? '-'}</p>
+                <p><strong>Attention:</strong> ${q.attention ?? '-'}</p>
+                <p><strong>Status:</strong>
+                    ${q.status
+                        ? `<span class="badge ${q.status.name === 'Pending' ? 'bg-yellow text-white' : q.status.name === 'Approve' ? 'bg-success' : 'bg-danger'}">
+                                                                  ${q.status.name}
+                                                               </span>`
+                        : '-'}
+                </p>
+                <hr>
+                <h5>Items</h5>
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${q.items.map(i => `
+                                                                <tr>
+                                                                    <td>${i.description}</td>
+                                                                    <td>${i.qty}</td>
+                                                                    <td>${formatRupiah(i.unit_price)}</td>
+                                                                    <td>${formatRupiah(i.total_price)}</td>
+                                                                </tr>
+                                                            `).join('')}
+                    </tbody>
+                </table>
+
+                ${q.scopes.length > 0 ? `
+                                                        <hr>
+                                                        <h5>Scopes</h5>
+                                                        <table class="table table-sm table-bordered">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Description</th>
+                                                                    <th>Responsible PT GPT</th>
+                                                                    <th>Responsible Client</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                ${q.scopes.map(s => `
+                                <tr>
+                                    <td>${s.description}</td>
+                                    <td class="text-center">${s.responsible_pt_gpt == 1 ? '✔️' : '-'}</td>
+                                    <td class="text-center">${s.responsible_client == 1 ? '✔️' : '-'}</td>
+                                </tr>
+                            `).join('')}
+                                                            </tbody>
+                                                        </table>
+                                                    ` : ''}
+            `);
+
+                        $('#showModal').modal('show');
+                    }
+                });
             });
+
+            // Approve
+            $(document).on('click', '.approveBtn', function() {
+                let id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This quotation will be approved!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, approve it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/quotations/' + id + '/approve',
+                            type: 'POST',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Approved!',
+                                    text: res.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                table.ajax.reload();
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Reject
+            $(document).on('click', '.rejectBtn', function() {
+                let id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Reject Reason',
+                    input: 'textarea',
+                    inputLabel: 'Please enter the reason for rejection',
+                    inputPlaceholder: 'Type your reason here...',
+                    inputAttributes: {
+                        'aria-label': 'Type your reason here'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Reject',
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    preConfirm: (reason) => {
+                        if (!reason) {
+                            Swal.showValidationMessage('Reason is required');
+                        }
+                        return reason;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/quotations/' + id + '/reject',
+                            type: 'POST',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content'),
+                                reason: result.value
+                            },
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Rejected!',
+                                    text: res.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                table.ajax.reload();
+                            }
+                        });
+                    }
+                });
+            });
+
+
         });
     </script>
 @endsection
