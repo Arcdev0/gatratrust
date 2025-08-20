@@ -213,7 +213,7 @@
                 <p><strong>Attention:</strong> ${q.attention ?? '-'}</p>
                 <p><strong>Status:</strong>
                     ${q.status
-                        ? `<span class="badge ${q.status.name === 'Pending' ? 'bg-yellow text-white' : q.status.name === 'Approve' ? 'bg-success' : 'bg-danger'}">
+                        ? `<span class="badge ${q.status.name === 'Pending' ? 'bg-yellow text-white' : q.status.name === 'Approve' ? 'bg-success text-white' : 'bg-danger text-white'}">
                                                                       ${q.status.name}
                                                                    </span>`
                         : '-'}

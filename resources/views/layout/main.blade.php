@@ -158,7 +158,7 @@
                             <i class="ik ik-folder"></i><span>Project</span>
                         </a>
                     </div>
-                    @if (Auth::user()->role_id == 1)
+                    @if (in_array(Auth::user()->role_id, [1, 3, 4]))
                         {{-- Master Data --}}
 
                         <div class="nav-item has-sub ">
