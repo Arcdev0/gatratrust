@@ -236,49 +236,55 @@ class QuotationController extends Controller
     }
 
 
-public function approve($id)
-{
-    $quotation = Quotation::findOrFail($id);
+    public function approve($id)
+    {
+        $quotation = Quotation::findOrFail($id);
 
-    // User yang approve
-    $user = auth()->user();
+        // Cegah double approval
+        if ($quotation->status_id == 2) {
+            return back()->with('warning', 'Quotation already approved!');
+        }
 
-    // Data approval
-    $approvalData = [
-        'quotation_id' => $quotation->id,
-        'approver_id' => $user->id,
-        'approver_name' => $user->name,
-        'approver_position' => $user->position ?? 'Manager',
-        'quotation_no' => $quotation->quo_no,
-        'approval_date' => now()->format('d-m-Y H:i'),
-        'signature_token' => Str::random(32)
-    ];
+        // User yang approve
+        $user = auth()->user();
 
-    // Enkripsi data
-    $encryptedData = Crypt::encryptString(json_encode($approvalData));
+        // Data approval
+        $approvalData = [
+            'quotation_id'      => $quotation->id,
+            'approver_id'       => $user->id,
+            'approver_name'     => $user->name,
+            'approver_position' => $user->position ?? 'Manager',
+            'quotation_no'      => $quotation->quo_no,
+            'approval_date'     => now()->format('d-m-Y H:i'),
+            'signature_token'   => Str::random(32),
+        ];
 
-    // URL yang akan dimasukkan ke QR
-    $qrUrl = route('quotation.approval', ['encryptedData' => $encryptedData]);
+        // Enkripsi data
+        $encryptedData = Crypt::encryptString(json_encode($approvalData));
 
-    // Generate QR (SVG)
-    $qrSvg = QrCode::format('svg')->size(200)->generate($qrUrl);
+        // URL yang akan dimasukkan ke QR
+        $qrUrl = route('quotation.approval', ['encryptedData' => $encryptedData]);
 
-    // Simpan di storage
-    $fileName = 'qrcodes/quotation_'.$quotation->id.'_approved.svg';
-    Storage::disk('public')->put($fileName, $qrSvg);
+        // Generate QR (SVG)
+        $qrSvg = QrCode::format('svg')->size(200)->generate($qrUrl);
 
-    // Ubah ke base64 supaya tetap kompatibel dengan PDF
-    $qrImage = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+        // Simpan di storage
+        $fileName = 'qrcodes/quotation_'.$quotation->id.'_approved.svg';
+        Storage::disk('public')->put($fileName, $qrSvg);
 
-    // Update quotation
-    $quotation->status_id = 2; // approved
-    $quotation->approved_by = $user->id;
-    $quotation->approved_qr = $fileName;
-    $quotation->approved_at = now();
-    $quotation->save();
+        // Ubah ke base64 supaya tetap kompatibel dengan PDF
+        $qrImage = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
 
-    return back()->with('success', 'Quotation approved & QR generated!');
-}
+        // Update quotation
+        $quotation->status_id       = 2; // approved
+        $quotation->approved_by     = $user->id;
+        $quotation->approved_qr     = $fileName;
+        $quotation->approved_at     = now();
+        $quotation->signature_token = $approvalData['signature_token']; // SIMPAN TOKEN
+        $quotation->save();
+
+        return back()->with('success', 'Quotation approved & QR generated!');
+    }
 
     public function reject(Request $request, $id)
     {
@@ -296,17 +302,20 @@ public function approve($id)
     }
 
 
-    public function showApproval($encryptedData)
+     public function showApproval($encryptedData)
     {
         try {
-            // Dekripsi data
             $decrypted = Crypt::decryptString($encryptedData);
             $approvalData = json_decode($decrypted, true);
 
             $quotation = Quotation::findOrFail($approvalData['quotation_id']);
 
+            if ($quotation->signature_token !== $approvalData['signature_token']) {
+                abort(403, 'Invalid approval token');
+            }
+
             return view('quotations.approval', [
-                'approval' => $approvalData,
+                'approval'  => $approvalData,
                 'quotation' => $quotation,
             ]);
         } catch (\Exception $e) {

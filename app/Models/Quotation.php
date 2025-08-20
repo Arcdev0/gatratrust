@@ -29,6 +29,7 @@ class Quotation extends Model
         'tax_included',
         'status_id',
         'rejected_reason',
+        'signature_token ',
     ];
 
     // Relasi ke item quotation
