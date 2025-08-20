@@ -180,7 +180,7 @@
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $item->description }}</td>
-                    <td>{{ $item->quantity }}</td>
+                    <td>{{ $item->qty }}</td>
                     <td class="text-right">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($item->total_price, 0, ',', '.') }}</td>
                 </tr>
