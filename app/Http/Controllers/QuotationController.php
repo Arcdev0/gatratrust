@@ -262,7 +262,7 @@ class QuotationController extends Controller
             'quotation_id'      => $quotation->id,
             'approver_id'       => $user->id,
             'approver_name'     => $user->name,
-            'approver_position' => $user->position ?? 'Manager',
+            'approver_position' => $user->role->name ?? 'Keuangan',
             'quotation_no'      => $quotation->quo_no,
             'approval_date'     => now()->format('d-m-Y H:i'),
             'signature_token'   => Str::random(32),
