@@ -214,8 +214,8 @@
                 <p><strong>Status:</strong>
                     ${q.status
                         ? `<span class="badge ${q.status.name === 'Pending' ? 'bg-yellow text-white' : q.status.name === 'Approve' ? 'bg-success' : 'bg-danger'}">
-                                                                  ${q.status.name}
-                                                               </span>`
+                                                                      ${q.status.name}
+                                                                   </span>`
                         : '-'}
                 </p>
                 <hr>
@@ -231,38 +231,38 @@
                     </thead>
                     <tbody>
                         ${q.items.map(i => `
-                                                                <tr>
-                                                                    <td>${i.description}</td>
-                                                                    <td>${i.qty}</td>
-                                                                    <td>${formatRupiah(i.unit_price)}</td>
-                                                                    <td>${formatRupiah(i.total_price)}</td>
-                                                                </tr>
-                                                            `).join('')}
+                                                                    <tr>
+                                                                        <td>${i.description}</td>
+                                                                        <td>${i.qty}</td>
+                                                                        <td>${formatRupiah(i.unit_price)}</td>
+                                                                        <td>${formatRupiah(i.total_price)}</td>
+                                                                    </tr>
+                                                                `).join('')}
                     </tbody>
                 </table>
 
                 ${q.scopes.length > 0 ? `
-                                                        <hr>
-                                                        <h5>Scopes</h5>
-                                                        <table class="table table-sm table-bordered">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Description</th>
-                                                                    <th>Responsible PT GPT</th>
-                                                                    <th>Responsible Client</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                ${q.scopes.map(s => `
+                                                            <hr>
+                                                            <h5>Scopes</h5>
+                                                            <table class="table table-sm table-bordered">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Description</th>
+                                                                        <th>Responsible PT GPT</th>
+                                                                        <th>Responsible Client</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    ${q.scopes.map(s => `
                                 <tr>
                                     <td>${s.description}</td>
                                     <td class="text-center">${s.responsible_pt_gpt == 1 ? '✔️' : '-'}</td>
                                     <td class="text-center">${s.responsible_client == 1 ? '✔️' : '-'}</td>
                                 </tr>
                             `).join('')}
-                                                            </tbody>
-                                                        </table>
-                                                    ` : ''}
+                                                                </tbody>
+                                                            </table>
+                                                        ` : ''}
             `);
 
                         $('#showModal').modal('show');
@@ -273,6 +273,8 @@
             // Approve
             $(document).on('click', '.approveBtn', function() {
                 let id = $(this).data('id');
+                let $btn = $(this); // tombol yang diklik
+                let originalText = $btn.html(); // simpan text asli tombol
 
                 Swal.fire({
                     title: 'Are you sure?',
@@ -284,6 +286,12 @@
                     confirmButtonText: 'Yes, approve it!'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // Tambahkan loading state
+                        $btn.prop('disabled', true);
+                        $btn.html(
+                            '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Approving...'
+                            );
+
                         $.ajax({
                             url: '/quotations/' + id + '/approve',
                             type: 'POST',
@@ -299,6 +307,18 @@
                                     showConfirmButton: false
                                 });
                                 table.ajax.reload();
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Failed!',
+                                    text: 'Something went wrong!',
+                                });
+                            },
+                            complete: function() {
+                                // Kembalikan tombol ke keadaan semula
+                                $btn.prop('disabled', false);
+                                $btn.html(originalText);
                             }
                         });
                     }

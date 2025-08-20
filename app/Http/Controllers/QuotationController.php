@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use App\Models\Quotation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -233,32 +236,49 @@ class QuotationController extends Controller
     }
 
 
-   public function approve($id)
-    {
-        $quotation = Quotation::findOrFail($id);
+public function approve($id)
+{
+    $quotation = Quotation::findOrFail($id);
 
-        // Simpan siapa yang approve
-        $user = auth()->user();
+    // User yang approve
+    $user = auth()->user();
 
-        // Data untuk QR
-        $qrData = "Approved by: {$user->name} | Quotation No: {$quotation->quo_no} | Date: ".now()->format('d-m-Y H:i');
+    // Data approval
+    $approvalData = [
+        'quotation_id' => $quotation->id,
+        'approver_id' => $user->id,
+        'approver_name' => $user->name,
+        'approver_position' => $user->position ?? 'Manager',
+        'quotation_no' => $quotation->quo_no,
+        'approval_date' => now()->format('d-m-Y H:i'),
+        'signature_token' => Str::random(32)
+    ];
 
-        // Generate QR (PNG)
-        $qrImage = QrCode::format('svg')->size(200)->generate($qrData);
+    // Enkripsi data
+    $encryptedData = Crypt::encryptString(json_encode($approvalData));
 
-        // Simpan di storage
-        $fileName = 'qrcodes/quotation_'.$quotation->id.'_approved.svg';
-        Storage::disk('public')->put($fileName, $qrImage);
+    // URL yang akan dimasukkan ke QR
+    $qrUrl = route('quotation.approval', ['encryptedData' => $encryptedData]);
 
-        // Update quotation
-        $quotation->status_id = 2; // approved
-        $quotation->approved_by = $user->id;
-        $quotation->approved_qr = $fileName;
-        $quotation->approved_at = now();
-        $quotation->save();
+    // Generate QR (SVG)
+    $qrSvg = QrCode::format('svg')->size(200)->generate($qrUrl);
 
-        return back()->with('success', 'Quotation approved & QR generated!');
-    }
+    // Simpan di storage
+    $fileName = 'qrcodes/quotation_'.$quotation->id.'_approved.svg';
+    Storage::disk('public')->put($fileName, $qrSvg);
+
+    // Ubah ke base64 supaya tetap kompatibel dengan PDF
+    $qrImage = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+
+    // Update quotation
+    $quotation->status_id = 2; // approved
+    $quotation->approved_by = $user->id;
+    $quotation->approved_qr = $fileName;
+    $quotation->approved_at = now();
+    $quotation->save();
+
+    return back()->with('success', 'Quotation approved & QR generated!');
+}
 
     public function reject(Request $request, $id)
     {
@@ -274,5 +294,25 @@ class QuotationController extends Controller
 
         return response()->json(['message' => 'Quotation rejected with reason saved']);
     }
+
+
+    public function showApproval($encryptedData)
+    {
+        try {
+            // Dekripsi data
+            $decrypted = Crypt::decryptString($encryptedData);
+            $approvalData = json_decode($decrypted, true);
+
+            $quotation = Quotation::findOrFail($approvalData['quotation_id']);
+
+            return view('quotations.approval', [
+                'approval' => $approvalData,
+                'quotation' => $quotation,
+            ]);
+        } catch (\Exception $e) {
+            abort(404, 'Approval data not found or expired');
+        }
+    }
+
 
 }

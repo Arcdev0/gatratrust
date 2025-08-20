@@ -146,3 +146,5 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
+
+Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
