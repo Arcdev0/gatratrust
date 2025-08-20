@@ -53,6 +53,9 @@ class QuotationController extends Controller
                                 data-id="'.$row->id.'">Show</button>
                     ';
 
+                    $user = auth()->user();
+                    $roleName = strtolower($user->role->name ?? ''); // handle kalau role null
+
                     if ((int) $row->status_id === 2) {
                         // Approved → hanya PDF
                         $btns .= ' <a href="'.route('quotations.exportPdf', $row->id).'"
@@ -62,12 +65,18 @@ class QuotationController extends Controller
                         $btns .= ' <button class="btn btn-sm btn-danger deleteBtn"
                                             data-id="'.$row->id.'">Delete</button>';
                     } else {
-                        // Pending → bisa approve, reject, delete
+                        // Pending
+                        if (in_array($roleName, ['superadmin', 'keuangan'])) {
+                            $btns .= '
+                                <button class="btn btn-sm btn-success approveBtn"
+                                        data-id="'.$row->id.'">Approve</button>
+                                <button class="btn btn-sm btn-warning rejectBtn"
+                                        data-id="'.$row->id.'">Reject</button>
+                            ';
+                        }
+
+                        // semua role tetap bisa Delete kalau pending
                         $btns .= '
-                            <button class="btn btn-sm btn-success approveBtn"
-                                    data-id="'.$row->id.'">Approve</button>
-                            <button class="btn btn-sm btn-warning rejectBtn"
-                                    data-id="'.$row->id.'">Reject</button>
                             <button class="btn btn-sm btn-danger deleteBtn"
                                     data-id="'.$row->id.'">Delete</button>
                         ';
@@ -253,7 +262,7 @@ class QuotationController extends Controller
             'quotation_id'      => $quotation->id,
             'approver_id'       => $user->id,
             'approver_name'     => $user->name,
-            'approver_position' => $user->position ?? 'Manager',
+            'approver_position' => $user->role->name ?? 'Keuangan',
             'quotation_no'      => $quotation->quo_no,
             'approval_date'     => now()->format('d-m-Y H:i'),
             'signature_token'   => Str::random(32),

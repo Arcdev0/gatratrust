@@ -6,17 +6,32 @@
     <title>Quotation {{ $quotation->quo_no }}</title>
     <style>
         body {
-            font-family: "Times New Roman", Times, serif;
+            font-family: "DejaVu Sans, Times New Roman", Times, serif;
             /* biar support simbol/✔ */
             font-size: 12px;
+        }
+
+        .no-page-break {
+            page-break-inside: avoid;
+            page-break-before: auto;
+            page-break-after: auto;
+            display: inline-block;
+        }
+
+        .check::before {
+            content: "\2713"; /* unicode ✔ */
+            font-size: 14px;
+            color: green;
+        }
+
+        .text-center {
+            text-align: center;
         }
 
         .header {
             width: 100%;
             border-bottom: 3px solid #008000;
-            /* garis bawah hijau */
             padding-bottom: 10px;
-            /* margin-bottom: 15px; */
         }
 
         .header-table {
@@ -27,26 +42,31 @@
 
         .header-table td {
             border: none;
-            /* pastikan tidak ada garis */
             vertical-align: middle;
         }
 
         .logo {
-            width: 120px;
-            /* ukuran logo tetap besar */
+            width: 90px;
             height: auto;
         }
 
         .header-text h1 {
             margin: 0;
             font-size: 18px;
-            color: #008000;
-            /* hijau */
+            color: #0C6401;
+        }
+
+        .header-table td.text-top {
+        vertical-align: top;
         }
 
         .header-text p {
             margin: 2px 0;
-            font-size: 11px;
+            font-size: 10px;
+        }
+
+        .header-text {
+        padding-top: 5px;
         }
 
         table {
@@ -75,6 +95,24 @@
             border-collapse: collapse;
             margin: 15px 0;
             font-size: 12px;
+        }
+
+        .info-table2 th {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 12px;
+            background-color: #0C6401;
+            align-content: left;
+        }
+
+        .info-table3 th {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 12px;
+            background-color: #0C6401;
+            align-content: left;
         }
 
         .info-table td {
@@ -109,7 +147,7 @@
             <tr>
                 <td style="width:130px;">
                     <?php
-                    $path = public_path('template/img/Logo_gatra.png');
+                    $path = public_path('template/img/LOGO_Gatra1.png');
                     $type = pathinfo($path, PATHINFO_EXTENSION);
                     if (file_exists($path)) {
                         $data = file_get_contents($path);
@@ -120,10 +158,11 @@
                     ?>
                     <img src="<?php echo $base64; ?>" alt="logo" class="logo" />
                 </td>
-                <td>
+                <td class="text-top">
                     <div class="header-text">
-                        <h1>PT. GATRA PERDANA TRUSTURE</h1>
+                        <h1>PT. GATRA PERDANA TRUSTRUE</h1>
                         <p>Calibration Test, Consultant, General Supplier, & Digital Agency for your Business</p>
+                        <p>Kawasan Komplek Ruko Golden BCI blok T3 No 12 Bengkong Laut, Kecamatan Bengkong, Kota Batam, Kepulauan Riau</p>
                     </div>
                 </td>
             </tr>
@@ -143,7 +182,7 @@
             <td class="label">Address</td>
             <td class="value">{{ $quotation->customer_address }}</td>
             <td class="right">Date</td>
-            <td class="right-value">{{ \Carbon\Carbon::parse($quotation->date)->format('d-M-Y') }}</td>
+            <td class="right-value">{{ \Carbon\Carbon::parse($quotation->date)->format('d M Y') }}</td>
         </tr>
         <tr>
             <td class="label">Attn</td>
@@ -165,7 +204,7 @@
         </tr>
     </table>
 
-    <table>
+    <table class="info-table2" style="margin-bottom: 20px;">
         <thead>
             <tr>
                 <th>No</th>
@@ -204,7 +243,7 @@
     </table>
 
     <h4>Scope of Work</h4>
-    <table>
+    <table class="info-table3" style="margin-bottom: 20px;">
         <thead>
             <tr>
                 <th>No</th>
@@ -218,8 +257,8 @@
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $scope->description }}</td>
-                    <td class="text-center">{{ $scope->responsible_pt_gpt ? '✔' : '' }}</td>
-                    <td class="text-center">{{ $scope->responsible_client ? '✔' : '' }}</td>
+                    <td class="text-center">{!! $scope->responsible_pt_gpt ? '&#10004;' : '' !!}</td>
+                    <td class="text-center">{!! $scope->responsible_client ? '&#10004;' : '' !!}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -231,31 +270,35 @@
         b). Quotation not including Tax.
     </p>
 
-    <table style="width:100%; margin-top:50px;" class="no-border">
-        <tr>
-            <td style="width:50%; text-align:left;">
-                <p>Approval,</p>
-                <br><br>
+    <!-- Approval + QR Code (selalu satu halaman dengan T&C) -->
+    <div class="no-page-break" style="margin-top:10px;">
+        <table style="width:100%;" class="no-border">
+            <tr>
+                <td style="width:50%; text-align:left;">
+                    <p><b>Approval, by</b></p>
+                    <br><br>
 
-                @if (isset($qrCodeBase64) && $qrCodeBase64)
-                    <div style="width: 100px; height: 100px;">
-                        <img src="{{ $qrCodeBase64 }}" style="width: 100%; height: auto;" alt="Approval QR Code">
-                    </div>
-                @else
-                    <div
-                        style="width: 100px; height: 100px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
-                        No QR Code
-                    </div>
-                @endif
+                    @if (isset($qrCodeBase64) && $qrCodeBase64)
+                        <div style="width: 100px; height: 100px;">
+                            <img src="{{ $qrCodeBase64 }}" style="width: 100%; height: auto;" alt="Approval QR Code">
+                        </div>
+                    @else
+                        <div style="width: 100px; height: 100px; border: 1px dashed #ccc; 
+                                    display: flex; align-items: center; justify-content: center;">
+                            No QR Code
+                        </div>
+                    @endif
 
-                <br>
-                <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
-                <p>Date:
-                    {{ $quotation->approved_at ? \Carbon\Carbon::parse($quotation->approved_at)->format('d M Y') : '__________________' }}
-                </p>
-            </td>
-        </tr>
-    </table>
+                    <br>
+                    <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
+                    <p>
+                        Date:
+                        {{ $quotation->approved_at ? \Carbon\Carbon::parse($quotation->approved_at)->format('d M Y') : '__________________' }}
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
 </body>
-
 </html>
