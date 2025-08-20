@@ -250,8 +250,7 @@
                                         icon: 'success',
                                         confirmButtonText: 'OK'
                                     }).then(() => {
-                                        location
-                                    .reload();
+                                        location.reload();
                                     });
                                 } else {
                                     Swal.fire({
@@ -259,6 +258,8 @@
                                         text: response.message,
                                         icon: 'error'
                                     });
+                                    // aktifkan lagi tombol
+                                    btn.prop('disabled', false).html(btnOriginalText);
                                 }
                             },
                             error: function(xhr) {
@@ -267,6 +268,8 @@
                                     text: 'Terjadi kesalahan pada server.',
                                     icon: 'error'
                                 });
+                                // aktifkan lagi tombol
+                                btn.prop('disabled', false).html(btnOriginalText);
                             }
                         });
                     }
