@@ -220,9 +220,7 @@ class QuotationController extends Controller
     // 7. Export PDF
     public function exportPdf($id)
     {
-        $quotation = Quotation::with(['items', 'scopes'])->findOrFail($id);
-
-        // dd( $quotation->approved_qr);
+        $quotation = Quotation::with(['items', 'scopes', 'terms'])->findOrFail($id);
 
         // Konversi gambar QR code ke base64
          $qrCodeBase64 = null;
