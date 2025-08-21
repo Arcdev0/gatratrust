@@ -44,6 +44,11 @@ class Quotation extends Model
         return $this->hasMany(QuotationScope::class);
     }
 
+    public function terms()
+    {
+        return $this->hasMany(QuotationTerm::class, 'quotation_id');
+    }
+
     public function status()
     {
         return $this->belongsTo(Status::class, 'status_id');

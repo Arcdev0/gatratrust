@@ -125,6 +125,9 @@ class QuotationController extends Controller
                     'scopes.*.description' => 'required_with:scopes|string',
                     'scopes.*.responsible_pt_gpt' => 'nullable|boolean',
                     'scopes.*.responsible_client' => 'nullable|boolean',
+                    'terms_conditions' => 'nullable|array',
+                    'terms_conditions.*.description' => 'required_with:terms_conditions|string|max:500',
+
                 ]);
 
                 // Hitung total amount
@@ -170,6 +173,14 @@ class QuotationController extends Controller
                             'description' => $scope['description'],
                             'responsible_pt_gpt' => !empty($scope['responsible_pt_gpt']) ? 1 : 0,
                             'responsible_client' => !empty($scope['responsible_client']) ? 1 : 0,
+                        ]);
+                    }
+                }
+
+                if (!empty($validated['terms_conditions'])) {
+                    foreach ($validated['terms_conditions'] as $term) {
+                        $quotation->terms()->create([
+                            'description' => $term['description'],
                         ]);
                     }
                 }
@@ -236,7 +247,7 @@ class QuotationController extends Controller
 
     public function show($id)
     {
-        $quotation = Quotation::with(['items', 'scopes', 'status'])->findOrFail($id);
+        $quotation = Quotation::with(['items', 'scopes', 'status', 'terms'])->findOrFail($id);
 
         return response()->json([
             'success' => true,

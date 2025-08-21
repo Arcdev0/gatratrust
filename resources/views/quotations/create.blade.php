@@ -28,14 +28,26 @@
                             <label class="form-label">Customer Address</label>
                             <textarea name="customer_address" class="form-control"></textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="rev" class="form-label">Revision</label>
+                        <div class="col-md-3">
+                            <label class="form-label">Revision</label>
                             <input type="number" name="rev" id="rev" class="form-control" min="0"
                                 value="">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Attention</label>
                             <input type="text" name="attention" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Your Reference</label>
+                            <input type="text" name="your_reference" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Terms</label>
+                            <input type="text" name="terms" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Job No</label>
+                            <input type="text" name="job_no" class="form-control">
                         </div>
                     </div>
                 </div>
@@ -85,6 +97,27 @@
                             {{-- baris dinamis --}}
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="mb-3">Terms & Conditions</h5>
+
+                    <table class="table table-bordered" id="termsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">No</th>
+                                <th>Description</th>
+                                <th style="width: 100px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamic rows akan masuk di sini -->
+                        </tbody>
+                    </table>
+
+                    <button type="button" class="btn btn-sm btn-primary" id="addTerm">+ Add Term</button>
                 </div>
             </div>
 
@@ -209,6 +242,39 @@
                             $(this).attr('name', newName);
                         }
                     });
+                });
+            }
+
+            let termIndex = 0;
+
+            $('#addTerm').on('click', function() {
+                termIndex++;
+                let row = `
+            <tr>
+                <td class="text-center">${termIndex}</td>
+                <td>
+                    <input type="text" name="terms_conditions[${termIndex}][description]"
+                           class="form-control" required>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-danger btn-sm remove-term">x</button>
+                </td>
+            </tr>
+        `;
+                $('#termsTable tbody').append(row);
+                updateTermNumbers();
+            });
+
+            // Hapus baris
+            $(document).on('click', '.remove-term', function() {
+                $(this).closest('tr').remove();
+                updateTermNumbers();
+            });
+
+            // Update nomor urut
+            function updateTermNumbers() {
+                $('#termsTable tbody tr').each(function(index, row) {
+                    $(row).find('td:first').text(index + 1);
                 });
             }
 
