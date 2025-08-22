@@ -13,7 +13,9 @@
         }
 
         .content {
-            margin: 20px;
+            margin: 0 20px;
+            /* buang margin atas bawah, sisakan kiri kanan */
+            padding-top: 0;
         }
 
         .no-page-break {
@@ -173,6 +175,14 @@
 
         .pagenum:before {
             content: counter(page);
+        }
+
+        @page {
+            margin-top: 10px;
+            /* bisa atur 0px kalau mau nempel full */
+            margin-left: 20px;
+            margin-right: 20px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
