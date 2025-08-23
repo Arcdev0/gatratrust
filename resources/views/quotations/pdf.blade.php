@@ -12,32 +12,15 @@
             padding: 0;
         }
 
-        .content {
-            margin: 0 20px;
-            /* buang margin atas bawah, sisakan kiri kanan */
-            padding-top: 0;
-        }
-
-        .no-page-break {
-            page-break-inside: avoid;
-            page-break-before: auto;
-            page-break-after: auto;
-            display: inline-block;
-        }
-
-        .check::before {
-            content: "\2713";
-            /* unicode ✔ */
-            font-size: 14px;
-            color: green;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
+        /* Header tetap di semua halaman */
+        .header-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 100;
+            padding: 0 20px;
         }
 
         .header {
@@ -83,18 +66,31 @@
             padding-top: 3px;
         }
 
+        /* Konten utama */
+        .content {
+            margin: 120px 20px;
+            /* biarkan @page yang handle jarak header/footer */
+            padding-top: 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 6px 0;
-            /* lebih rapat */
         }
 
         th,
         td {
             border: 1px solid #000;
             padding: 3px 4px;
-            /* lebih rapat */
             text-align: left;
             font-size: 11px;
         }
@@ -154,16 +150,21 @@
             line-height: 1.3;
         }
 
+        /* Footer tetap di semua halaman */
         .footer {
             position: fixed;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            /* tinggi fix footer */
             text-align: center;
             font-size: 10px;
             color: #555;
             border-top: 1px solid #ccc;
-            padding: 4px 0;
+            padding: 5px 0;
+            background-color: white;
+            z-index: 100;
         }
 
         .footer img {
@@ -177,18 +178,27 @@
             content: counter(page);
         }
 
+        /* Khusus approval block (biar QR code tidak ketimpa header saat page break) */
+        .approval-block {
+            page-break-inside: avoid;
+            margin-top: 40px;
+        }
+
+        /* Atur margin halaman */
         @page {
-            margin-top: 10px;
-            /* bisa atur 0px kalau mau nempel full */
+            margin-top: 20px;
+            /* sesuai tinggi header */
+            margin-bottom: 20px;
+            /* sesuai tinggi footer */
             margin-left: 20px;
             margin-right: 20px;
-            margin-bottom: 20px;
         }
     </style>
 </head>
 
 <body>
-    <div class="content">
+    <!-- Header untuk semua halaman -->
+    <div class="header-page">
         <div class="header">
             <table class="header-table">
                 <tr>
@@ -218,8 +228,12 @@
             </table>
         </div>
 
-        <h2 style="text-align:center;">QUOTATION</h2>
 
+    </div>
+
+    <!-- Konten utama -->
+    <div class="content">
+        <h2 style="text-align:center;">QUOTATION</h2>
         <table class="info-table no-border" style="width:100%; border-collapse: collapse;">
             <tr>
                 <!-- Kolom kiri -->
@@ -271,7 +285,6 @@
                 </td>
             </tr>
         </table>
-
 
         <table class="info-table2" style="margin-bottom: 20px;">
             <thead>
@@ -337,19 +350,18 @@
             $termsList = $quotation->terms()->get();
         @endphp
 
-        <div class="no-page-break" style="margin-top:80px;">
-            <p><b>Terms and Conditions:</b></p>
-            @if ($termsList && $termsList->count() > 0)
-                <ol style="padding-left: 20px; margin:0 0 20px 0;">
-                    @foreach ($termsList as $index => $term)
-                        <li>{{ $term->description }}</li>
-                    @endforeach
-                </ol>
-            @else
-                <p style="margin-bottom:20px;">-</p>
-            @endif
-
-
+        {{-- <div class="no-page-break" style="margin-top:80px;"> --}}
+        <p><b>Terms and Conditions:</b></p>
+        @if ($termsList && $termsList->count() > 0)
+            <ol style="padding-left: 20px; margin:0 0 20px 0;">
+                @foreach ($termsList as $index => $term)
+                    <li>{{ $term->description }}</li>
+                @endforeach
+            </ol>
+        @else
+            <p style="margin-bottom:20px;">-</p>
+        @endif
+        <div class="approval-block">
             <table style="width:100%;" class="no-border">
                 <tr>
                     <td style="width:50%; text-align:left;">
@@ -380,12 +392,13 @@
             </table>
         </div>
 
+        {{-- </div> --}}
+    </div>
 
-        <!-- Footer -->
-        <div class="footer">
-            <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">
-            PT. GATRA PERDANA TRUSTRUE | www.gatraperdanatrustrue.com | Page <span class="pagenum"></span>
-        </div>
+    <!-- Footer -->
+    <div class="footer">
+        <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">
+        PT. GATRA PERDANA TRUSTRUE | www.gatraperdanatrustrue.com | Page <span class="pagenum"></span>
     </div>
 </body>
 

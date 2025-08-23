@@ -114,7 +114,7 @@ class QuotationController extends Controller
                     'terms' => 'nullable|string',
                     'job_no' => 'nullable|string|max:50',
                     'rev' => 'nullable|string|max:10',
-                    'discount' => 'nullable|numeric|min:0',
+                    'discount_amount' => 'nullable|min:0',
                     'payment_terms' => 'nullable|string',
                     'bank_account' => 'nullable|string',
                     'tax_included' => 'nullable|boolean',
@@ -135,7 +135,8 @@ class QuotationController extends Controller
                     return $item['qty'] * $item['unit_price'];
                 });
 
-                $sub_total = $total_amount - ($validated['discount'] ?? 0);
+                $discount = $validated['discount_amount'] ?? 0;
+                $sub_total = $total_amount - $discount;
 
                 // Simpan quotation utama
                 $quotation = Quotation::create([
@@ -149,7 +150,7 @@ class QuotationController extends Controller
                     'job_no' => $validated['job_no'] ?? null,
                     'rev' => $validated['rev'] ?? null,
                     'total_amount' => $total_amount,
-                    'discount' => $validated['discount'] ?? 0,
+                    'discount' => $discount,
                     'sub_total' => $sub_total,
                     'payment_terms' => $validated['payment_terms'] ?? null,
                     'bank_account' => $validated['bank_account'] ?? null,
@@ -197,7 +198,7 @@ class QuotationController extends Controller
                 return response()->json([
                     'success' => false,
                     'status'  => 500,
-                    'message' => 'Terjadi kesalahan saat menyimpan quotation'
+                    'message' => $e->getMessage(), // tampilkan error asli
                 ], 500);
             }
         }

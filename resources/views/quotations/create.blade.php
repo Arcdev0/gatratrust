@@ -74,6 +74,21 @@
                             {{-- baris dinamis --}}
                         </tbody>
                     </table>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label>Discount (%)</label>
+                            <input type="number" id="discountPercent" class="form-control" min="0" max="100"
+                                value="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label>Discount (Rp)</label>
+                            <input type="text" id="discountAmount" class="form-control" value="0">
+                            <input type="hidden" name="discount_amount" id="discountAmountHidden" value="0">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <h5 class="ms-3">Grand Total: <span id="grandTotal">Rp0</span></h5>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -205,14 +220,42 @@
                 calculateGrandTotal();
             });
 
-            // Hitung grand total
             function calculateGrandTotal() {
                 let grandTotal = 0;
                 $('.total_price_raw').each(function() {
                     grandTotal += parseFloat($(this).val()) || 0;
                 });
-                $('#grandTotal').text(formatRupiah(grandTotal));
+
+                let discountPercent = parseFloat($('#discountPercent').val()) || 0;
+                let discountAmountInput = parseRupiah($('#discountAmount').val());
+
+                let discountFromPercent = 0;
+                if (discountPercent > 0) {
+                    discountFromPercent = (grandTotal * discountPercent) / 100;
+                    discountAmountInput = discountFromPercent; // override amount dari persen
+                    $('#discountAmount').val(formatRupiah(discountAmountInput));
+                }
+
+                // Jangan lebih besar dari total
+                let totalDiscount = Math.min(discountAmountInput, grandTotal);
+
+                let finalTotal = grandTotal - totalDiscount;
+
+                // update view
+                $('#grandTotal').text(formatRupiah(finalTotal));
+
+                // simpan ke hidden input untuk dikirim ke server
+                $('#discountAmountHidden').val(Math.round(totalDiscount));
             }
+
+            // Event listener untuk discount
+            $(document).on('input', '#discountPercent, #discountAmount', function() {
+                if ($(this).attr('id') === 'discountAmount') {
+                    let val = parseRupiah($(this).val());
+                    $(this).val(formatRupiah(val));
+                }
+                calculateGrandTotal();
+            });
 
             // Tambah baris scope
             $('#addScope').click(function() {
