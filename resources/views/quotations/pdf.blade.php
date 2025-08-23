@@ -6,33 +6,39 @@
     <title>Quotation {{ $quotation->quo_no }}</title>
     <style>
         body {
-            font-family: "DejaVu Sans, Times New Roman", Times, serif;
+            font-family: "DejaVu Sans", "Times New Roman", Times, serif;
             font-size: 12px;
             margin: 0;
             padding: 0;
         }
 
+        /* Atur margin halaman sesuai tinggi header & footer */
+        @page {
+            margin-top: 100px;   /* tinggi header */
+            margin-bottom: 80px; /* tinggi footer */
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
         /* Header tetap di semua halaman */
         .header-page {
             position: fixed;
-            top: 0;
+            top: -100px;
             left: 0;
             right: 0;
+            height: 100px; /* harus sama dengan @page margin-top */
             background: white;
             z-index: 100;
-            padding: 0 20px;
         }
 
         .header {
             width: 100%;
             border-bottom: 2px solid #008000;
             padding-bottom: 5px;
-            margin-bottom: 8px;
         }
 
         .header-table {
             width: 100%;
-            border: none;
             border-collapse: collapse;
         }
 
@@ -53,10 +59,6 @@
             color: #0C6401;
         }
 
-        .header-table td.text-top {
-            vertical-align: top;
-        }
-
         .header-text p {
             margin: 1px 0;
             font-size: 9px;
@@ -66,11 +68,37 @@
             padding-top: 3px;
         }
 
+        /* Footer tetap di semua halaman */
+        .footer {
+            position: fixed;
+            bottom: -100px;
+            left: 0;
+            right: 0;
+            height: 80px; /* harus sama dengan @page margin-bottom */
+            text-align: center;
+            font-size: 10px;
+            color: #555;
+            border-top: 1px solid #ccc;
+            padding: 5px 0;
+            background-color: white;
+            z-index: 100;
+        }
+
+        .footer img {
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+            padding-top: 7px;
+        }
+
+        .pagenum:before {
+            content: counter(page);
+        }
+
         /* Konten utama */
         .content {
-            margin: 120px 20px;
-            /* biarkan @page yang handle jarak header/footer */
-            padding-top: 0;
+            margin: 0;
+            padding: 0;
         }
 
         .text-center {
@@ -150,54 +178,16 @@
             line-height: 1.3;
         }
 
-        /* Footer tetap di semua halaman */
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 50px;
-            /* tinggi fix footer */
-            text-align: center;
-            font-size: 10px;
-            color: #555;
-            border-top: 1px solid #ccc;
-            padding: 5px 0;
-            background-color: white;
-            z-index: 100;
-        }
-
-        .footer img {
-            height: 15px;
-            margin-right: 5px;
-            vertical-align: middle;
-            padding-top: 7px;
-        }
-
-        .pagenum:before {
-            content: counter(page);
-        }
-
-        /* Khusus approval block (biar QR code tidak ketimpa header saat page break) */
+        /* Approval block (supaya tidak ketimpa header/footer) */
         .approval-block {
             page-break-inside: avoid;
-            margin-top: 40px;
-        }
-
-        /* Atur margin halaman */
-        @page {
             margin-top: 20px;
-            /* sesuai tinggi header */
-            margin-bottom: 20px;
-            /* sesuai tinggi footer */
-            margin-left: 20px;
-            margin-right: 20px;
         }
     </style>
 </head>
 
 <body>
-    <!-- Header untuk semua halaman -->
+    <!-- Header -->
     <div class="header-page">
         <div class="header">
             <table class="header-table">
@@ -220,25 +210,22 @@
                             <h1>PT. GATRA PERDANA TRUSTRUE</h1>
                             <p>Calibration Test, Consultant, General Supplier, & Digital Agency for your Business</p>
                             <p>Kawasan Komplek Ruko Golden BCI blok T3 No 12 Bengkong Laut, Kecamatan Bengkong, Kota
-                                Batam,
-                                Kepulauan Riau</p>
+                                Batam, Kepulauan Riau</p>
                         </div>
                     </td>
                 </tr>
             </table>
         </div>
-
-
     </div>
 
-    <!-- Konten utama -->
+    <!-- Konten -->
     <div class="content">
-        <h2 style="text-align:center;">QUOTATION</h2>
-        <table class="info-table no-border" style="width:100%; border-collapse: collapse;">
+        <h2 class="text-center">QUOTATION</h2>
+
+        <table class="info-table no-border">
             <tr>
-                <!-- Kolom kiri -->
                 <td style="width:50%; vertical-align:top;">
-                    <table style="width:100%; border-collapse: collapse;">
+                    <table style="width:100%;">
                         <tr>
                             <td style="width:35%; font-weight:bold;">Customer</td>
                             <td style="width:65%;">: {{ $quotation->customer_name }}</td>
@@ -261,10 +248,8 @@
                         </tr>
                     </table>
                 </td>
-
-                <!-- Kolom kanan -->
                 <td style="width:50%; vertical-align:top;">
-                    <table style="width:100%; border-collapse: collapse;">
+                    <table style="width:100%;">
                         <tr>
                             <td style="width:35%; font-weight:bold;">Quo No</td>
                             <td style="width:65%;">: {{ $quotation->quo_no }}</td>
@@ -286,7 +271,7 @@
             </tr>
         </table>
 
-        <table class="info-table2" style="margin-bottom: 20px;">
+        <table class="info-table2" style="margin-bottom:20px;">
             <thead>
                 <tr>
                     <th>No</th>
@@ -298,13 +283,13 @@
             </thead>
             <tbody>
                 @foreach ($quotation->items as $i => $item)
-                    <tr>
-                        <td>{{ $i + 1 }}</td>
-                        <td>{{ $item->description }}</td>
-                        <td>{{ $item->qty }}</td>
-                        <td class="text-right">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($item->total_price, 0, ',', '.') }}</td>
-                    </tr>
+                <tr>
+                    <td>{{ $i + 1 }}</td>
+                    <td>{{ $item->description }}</td>
+                    <td>{{ $item->qty }}</td>
+                    <td class="text-right">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($item->total_price, 0, ',', '.') }}</td>
+                </tr>
                 @endforeach
             </tbody>
         </table>
@@ -325,7 +310,7 @@
         </table>
 
         <h4>Scope of Work</h4>
-        <table class="info-table3" style="margin-bottom: 20px;">
+        <table class="info-table3" style="margin-bottom:20px;">
             <thead>
                 <tr>
                     <th>No</th>
@@ -336,12 +321,12 @@
             </thead>
             <tbody>
                 @foreach ($quotation->scopes as $i => $scope)
-                    <tr>
-                        <td>{{ $i + 1 }}</td>
-                        <td>{{ $scope->description }}</td>
-                        <td class="text-center">{!! $scope->responsible_pt_gpt ? '&#10004;' : '' !!}</td>
-                        <td class="text-center">{!! $scope->responsible_client ? '&#10004;' : '' !!}</td>
-                    </tr>
+                <tr>
+                    <td>{{ $i + 1 }}</td>
+                    <td>{{ $scope->description }}</td>
+                    <td class="text-center">{!! $scope->responsible_pt_gpt ? '&#10004;' : '' !!}</td>
+                    <td class="text-center">{!! $scope->responsible_client ? '&#10004;' : '' !!}</td>
+                </tr>
                 @endforeach
             </tbody>
         </table>
@@ -349,38 +334,33 @@
         @php
             $termsList = $quotation->terms()->get();
         @endphp
-
-        {{-- <div class="no-page-break" style="margin-top:80px;"> --}}
         <p><b>Terms and Conditions:</b></p>
         @if ($termsList && $termsList->count() > 0)
-            <ol style="padding-left: 20px; margin:0 0 20px 0;">
-                @foreach ($termsList as $index => $term)
-                    <li>{{ $term->description }}</li>
-                @endforeach
-            </ol>
+        <ol style="padding-left:20px; margin:0 0 20px 0;">
+            @foreach ($termsList as $index => $term)
+            <li>{{ $term->description }}</li>
+            @endforeach
+        </ol>
         @else
-            <p style="margin-bottom:20px;">-</p>
+        <p style="margin-bottom:20px;">-</p>
         @endif
+
+        <!-- Approval Block -->
         <div class="approval-block">
             <table style="width:100%;" class="no-border">
                 <tr>
                     <td style="width:50%; text-align:left;">
                         <p><b>Approval, by</b></p>
                         <br><br>
-
                         @if (isset($qrCodeBase64) && $qrCodeBase64)
-                            <div style="width: 100px; height: 100px;">
-                                <img src="{{ $qrCodeBase64 }}" style="width: 100%; height: auto;"
-                                    alt="Approval QR Code">
-                            </div>
+                        <div style="width:100px; height:100px;">
+                            <img src="{{ $qrCodeBase64 }}" style="width:100%; height:auto;" alt="Approval QR Code">
+                        </div>
                         @else
-                            <div
-                                style="width: 100px; height: 100px; border: 1px dashed #ccc;
-                                    display: flex; align-items: center; justify-content: center;">
-                                No QR Code
-                            </div>
+                        <div style="width:100px; height:100px; border:1px dashed #ccc; display:flex; align-items:center; justify-content:center;">
+                            No QR Code
+                        </div>
                         @endif
-
                         <br>
                         <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
                         <p>
@@ -391,8 +371,6 @@
                 </tr>
             </table>
         </div>
-
-        {{-- </div> --}}
     </div>
 
     <!-- Footer -->
@@ -401,5 +379,4 @@
         PT. GATRA PERDANA TRUSTRUE | www.gatraperdanatrustrue.com | Page <span class="pagenum"></span>
     </div>
 </body>
-
 </html>
