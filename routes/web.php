@@ -142,6 +142,7 @@ Route::middleware('auth')->group(function () {
     });
     Route::post('/quotations/{id}/approve', [QuotationController::class, 'approve'])->name('quotations.approve');
     Route::post('/quotations/{id}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
+    Route::get('/quotations/{id}/copy', [QuotationController::class, 'copy'])->name('quotations.copy');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

@@ -5,12 +5,23 @@
 @section('content')
     <div class="container-fluid">
         <h4>Create Quotation</h4>
-        <form id="quotationForm" method="POST" action="{{ route('quotations.store') }}">
-            @csrf
 
-            {{-- Header Quotation --}}
-            <div class="card mb-3">
-                <div class="card-body">
+
+
+        {{-- Header Quotation --}}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div>
+                    <label class="form-label">Copy From Quotation</label>
+                    <select id="copyFrom" class="form-control">
+                        <option value="">-- Pilih Quotation Lama --</option>
+                        @foreach ($quotations as $q)
+                            <option value="{{ $q->id }}">{{ $q->quo_no }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <form id="quotationForm" method="POST" action="{{ route('quotations.store') }}">
+                    @csrf
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Quotation No</label>
@@ -50,97 +61,97 @@
                             <input type="text" name="job_no" class="form-control">
                         </div>
                     </div>
-                </div>
             </div>
+        </div>
 
-            {{-- Items --}}
-            <div class="card mb-3">
-                <div class="card-header d-flex justify-content-between">
-                    <span>Quotation Items</span>
-                    <button type="button" class="btn btn-sm btn-success" id="addItem">+ Add Item</button>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered" id="itemsTable">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th>Qty</th>
-                                <th>Unit Price</th>
-                                <th>Total Price</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{-- baris dinamis --}}
-                        </tbody>
-                    </table>
-                    <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label>Discount (%)</label>
-                            <input type="number" id="discountPercent" class="form-control" min="0" max="100"
-                                value="0">
-                        </div>
-                        <div class="col-md-3">
-                            <label>Discount (Rp)</label>
-                            <input type="text" id="discountAmount" class="form-control" value="0">
-                            <input type="hidden" name="discount_amount" id="discountAmountHidden" value="0">
-                        </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <h5 class="ms-3">Grand Total: <span id="grandTotal">Rp0</span></h5>
-                        </div>
+        {{-- Items --}}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <span>Quotation Items</span>
+                <button type="button" class="btn btn-sm btn-success" id="addItem">+ Add Item</button>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Total Price</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{-- baris dinamis --}}
+                    </tbody>
+                </table>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <label>Discount (%)</label>
+                        <input type="number" id="discountPercent" class="form-control" min="0" max="100"
+                            value="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label>Discount (Rp)</label>
+                        <input type="text" id="discountAmount" class="form-control" value="0">
+                        <input type="hidden" name="discount_amount" id="discountAmountHidden" value="0">
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <h5 class="ms-3">Grand Total: <span id="grandTotal">Rp0</span></h5>
                     </div>
                 </div>
             </div>
+        </div>
 
-            {{-- Scope of Work --}}
-            <div class="card mb-3">
-                <div class="card-header d-flex justify-content-between">
-                    <span>Scope of Work</span>
-                    <button type="button" class="btn btn-sm btn-success" id="addScope">+ Add Scope</button>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered" id="scopeTable">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th>Responsible PT GPT</th>
-                                <th>Responsible Client</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{-- baris dinamis --}}
-                        </tbody>
-                    </table>
-                </div>
+        {{-- Scope of Work --}}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <span>Scope of Work</span>
+                <button type="button" class="btn btn-sm btn-success" id="addScope">+ Add Scope</button>
             </div>
-
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="mb-3">Terms & Conditions</h5>
-
-                    <table class="table table-bordered" id="termsTable">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px;">No</th>
-                                <th>Description</th>
-                                <th style="width: 100px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Dynamic rows akan masuk di sini -->
-                        </tbody>
-                    </table>
-
-                    <button type="button" class="btn btn-sm btn-primary" id="addTerm">+ Add Term</button>
-                </div>
+            <div class="card-body">
+                <table class="table table-bordered" id="scopeTable">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Responsible PT GPT</th>
+                            <th>Responsible Client</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{-- baris dinamis --}}
+                    </tbody>
+                </table>
             </div>
+        </div>
 
-            {{-- Submit --}}
-            <div class="text-end">
-                <button type="submit" class="btn btn-primary">Save Quotation</button>
-                <a href="{{ route('quotations.index') }}" class="btn btn-secondary">Cancel</a>
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="mb-3">Terms & Conditions</h5>
+
+                <table class="table table-bordered" id="termsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">No</th>
+                            <th>Description</th>
+                            <th style="width: 100px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dynamic rows akan masuk di sini -->
+                    </tbody>
+                </table>
+
+                <button type="button" class="btn btn-sm btn-primary" id="addTerm">+ Add Term</button>
             </div>
+        </div>
+
+        {{-- Submit --}}
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Save Quotation</button>
+            <a href="{{ route('quotations.index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
         </form>
     </div>
 @endsection
@@ -162,7 +173,84 @@
                 return parseInt(rupiah.replace(/[^\d]/g, '')) || 0;
             }
 
-            // Tambah baris item
+            function formatDate(dateStr) {
+                if (!dateStr) return '';
+                return dateStr.split('T')[0];
+            }
+
+            $('#copyFrom').select2({
+                placeholder: "-- Pilih Quotation Lama --",
+                allowClear: true,
+                width: '100%'
+            });
+
+
+            $('#copyFrom').on('change', function() {
+                let id = $(this).val();
+                if (!id) return;
+
+                $.get("{{ url('/quotations') }}/" + id + "/copy", function(res) {
+                    if (res.success) {
+                        let q = res.data;
+                        $('input[name="quo_no"]').val(q.quo_no);
+                        $('input[name="date"]').val(formatDate(q.date));
+                        $('input[name="customer_name"]').val(q.customer_name);
+                        $('textarea[name="customer_address"]').val(q.customer_address);
+                        $('#rev').val(q.rev);
+                        $('input[name="attention"]').val(q.attention);
+                        $('input[name="your_reference"]').val(q.your_reference);
+                        $('input[name="terms"]').val(q.terms);
+                        $('input[name="job_no"]').val(q.job_no);
+
+                        $('#itemsTable tbody').empty();
+                        q.items.forEach((item, i) => {
+                            $('#itemsTable tbody').append(`
+                    <tr>
+                        <td><input type="text" name="items[${i}][description]" class="form-control" value="${item.description}"></td>
+                        <td><input type="number" name="items[${i}][qty]" class="form-control qty" value="${item.qty}"></td>
+                        <td>
+                            <input type="text" class="form-control unit_price" value="${formatRupiah(item.unit_price)}">
+                            <input type="hidden" name="items[${i}][unit_price]" class="unit_price_raw" value="${item.unit_price}">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control total_price" value="${formatRupiah(item.total_price)}">
+                            <input type="hidden" name="items[${i}][total_price]" class="total_price_raw" value="${item.total_price}">
+                        </td>
+                        <td><button type="button" class="btn btn-danger btn-sm removeItem">×</button></td>
+                    </tr>
+                `);
+                        });
+
+                        // scope
+                        $('#scopeTable tbody').empty();
+                        q.scopes.forEach((scope, i) => {
+                            $('#scopeTable tbody').append(`
+                    <tr>
+                        <td><input type="text" name="scopes[${i}][description]" class="form-control" value="${scope.description}"></td>
+                        <td class="text-center"><input type="checkbox" name="scopes[${i}][responsible_pt_gpt]" value="1" ${scope.responsible_pt_gpt ? 'checked' : ''}></td>
+                        <td class="text-center"><input type="checkbox" name="scopes[${i}][responsible_client]" value="1" ${scope.responsible_client ? 'checked' : ''}></td>
+                        <td><button type="button" class="btn btn-danger btn-sm removeScope">×</button></td>
+                    </tr>
+                `);
+                        });
+
+                        // terms
+                        $('#termsTable tbody').empty();
+                        q.terms_conditions.forEach((term, i) => {
+                            $('#termsTable tbody').append(`
+                    <tr>
+                        <td class="text-center">${i+1}</td>
+                        <td><input type="text" name="terms_conditions[${i}][description]" class="form-control" value="${term.description}"></td>
+                        <td class="text-center"><button type="button" class="btn btn-danger btn-sm remove-term">x</button></td>
+                    </tr>
+                `);
+                        });
+
+                        calculateGrandTotal();
+                    }
+                });
+            });
+
             $('#addItem').click(function() {
                 const index = $('#itemsTable tbody tr').length;
                 const itemRow = `
@@ -386,4 +474,5 @@
             });
         });
     </script>
+
 @endsection

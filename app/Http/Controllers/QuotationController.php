@@ -91,7 +91,26 @@ class QuotationController extends Controller
 
     public function create()
     {
-        return view('quotations.create');
+        // Ambil semua quotation lama, misal urut dari terbaru
+        $quotations = Quotation::orderBy('id', 'desc')->get();
+
+        return view('quotations.create', compact('quotations'));
+    }
+    public function copy($id)
+    {
+        $quotation = Quotation::with(['items', 'scopes'])->findOrFail($id);
+
+        $terms = DB::table('quotation_terms')
+            ->where('quotation_id', $quotation->id)
+            ->get();
+
+        $data = $quotation->toArray();
+        $data['terms_conditions'] = $terms;
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
     }
 
      public function store(Request $request)

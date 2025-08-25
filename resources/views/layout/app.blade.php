@@ -24,6 +24,7 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     @yield('css')
     <style>
@@ -56,6 +57,7 @@
     <script src="{{ asset('template/src/js/vendor/modernizr-2.8.3.min.js') }}"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         window.jQuery || document.write(
             '<script src="{{ asset('template/src/js/vendor/jquery-3.3.1.min.js') }}"><\/script>');
