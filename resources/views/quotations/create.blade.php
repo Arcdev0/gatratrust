@@ -418,6 +418,30 @@
                     return;
                 }
 
+                if (typeof reindexItems === 'function') reindexItems();
+                if (typeof reindexScopes === 'function') reindexScopes();
+                if (typeof updateTermNumbers === 'function') updateTermNumbers();
+
+                const formEl = this;
+                const $form = $(formEl);
+                const btn = $form.find('button[type="submit"]');
+                const btnOriginalText = btn.text();
+
+                let formData = new FormData(formEl);
+
+                $('#itemsTable tbody, #scopeTable tbody, #termsTable tbody').find('input, select, textarea')
+                    .each(function() {
+                        const name = $(this).attr('name');
+                        if (!name) return;
+
+                        if ($(this).is(':checkbox')) {
+                            // kirim 1 jika checked, 0 jika tidak (sesuaikan kalau mau behavior berbeda)
+                            formData.set(name, $(this).is(':checked') ? $(this).val() : '0');
+                        } else {
+                            formData.set(name, $(this).val());
+                        }
+                    });
+
                 Swal.fire({
                     title: 'Simpan Quotation?',
                     text: 'Pastikan data sudah benar',
@@ -426,50 +450,56 @@
                     confirmButtonText: 'Ya, Simpan',
                     cancelButtonText: 'Batal',
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        const form = $(this);
-                        const btn = form.find('button[type="submit"]');
-                        const btnOriginalText = btn.text();
+                    if (!result.isConfirmed) return;
 
-                        btn.prop('disabled', true).html(
-                            '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...'
-                        );
+                    // disable tombol dan tampilkan spinner
+                    btn.prop('disabled', true).html(
+                        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...'
+                    );
 
-                        $.ajax({
-                            url: form.attr('action'),
-                            method: 'POST',
-                            data: form.serialize(),
-                            success: function(response) {
-                                if (response.success) {
-                                    Swal.fire({
-                                        title: 'Berhasil!',
-                                        text: response.message,
-                                        icon: 'success',
-                                        confirmButtonText: 'OK'
-                                    }).then(() => {
-                                        location.reload();
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        title: 'Gagal!',
-                                        text: response.message,
-                                        icon: 'error'
-                                    });
-                                    // aktifkan lagi tombol
-                                    btn.prop('disabled', false).html(btnOriginalText);
-                                }
-                            },
-                            error: function(xhr) {
+                    $.ajax({
+                        url: $form.attr('action'),
+                        method: 'POST',
+                        data: formData,
+                        processData: false, // penting untuk FormData
+                        contentType: false, // penting untuk FormData
+                        cache: false,
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response && response.success) {
                                 Swal.fire({
-                                    title: 'Error!',
-                                    text: 'Terjadi kesalahan pada server.',
+                                    title: 'Berhasil!',
+                                    text: response.message ||
+                                        'Quotation tersimpan.',
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    // reload atau redirect sesuai kebutuhan
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: (response && response.message) ?
+                                        response.message : 'Terjadi kesalahan.',
                                     icon: 'error'
                                 });
-                                // aktifkan lagi tombol
                                 btn.prop('disabled', false).html(btnOriginalText);
                             }
-                        });
-                    }
+                        },
+                        error: function(xhr) {
+                            // opsi: tampilkan error detail saat development
+                            let msg = 'Terjadi kesalahan pada server.';
+                            if (xhr && xhr.responseJSON && xhr.responseJSON.message)
+                                msg = xhr.responseJSON.message;
+                            Swal.fire({
+                                title: 'Error!',
+                                text: msg,
+                                icon: 'error'
+                            });
+                            btn.prop('disabled', false).html(btnOriginalText);
+                        }
+                    });
                 });
             });
         });
