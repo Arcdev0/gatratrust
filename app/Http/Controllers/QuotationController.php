@@ -91,11 +91,23 @@ class QuotationController extends Controller
 
     public function create()
     {
-        // Ambil semua quotation lama, misal urut dari terbaru
+        $lastQuotation = Quotation::orderBy('id', 'desc')->first();
+        if ($lastQuotation && preg_match('/Q\.(\d+)\//', $lastQuotation->quo_no, $matches)) {
+            $lastNumber = (int)$matches[1];
+        } else {
+            $lastNumber = 0;
+        }
+        $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        $monthYear = now()->format('m-y');
+
+        $newQuotationNo = "Q.{$newNumber}/GPT/{$monthYear}";
+
         $quotations = Quotation::orderBy('id', 'desc')->get();
 
-        return view('quotations.create', compact('quotations'));
+        return view('quotations.create', compact('quotations', 'newQuotationNo'));
     }
+
+
     public function copy($id)
     {
         $quotation = Quotation::with(['items', 'scopes'])->findOrFail($id);

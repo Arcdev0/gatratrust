@@ -25,7 +25,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Quotation No</label>
-                            <input type="text" name="quo_no" class="form-control" required>
+                            <input type="text" name="quo_no" value="{{ $newQuotationNo }}" class="form-control" readonly required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Date</label>
@@ -192,7 +192,7 @@
                 $.get("{{ url('/quotations') }}/" + id + "/copy", function(res) {
                     if (res.success) {
                         let q = res.data;
-                        $('input[name="quo_no"]').val(q.quo_no);
+                        // $('input[name="quo_no"]').val(q.quo_no);
                         $('input[name="date"]').val(formatDate(q.date));
                         $('input[name="customer_name"]').val(q.customer_name);
                         $('textarea[name="customer_address"]').val(q.customer_address);
