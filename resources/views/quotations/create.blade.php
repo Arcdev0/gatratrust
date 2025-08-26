@@ -13,19 +13,23 @@
             <div class="card-body">
                 <div>
                     <label class="form-label">Copy From Quotation</label>
-                    <select id="copyFrom" class="form-control">
-                        <option value="">-- Pilih Quotation Lama --</option>
-                        @foreach ($quotations as $q)
-                            <option value="{{ $q->id }}">{{ $q->quo_no }}</option>
-                        @endforeach
-                    </select>
+                    <div class="d-flex gap-2 align-items-center">
+                        <select id="copyFrom" class="form-control">
+                            <option value="">-- Pilih Quotation Lama --</option>
+                            @foreach ($quotations as $q)
+                                <option value="{{ $q->id }}">{{ $q->quo_no }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" id="resetCopy" class="btn btn-danger ml-2 h-100">Reset</button>
+                    </div>
                 </div>
                 <form id="quotationForm" method="POST" action="{{ route('quotations.store') }}">
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Quotation No</label>
-                            <input type="text" name="quo_no" value="{{ $newQuotationNo }}" class="form-control" readonly required>
+                            <input type="text" name="quo_no" value="{{ $newQuotationNo }}" class="form-control" readonly
+                                required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Date</label>
@@ -180,7 +184,7 @@
 
             $('#copyFrom').select2({
                 placeholder: "-- Pilih Quotation Lama --",
-                allowClear: true,
+                // allowClear: true,
                 width: '100%'
             });
 
@@ -250,6 +254,30 @@
                     }
                 });
             });
+
+            $('#resetCopy').on('click', function() {
+                // reset dropdown
+                $('#copyFrom').val('');
+
+                // reset form input
+                $('input[name="date"]').val('');
+                $('input[name="customer_name"]').val('');
+                $('textarea[name="customer_address"]').val('');
+                $('#rev').val('');
+                $('input[name="attention"]').val('');
+                $('input[name="your_reference"]').val('');
+                $('input[name="terms"]').val('');
+                $('input[name="job_no"]').val('');
+
+                // reset tabel
+                $('#itemsTable tbody').empty();
+                $('#scopeTable tbody').empty();
+                $('#termsTable tbody').empty();
+
+                // hitung ulang total biar nol
+                calculateGrandTotal();
+            });
+
 
             $('#addItem').click(function() {
                 const index = $('#itemsTable tbody tr').length;
