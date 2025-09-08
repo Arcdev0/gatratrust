@@ -197,7 +197,7 @@
                     if (res.success) {
                         let q = res.data;
                         // $('input[name="quo_no"]').val(q.quo_no);
-                        $('input[name="date"]').val(formatDate(q.date));
+                        // $('input[name="date"]').val(formatDate(q.date));
                         $('input[name="customer_name"]').val(q.customer_name);
                         $('textarea[name="customer_address"]').val(q.customer_address);
                         $('#rev').val(q.rev);
