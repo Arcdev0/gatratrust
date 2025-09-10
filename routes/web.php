@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
@@ -143,6 +144,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/quotations/{id}/approve', [QuotationController::class, 'approve'])->name('quotations.approve');
     Route::post('/quotations/{id}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
     Route::get('/quotations/{id}/copy', [QuotationController::class, 'copy'])->name('quotations.copy');
+
+    // Invoices
+    Route::get('/invoice', [InvoiceController::class, 'index'])->name('invoice.index');
+    Route::get('/invoice/create', [InvoiceController::class, 'create'])->name('invoice.create');
+    Route::post('/invoice/store', [InvoiceController::class, 'store'])->name('invoice.store');
+    Route::get('/invoice/data', [InvoiceController::class, 'getData'])->name('invoice.data');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
