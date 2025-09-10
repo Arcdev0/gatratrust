@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProjectTbl;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -72,8 +73,10 @@ class InvoiceController extends Controller
 
     public function create()
     {
+        $projects = ProjectTbl::orderBy('created_at', 'desc')
+        ->get();// Ambil data proyek dari database jika perlu
         $newInvoiceNo = 'INV-' . str_pad(rand(1, 9999), 5, '0', STR_PAD_LEFT);
-        return view('invoice.create', compact('newInvoiceNo'));
+        return view('invoice.create', compact('newInvoiceNo', 'projects'));
     }
 
     public function edit($invoiceNo)
