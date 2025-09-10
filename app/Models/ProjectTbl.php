@@ -48,4 +48,9 @@ class ProjectTbl extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+        public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'project_id');
+    }
 }

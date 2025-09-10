@@ -85,6 +85,9 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
+
+
+        dd($request->all());
         $request->validate([
             'invoice_no'          => 'required|string|max:50',
             'date'                => 'required|date',
@@ -113,9 +116,7 @@ class InvoiceController extends Controller
             'items'            => $request->items,
         ];
 
-        $invoices = session()->get('invoices', []);
-        $invoices[] = $invoice;
-        session()->put('invoices', $invoices);
+
 
         return redirect()->route('invoice.index')->with('success', 'Invoice berhasil disimpan (dummy).');
     }

@@ -43,7 +43,7 @@
                             <tbody>
                                 <tr>
                                     <td>
-                                        <div id="editor-0" class="quill-editor" style="height:100px;"></div>
+                                        <div id="editor-0" class="quill-editor" style="height:50vh;"></div>
                                         <input type="hidden" name="inputDesc" id="inputDesc">
                                     </td>
                                     <td>
