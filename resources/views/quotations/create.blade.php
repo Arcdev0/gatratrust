@@ -260,7 +260,7 @@
                 $('#copyFrom').val('');
 
                 // reset form input
-                $('input[name="date"]').val('');
+                // $('input[name="date"]').val('');
                 $('input[name="customer_name"]').val('');
                 $('textarea[name="customer_address"]').val('');
                 $('#rev').val('');
