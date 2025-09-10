@@ -44,10 +44,10 @@
                                 <tr>
                                     <td>
                                         <div id="editor-0" class="quill-editor" style="height:100px;"></div>
-                                        <input type="hidden" name="items[0][description]" id="input-editor-0">
+                                        <input type="hidden" name="inputDesc" id="inputDesc">
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][amount]" class="form-control amount text-end" value="Rp. 0">
+                                        <input type="text" name="inputAmmount" class="form-control amount text-end" value="Rp. 0">
                                     </td>
                                 </tr>
                             </tbody>
@@ -110,7 +110,7 @@
 
             // Sinkronisasi ke hidden input
             editor.on('text-change', function() {
-                $('#input-editor-0').val(editor.root.innerHTML);
+                $('#inputDesc').val(editor.root.innerHTML);
             });
 
             // Format angka ke Rupiah
