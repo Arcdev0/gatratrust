@@ -365,7 +365,7 @@
                         <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
                         <p>
                             Date:
-                            {{ $quotation->approved_at ? \Carbon\Carbon::parse($quotation->approved_at)->format('d M Y') : '__________________' }}
+                            {{ $quotation->approved_at ? \Carbon\Carbon::parse($quotation->approved_at)->format('d M Y') : '' }}
                         </p>
                     </td>
                 </tr>

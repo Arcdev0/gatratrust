@@ -50,35 +50,52 @@ class QuotationController extends Controller
                 ->addColumn('action', function ($row) {
                     $btns = '
                         <button class="btn btn-sm btn-info showBtn"
-                                data-id="'.$row->id.'">Show</button>
+                                data-id="'.$row->id.'" title="Show">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     ';
 
                     $user = auth()->user();
-                    $roleName = strtolower($user->role->name ?? ''); // handle kalau role null
+                    $roleName = strtolower($user->role->name ?? '');
 
                     if ((int) $row->status_id === 2) {
                         // Approved → hanya PDF
                         $btns .= ' <a href="'.route('quotations.exportPdf', $row->id).'"
-                                    class="btn btn-sm btn-secondary" target="_blank">PDF</a>';
+                                    class="btn btn-sm btn-secondary" target="_blank" title="Export PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>';
                     } elseif ((int) $row->status_id === 3) {
                         // Rejected → hanya Delete
                         $btns .= ' <button class="btn btn-sm btn-danger deleteBtn"
-                                            data-id="'.$row->id.'">Delete</button>';
+                                            data-id="'.$row->id.'" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                </button>';
                     } else {
-                        // Pending
+                        // Pending → tampilkan PDF juga
+                        $btns .= ' <a href="'.route('quotations.exportPdf', $row->id).'"
+                                    class="btn btn-sm btn-secondary" target="_blank" title="Export PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>';
+
                         if (in_array($roleName, ['superadmin', 'keuangan'])) {
                             $btns .= '
                                 <button class="btn btn-sm btn-success approveBtn"
-                                        data-id="'.$row->id.'">Approve</button>
+                                        data-id="'.$row->id.'" title="Approve">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
                                 <button class="btn btn-sm btn-warning rejectBtn"
-                                        data-id="'.$row->id.'">Reject</button>
+                                        data-id="'.$row->id.'" title="Reject">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
                             ';
                         }
 
                         // semua role tetap bisa Delete kalau pending
                         $btns .= '
                             <button class="btn btn-sm btn-danger deleteBtn"
-                                    data-id="'.$row->id.'">Delete</button>
+                                    data-id="'.$row->id.'" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         ';
                     }
 
