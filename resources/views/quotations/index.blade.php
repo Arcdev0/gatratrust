@@ -46,8 +46,10 @@
                     <!-- content dari ajax -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        aria-label="Close">Close</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <a href="#" id="convertToInvoiceBtn" class="btn btn-primary" style="display:none;">
+                        <i class="fas fa-file-invoice"></i> Convert to Invoice
+                    </a>
                 </div>
             </div>
         </div>
@@ -231,21 +233,21 @@
                                     ${
                                         q.status
                                             ? `
-                                                    <span class="badge ${
-                                                        q.status.name === 'Pending'
-                                                            ? 'bg-yellow text-white'
-                                                            : q.status.name === 'Approve'
-                                                                ? 'bg-success text-white'
-                                                                : 'bg-danger text-white'
-                                                    }">
-                                                        ${q.status.name}
-                                                    </span>
-                                                    ${
-                                                        q.status.name === 'Rejected' && q.rejected_reason
-                                                            ? `<div class="mt-1 text-danger small">${q.rejected_reason}</div>`
-                                                            : ''
-                                                    }
-                                                `
+                                                                    <span class="badge ${
+                                                                        q.status.name === 'Pending'
+                                                                            ? 'bg-yellow text-white'
+                                                                            : q.status.name === 'Approve'
+                                                                                ? 'bg-success text-white'
+                                                                                : 'bg-danger text-white'
+                                                                    }">
+                                                                        ${q.status.name}
+                                                                    </span>
+                                                                    ${
+                                                                        q.status.name === 'Rejected' && q.rejected_reason
+                                                                            ? `<div class="mt-1 text-danger small">${q.rejected_reason}</div>`
+                                                                            : ''
+                                                                    }
+                                                                `
                                             : '-'
                                     }
                                 </td>
@@ -264,63 +266,71 @@
                     </thead>
                     <tbody>
                         ${q.items.map(i => `
-                                                                            <tr>
-                                                                                <td>${i.description}</td>
-                                                                                <td>${i.qty}</td>
-                                                                                <td>${formatRupiah(i.unit_price)}</td>
-                                                                                <td>${formatRupiah(i.total_price)}</td>
-                                                                            </tr>
-                                                                        `).join('')}
+                                                                                            <tr>
+                                                                                                <td>${i.description}</td>
+                                                                                                <td>${i.qty}</td>
+                                                                                                <td>${formatRupiah(i.unit_price)}</td>
+                                                                                                <td>${formatRupiah(i.total_price)}</td>
+                                                                                            </tr>
+                                                                                        `).join('')}
                     </tbody>
                 </table>
 
                 ${q.scopes.length > 0 ? `
-                                                                    <hr>
-                                                                    <h5>Scopes</h5>
-                                                                    <table class="table table-sm table-bordered">
-                                                                        <thead>
-                                                                            <tr>
-                                                                                <th>Description</th>
-                                                                                <th>Responsible PT GPT</th>
-                                                                                <th>Responsible Client</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            ${q.scopes.map(s => `
+                                                                                    <hr>
+                                                                                    <h5>Scopes</h5>
+                                                                                    <table class="table table-sm table-bordered">
+                                                                                        <thead>
+                                                                                            <tr>
+                                                                                                <th>Description</th>
+                                                                                                <th>Responsible PT GPT</th>
+                                                                                                <th>Responsible Client</th>
+                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody>
+                                                                                            ${q.scopes.map(s => `
                                 <tr>
                                     <td>${s.description}</td>
                                     <td class="text-center">${s.responsible_pt_gpt == 1 ? '✔️' : '-'}</td>
                                     <td class="text-center">${s.responsible_client == 1 ? '✔️' : '-'}</td>
                                 </tr>
                             `).join('')}
-                                                                        </tbody>
-                                                                    </table>
-                                                                ` : ''}
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                ` : ''}
 
 
                     ${q.terms.length > 0 ? `
-                        <hr>
-                        <h5>Terms & Conditions</h5>
-                        <table class="table table-sm table-bordered">
-                            <thead>
-                                <tr>
-                                    <th style="width:50px;">No</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${q.terms.map((t, index) => `
+                                        <hr>
+                                        <h5>Terms & Conditions</h5>
+                                        <table class="table table-sm table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:50px;">No</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${q.terms.map((t, index) => `
                             <tr>
                                 <td class="text-center">${index + 1}</td>
                                 <td>${t.description}</td>
                             </tr>
                         `).join('')}
-                            </tbody>
-                        </table>
-                    ` : ''}
+                                            </tbody>
+                                        </table>
+                                    ` : ''}
             `);
 
+                        if (q.status && q.status.name === 'Approve') {
+                            $('#convertToInvoiceBtn')
+                                .attr('href', '/invoices/create?quotation_id=' + q.id)
+                                .show();
+                        } else {
+                            $('#convertToInvoiceBtn').hide();
+                        }
                         $('#showModal').modal('show');
+
                     }
                 });
             });
