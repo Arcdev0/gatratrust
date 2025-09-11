@@ -16,7 +16,7 @@ class InvoiceController extends Controller
         return view('invoice.index');
     }
 
-      public function getData(Request $request)
+    public function getData(Request $request)
     {
         $query = Invoice::select([
             'id',
@@ -39,6 +39,9 @@ class InvoiceController extends Controller
             ->addColumn('net_total', function ($inv) {
                 return number_format($inv->net_total ?? 0, 0, ',', '.');
             })
+            ->addColumn('remaining', function ($inv) {
+                return number_format($inv->remaining ?? 0, 0, ',', '.');
+            })
             ->addColumn('aksi', function ($inv) {
                 return '
                     <button data-id="'.$inv->id.'" class="btn btn-sm btn-info btn-edit me-1">
@@ -55,6 +58,7 @@ class InvoiceController extends Controller
             ->rawColumns(['aksi'])
             ->make(true);
     }
+
 
     public function create(Request $request)
     {
