@@ -21,13 +21,14 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Customer Name</label>
-                            <input type="text" name="customer_name" class="form-control" required>
+                            <input type="text" name="customer_name" class="form-control"
+                                value="{{ $quotation->customer_name ?? '' }}" required>
                         </div>
 
                         <div class="col-md-4 my-2">
                             <label class="form-label">No. Project</label>
                             <div class="d-flex gap-2 align-items-center">
-                                <select id="no_project" class="form-control">
+                                <select id="no_project" name="project_id" class="form-control" required>
                                     <option value="">-- Pilih No. Project --</option>
                                     @foreach ($projects as $p)
                                         <option value="{{ $p->id }}">{{ $p->no_project }}</option>
@@ -37,73 +38,83 @@
                         </div>
                     </div>
                     <label class="form-label">Customer Address</label>
-                    <textarea name="customer_address" class="form-control"></textarea>
-            </div>
+                    <textarea name="customer_address" class="form-control">{{ $quotation->customer_address ?? '' }}</textarea>
 
-            {{-- Tabel Deskripsi & Jumlah --}}
-            <div class="table-responsive mt-4">
-                <table class="table table-bordered align-middle" id="invoiceTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 60%">Deskripsi</th>
-                            <th style="width: 40%">Jumlah</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div id="editor-0" class="quill-editor" style="height:50vh;"></div>
-                                <input type="hidden" name="inputDesc" id="inputDesc">
-                            </td>
-                            <td>
-                                <input type="text" name="inputAmmount" class="form-control amount text-end"
-                                    value="Rp. 0">
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                    {{-- Tabel Deskripsi & Jumlah --}}
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered align-middle" id="invoiceTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 60%">Deskripsi</th>
+                                    <th style="width: 40%">Jumlah</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div id="editor-0" class="quill-editor" style="height:50vh;"></div>
+                                        <input type="hidden" name="inputDesc" id="inputDesc">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control amountDisplay text-end" value="Rp. 0">
+                                        <input type="hidden" name="inputAmmount" class="amount">
+                                    </td>
 
-            {{-- Summary --}}
-            <div class="row justify-content-end mt-4">
-                <div class="col-md-4">
-                    <table class="table table-sm">
-                        <tr>
-                            <th>Gross Total</th>
-                            <td><input type="text" name="gross_total" id="grossTotal" class="form-control text-end"
-                                    readonly></td>
-                        </tr>
-                        <tr>
-                            <th>Discount</th>
-                            <td><input type="number" name="discount" id="discount" class="form-control text-end"
-                                    value="0">
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Down Payment</th>
-                            <td><input type="text" name="down_payment" id="downPayment" class="form-control text-end"
-                                    value="Rp. 0"></td>
-                        </tr>
-                        <tr>
-                            <th>Tax (%)</th>
-                            <td><input type="number" name="tax" id="tax" class="form-control text-end"
-                                    value="0"></td>
-                        </tr>
-                        <tr class="table-light">
-                            <th>Net Total</th>
-                            <td><input type="text" name="net_total" id="netTotal" class="form-control text-end"
-                                    readonly>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-            <div class="text-end mt-4">
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <a href="{{ route('invoice.index') }}" class="btn btn-secondary">Cancel</a>
+                    {{-- Summary --}}
+                    <div class="row justify-content-end mt-4">
+                        <div class="col-md-4">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Gross Total</th>
+                                    <td>
+                                        <input type="text" id="grossTotalDisplay" class="form-control text-end" readonly>
+                                        <input type="hidden" name="gross_total" id="grossTotal">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Discount</th>
+                                    <td>
+                                        <input type="number" name="discount" id="discount" class="form-control text-end"
+                                            value="0">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Down Payment</th>
+                                    <td>
+                                        <input type="text" id="downPaymentDisplay" class="form-control text-end"
+                                            value="Rp. 0">
+                                        <input type="hidden" name="down_payment" id="downPayment">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Tax (%)</th>
+                                    <td>
+                                        <input type="number" name="tax" id="tax" class="form-control text-end"
+                                            value="0">
+                                    </td>
+                                </tr>
+                                <tr class="table-light">
+                                    <th>Net Total</th>
+                                    <td>
+                                        <input type="text" id="netTotalDisplay" class="form-control text-end" readonly>
+                                        <input type="hidden" name="net_total" id="netTotal">
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.history.back()">Back</button>
+                    </div>
+                </form>
             </div>
-            </form>
         </div>
     </div>
 @endsection
@@ -113,7 +124,7 @@
         $(document).ready(function() {
             // Inisialisasi Quill
             $('#no_project').select2({
-                placeholder: "-- Pilih Quotation Lama --",
+                placeholder: "-- Pilih Project --",
                 // allowClear: true,
                 width: '100%'
             });
@@ -138,6 +149,38 @@
                 $('#inputDesc').val(editor.root.innerHTML);
             });
 
+            @if ($quotation && $quotation->items->count())
+                var items = @json($quotation->items);
+
+                var total = 0;
+                var listHtml = "<ol>";
+
+                $.each(items, function(index, item) {
+                    listHtml += `<li>${item.description}
+                (Qty: ${item.qty}, Unit: Rp${Number(item.unit_price).toLocaleString()},
+                Total: Rp${Number(item.total_price).toLocaleString()})</li>`;
+                    total += parseFloat(item.total_price);
+                });
+
+                listHtml += "</ol>";
+
+                // Masukkan ke Quill
+                editor.root.innerHTML = listHtml;
+
+                // Sinkronisasi ke hidden input
+                $('#inputDesc').val(editor.root.innerHTML);
+
+                // Isi input amount otomatis (display + hidden)
+                $('.amountDisplay').val("Rp. " + total.toLocaleString("id-ID"));
+                $('.amount').val(total);
+
+                // Update summary
+                $('#grossTotalDisplay').val("Rp. " + total.toLocaleString());
+                $('#grossTotal').val(total);
+                $('#netTotalDisplay').val("Rp. " + total.toLocaleString());
+                $('#netTotal').val(total);
+            @endif
+
             // Format angka ke Rupiah
             function formatRupiah(angka) {
                 return 'Rp. ' + new Intl.NumberFormat('id-ID').format(angka);
@@ -147,42 +190,118 @@
                 return parseFloat(str.replace(/[^0-9]/g, '')) || 0;
             }
 
-            // Hitung total
+            $(document).on('input', '.amountDisplay', function() {
+                let val = parseRupiah($(this).val());
+                $(this).val(formatRupiah(val));
+
+                // update hidden input di sibling-nya
+                $(this).closest('td').find('.amount').val(val);
+
+                calculateTotals();
+            });
+
             function calculateTotals() {
                 let gross = 0;
                 $('.amount').each(function() {
                     gross += parseRupiah($(this).val());
                 });
 
-                $('#grossTotal').val(formatRupiah(gross));
+                // update display & hidden
+                $('#grossTotalDisplay').val(formatRupiah(gross));
+                $('#grossTotal').val(gross);
 
                 let discount = parseFloat($('#discount').val()) || 0;
-                let downPayment = parseRupiah($('#downPayment').val());
+                let downPayment = parseRupiah($('#downPaymentDisplay').val());
                 let taxPercent = parseFloat($('#tax').val()) || 0;
 
                 let afterDiscount = gross - discount - downPayment;
                 let tax = afterDiscount * (taxPercent / 100);
                 let net = afterDiscount + tax;
 
-                $('#netTotal').val(formatRupiah(net));
+                $('#netTotalDisplay').val(formatRupiah(net));
+                $('#netTotal').val(net);
+                $('#downPayment').val(downPayment);
             }
 
-            // Format input rupiah
-            $(document).on('input', '.amount, #downPayment', function() {
+            // format input down payment saat ketik
+            $(document).on('input', '#downPaymentDisplay', function() {
                 let val = parseRupiah($(this).val());
                 $(this).val(formatRupiah(val));
                 calculateTotals();
             });
 
-            // Recalculate jika discount/tax berubah
-            $(document).on('input', '#discount, #tax', calculateTotals);
+            // recalc jika ada perubahan
+            $(document).on('input', '.amount, #discount, #tax', calculateTotals);
 
-            // Paksa update Quill ke hidden input saat submit
+            calculateTotals();
+
             $('#invoiceForm').submit(function() {
                 $('#input-editor-0').val(editor.root.innerHTML);
             });
 
-            calculateTotals();
+            $('#invoiceForm').on('submit', function(e) {
+                e.preventDefault();
+
+                let form = $(this);
+                let formData = form.serialize();
+
+                Swal.fire({
+                    title: 'Apakah kamu yakin?',
+                    text: "Invoice ini akan disimpan.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, simpan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // tampilkan loading
+                        Swal.fire({
+                            title: 'Menyimpan...',
+                            text: 'Harap tunggu sebentar',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading()
+                            }
+                        });
+
+                        // kirim data via ajax
+                        $.ajax({
+                            url: form.attr('action'),
+                            method: form.attr('method'),
+                            data: formData,
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil!',
+                                        text: response.message,
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        window.location.href =
+                                            "{{ route('invoice.index') }}";
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: response.message ||
+                                            'Terjadi kesalahan'
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: xhr.responseJSON?.message ||
+                                        'Server error'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
         });
     </script>
 @endsection

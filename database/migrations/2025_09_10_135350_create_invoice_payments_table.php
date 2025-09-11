@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invoice_items', function (Blueprint $table) {
+       Schema::create('invoice_payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_id')->constrained('invoices')->onDelete('cascade');
-            $table->longText('description');
-            $table->decimal('amount', 15, 2)->default(0);
+            $table->unsignedBigInteger('invoice_id');
+            $table->date('payment_date');
+            $table->decimal('amount_paid', 15, 2);
+            $table->text('note')->nullable();
             $table->timestamps();
+            $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade');
         });
     }
 

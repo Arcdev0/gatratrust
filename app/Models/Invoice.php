@@ -13,16 +13,29 @@ class Invoice extends Model
         'invoice_no',
         'date',
         'project_id',
+        'customer_name',
         'customer_address',
+        'description',
         'gross_total',
         'discount',
         'down_payment',
         'tax',
         'net_total',
+        'status'
     ];
 
-    public function items()
+    public function payments()
     {
-        return $this->hasMany(InvoiceItem::class);
+        return $this->hasMany(InvoicePayment::class);
+    }
+
+    public function getTotalPaidAttribute()
+    {
+        return $this->payments()->sum('amount_paid');
+    }
+
+    public function getRemainingAttribute()
+    {
+        return $this->net_total - $this->total_paid;
     }
 }

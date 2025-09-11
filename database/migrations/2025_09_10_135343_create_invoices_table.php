@@ -11,17 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-            Schema::create('invoices', function (Blueprint $table) {
+        Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->string('invoice_no')->unique();
             $table->date('date');
-            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
-            $table->text('customer_address')->nullable();
-            $table->decimal('gross_total', 15, 2)->default(0);
+            $table->unsignedBigInteger('project_id')->nullable();
+            $table->string('customer_name');
+            $table->text('customer_address');
+            $table->longText('description');
+            $table->decimal('gross_total', 15, 2);
             $table->decimal('discount', 15, 2)->default(0);
             $table->decimal('down_payment', 15, 2)->default(0);
-            $table->decimal('tax', 5, 2)->default(0); // simpan % pajak
-            $table->decimal('net_total', 15, 2)->default(0);
+            $table->decimal('tax', 15, 2)->default(0);
+            $table->decimal('net_total', 15, 2);
+            $table->enum('status', ['draft','unpaid','partial','paid'])->default('unpaid');
             $table->timestamps();
         });
     }
