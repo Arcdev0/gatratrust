@@ -150,6 +150,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice/create', [InvoiceController::class, 'create'])->name('invoice.create');
     Route::post('/invoice/store', [InvoiceController::class, 'store'])->name('invoice.store');
     Route::get('/invoice/data', [InvoiceController::class, 'getData'])->name('invoice.data');
+    Route::get('/invoice/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
+    Route::post('/invoice/{id}/update', [InvoiceController::class, 'update'])->name('invoice.update');
+
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
