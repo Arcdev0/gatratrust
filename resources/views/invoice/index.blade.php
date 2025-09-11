@@ -7,8 +7,8 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="text-primary font-weight-bold">Invoice</h3>
         <a href="{{ route('invoice.create') }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg"></i> Tambah Invoice
-            </a>
+            <i class="bi bi-plus-lg"></i> Tambah Invoice
+        </a>
     </div>
     <div class="card">
         <div class="card-body">
@@ -18,7 +18,6 @@
                         <th>No Invoice</th>
                         <th>Tanggal</th>
                         <th>Customer</th>
-                        <th>Deskripsi</th>
                         <th>Down Payment</th>
                         <th>Net Total</th>
                         <th>Status</th>
@@ -34,7 +33,7 @@
 
 @section('script')
 <script>
-$(document).ready(function() {
+    $(document).ready(function() {
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -49,8 +48,7 @@ $(document).ready(function() {
         columns: [
             { data: 'invoice_no', name: 'invoice_no' },
             { data: 'tanggal', name: 'tanggal' },
-            { data: 'customer', name: 'customer' },
-            { data: 'deskripsi', name: 'deskripsi' },
+            { data: 'customer_name', name: 'customer_name' },
             { 
                 data: 'down_payment', 
                 name: 'down_payment',
@@ -69,8 +67,16 @@ $(document).ready(function() {
                 data: 'status', 
                 name: 'status',
                 render: function(data) {
-                    let badgeClass = data === 'Lunas' ? 'success' : 'warning';
-                    return `<span class="badge bg-${badgeClass}">${data}</span>`;
+                     let badgeClass = '';
+
+        if (data.toLowerCase() === 'paid') {
+            badgeClass = 'success'; // hijau
+        } else if (data.toLowerCase() === 'unpaid') {
+            badgeClass = 'danger'; // merah
+        } else {
+            badgeClass = 'secondary'; // default
+        }
+                    return `<span class="badge bg-${badgeClass} text-white">${data}</span>`;
                 }
             },
             { 
