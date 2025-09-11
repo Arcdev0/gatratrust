@@ -45,6 +45,7 @@ class InvoiceController extends Controller
                     'down_payment'     => 50000,
                     'tax'              => 25000,
                     'net_total'        => 225000,
+                    'status'           => 'Belum Lunas',
                     'items' => [
                         ['description' => 'Jasa Konsultasi', 'amount' => 250000],
                     ],

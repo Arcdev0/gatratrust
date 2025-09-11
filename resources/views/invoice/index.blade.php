@@ -4,15 +4,13 @@
 
 @section('content')
 <div class="container-fluid">
-    <h4 class="mb-3">Invoice List</h4>
-
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Daftar Invoice</span>
-            <a href="{{ route('invoice.create') }}" class="btn btn-primary btn-sm">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary font-weight-bold">Invoice</h3>
+        <a href="{{ route('invoice.create') }}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Tambah Invoice
             </a>
-        </div>
+    </div>
+    <div class="card">
         <div class="card-body">
             <table id="invoiceTable" class="table table-bordered table-striped table-hover w-100 mx-auto">
                 <thead>
@@ -23,6 +21,7 @@
                         <th>Deskripsi</th>
                         <th>Down Payment</th>
                         <th>Net Total</th>
+                        <th>Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -64,6 +63,14 @@ $(document).ready(function() {
                 name: 'net_total',
                 render: function(data) {
                     return data ? 'Rp ' + parseFloat(data.replace(/\./g, '')).toLocaleString('id-ID') : 'Rp 0';
+                }
+            },
+            { 
+                data: 'status', 
+                name: 'status',
+                render: function(data) {
+                    let badgeClass = data === 'Lunas' ? 'success' : 'warning';
+                    return `<span class="badge bg-${badgeClass}">${data}</span>`;
                 }
             },
             { 
