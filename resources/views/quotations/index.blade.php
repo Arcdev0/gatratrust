@@ -324,7 +324,7 @@
 
                         if (q.status && q.status.name === 'Approve') {
                             $('#convertToInvoiceBtn')
-                                .attr('href', '/invoices/create?quotation_id=' + q.id)
+                                .attr('href', '/invoice/create?quotation_id=' + q.id)
                                 .show();
                         } else {
                             $('#convertToInvoiceBtn').hide();

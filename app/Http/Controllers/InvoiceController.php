@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Invoice;
 use App\Models\ProjectTbl;
+use App\Models\Quotation;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -71,12 +73,20 @@ class InvoiceController extends Controller
         return DataTables::of($collection)->rawColumns(['aksi'])->make(true);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $projects = ProjectTbl::orderBy('created_at', 'desc')
-        ->get();// Ambil data proyek dari database jika perlu
+        ->get();
+
+        $quotation = null;
+
+        if ($request->has('quotation_id')) {
+            $quotation = Quotation::with(['items', 'status'])
+                ->findOrFail($request->quotation_id);
+        }
+
         $newInvoiceNo = 'INV-' . str_pad(rand(1, 9999), 5, '0', STR_PAD_LEFT);
-        return view('invoice.create', compact('newInvoiceNo', 'projects'));
+        return view('invoice.create', compact('newInvoiceNo', 'projects', 'quotation'));
     }
 
     public function edit($invoiceNo)
@@ -87,42 +97,46 @@ class InvoiceController extends Controller
     }
 
     public function store(Request $request)
-    {
+        {
 
+            // dd($request->all());
+            // Validasi data dulu
+            $validated = $request->validate([
+                'invoice_no'       => 'required|string|unique:invoices,invoice_no',
+                'date'             => 'required|date',
+                'customer_name'    => 'required|string|max:255',
+                'project_id'       => 'required|integer|exists:projects,id',
+                'customer_address' => 'required|string',
+                'inputDesc'        => 'required|string',
+                'gross_total'      => 'required|numeric',
+                'discount'         => 'nullable|numeric',
+                'down_payment'     => 'nullable|numeric',
+                'tax'              => 'nullable|numeric',
+                'net_total'        => 'required|numeric',
+            ]);
 
-        dd($request->all());
-        $request->validate([
-            'invoice_no'          => 'required|string|max:50',
-            'date'                => 'required|date',
-            'customer_name'       => 'required|string|max:255',
-            'customer_address'    => 'nullable|string',
-            'gross_total'         => 'required|numeric|min:0',
-            'discount'            => 'nullable|numeric|min:0',
-            'down_payment'        => 'nullable|numeric|min:0',
-            'tax'                 => 'nullable|numeric|min:0',
-            'net_total'           => 'required|numeric|min:0',
-            'items'               => 'required|array|min:1',
-            'items.*.description' => 'required|string|max:500',
-            'items.*.amount'      => 'required|numeric|min:0',
-        ]);
+            // Simpan invoice
+            $invoice = Invoice::create([
+                'invoice_no'       => $validated['invoice_no'],
+                'date'             => $validated['date'],
+                'project_id'       => $validated['project_id'] ?? null,
+                'customer_name'    => $validated['customer_name'],
+                'customer_address' => $validated['customer_address'],
+                'description'      => $validated['inputDesc'],
+                'gross_total'      => $validated['gross_total'],
+                'discount'         => $validated['discount'] ?? 0,
+                'down_payment'     => $validated['down_payment'] ?? 0,
+                'tax'              => $validated['tax'] ?? 0,
+                'net_total'        => $validated['net_total'],
+                'status'           => 'unpaid',
+            ]);
 
-        $invoice = [
-            'invoice_no'       => $request->invoice_no,
-            'date'             => $request->date,
-            'customer_name'    => $request->customer_name,
-            'customer_address' => $request->customer_address,
-            'gross_total'      => $request->gross_total,
-            'discount'         => $request->discount ?? 0,
-            'down_payment'     => $request->down_payment ?? 0,
-            'tax'              => $request->tax ?? 0,
-            'net_total'        => $request->net_total,
-            'items'            => $request->items,
-        ];
-
-
-
-        return redirect()->route('invoice.index')->with('success', 'Invoice berhasil disimpan (dummy).');
-    }
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil dibuat',
+                'data'    => $invoice
+            ]);
+        }
 
     public function destroy($invoiceNo)
     {
