@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('down_payment', 15, 2)->default(0);
             $table->decimal('tax', 15, 2)->default(0);
             $table->decimal('net_total', 15, 2);
-            $table->enum('status', ['draft','unpaid','partial','paid'])->default('unpaid');
+            $table->enum('status', ['open','partial','close','cancel'])->default('open');
             $table->timestamps();
         });
     }

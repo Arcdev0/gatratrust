@@ -20,7 +20,6 @@
                             <th>Customer</th>
                             <th>Down Payment</th>
                             <th>Net Total</th>
-                            <th>Remaining</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -60,30 +59,44 @@
                     },
                     {
                         data: 'down_payment',
-                        name: 'down_payment'
+                        name: 'down_payment',
+                        render: function(data) {
+                            return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
+                                .toLocaleString('id-ID') : 'Rp 0';
+                        }
                     },
                     {
                         data: 'net_total',
-                        name: 'net_total'
-                    },
-                    {
-                        data: 'remaining',
-                        name: 'remaining'
+                        name: 'net_total',
+                        render: function(data) {
+                            return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
+                                .toLocaleString('id-ID') : 'Rp 0';
+                        }
                     },
                     {
                         data: 'status',
                         name: 'status',
                         render: function(data) {
                             let badgeClass = '';
+                            let label = data.toLowerCase();
 
-                            if (data.toLowerCase() === 'paid') {
-                                badgeClass = 'success'; // hijau
-                            } else if (data.toLowerCase() === 'unpaid') {
-                                badgeClass = 'danger'; // merah
-                            } else {
-                                badgeClass = 'secondary'; // default
+                            switch (label) {
+                                case 'open':
+                                    badgeClass = 'yellow'; // kuning
+                                    break;
+                                case 'partial':
+                                    badgeClass = 'danger'; // merah
+                                    break;
+                                case 'close':
+                                    badgeClass = 'secondary'; // abu-abu
+                                    break;
+                                case 'cancel':
+                                    badgeClass = 'info'; // biru
+                                    break;
+                                default:
+                                    badgeClass = 'secondary'; // default abu-abu
                             }
-                            return `<span class="badge bg-${badgeClass} text-white">${data}</span>`;
+                            return `<span class="badge bg-${badgeClass} text-white">${label.toUpperCase()}</span>`;
                         }
                     },
                     {
@@ -97,8 +110,6 @@
                     [1, 'desc']
                 ]
             });
-
-
 
             // Event delete dummy
             $(document).on('click', '.btn-delete', function() {
