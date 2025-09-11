@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\ProjectTbl;
 use App\Models\Quotation;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -15,62 +16,44 @@ class InvoiceController extends Controller
         return view('invoice.index');
     }
 
-    public function getData(Request $request)
+      public function getData(Request $request)
     {
-        $invoices = session()->get('invoices', []);
+        $query = Invoice::select([
+            'id',
+            'invoice_no',
+            'date',
+            'customer_name',
+            'customer_address',
+            'down_payment',
+            'net_total',
+            'status',
+        ]);
 
-        // Jika belum ada data di session, buat dummy
-        if (empty($invoices)) {
-            $invoices = [
-                [
-                    'invoice_no'       => 'INV-00001',
-                    'date'             => '2025-09-01',
-                    'customer_name'    => 'PT. Nusantara Abadi',
-                    'customer_address' => 'Jl. Merdeka No. 1, Jakarta',
-                    'gross_total'      => 500000,
-                    'discount'         => 50000,
-                    'down_payment'     => 100000,
-                    'tax'              => 45000,
-                    'net_total'        => 395000,
-                    'items' => [
-                        ['description' => 'Produk A', 'amount' => 200000],
-                        ['description' => 'Produk B', 'amount' => 300000],
-                    ],
-                ],
-                [
-                    'invoice_no'       => 'INV-00002',
-                    'date'             => '2025-09-05',
-                    'customer_name'    => 'CV. Maju Jaya',
-                    'customer_address' => 'Jl. Melati No. 10, Bandung',
-                    'gross_total'      => 250000,
-                    'discount'         => 0,
-                    'down_payment'     => 50000,
-                    'tax'              => 25000,
-                    'net_total'        => 225000,
-                    'items' => [
-                        ['description' => 'Jasa Konsultasi', 'amount' => 250000],
-                    ],
-                ],
-            ];
-            session()->put('invoices', $invoices);
-        }
-
-       $collection = collect($invoices)->map(function ($inv) {
-    return [
-        'invoice_no'   => $inv['invoice_no'],
-        'tanggal'      => $inv['date'],
-        'customer'     => $inv['customer_name'],
-        'deskripsi'    => $inv['items'][0]['description'] ?? '-',
-        'down_payment' => number_format($inv['down_payment'] ?? 0, 0, ',', '.'),
-        'net_total'    => number_format($inv['net_total'] ?? 0, 0, ',', '.'),
-        'aksi'         => '
-            <button data-id="'.$inv['invoice_no'].'" class="btn btn-sm btn-warning btn-edit me-1"><i class="fas fa-edit"></i></button>
-            <button data-id="'.$inv['invoice_no'].'" class="btn btn-sm btn-danger btn-delete"><i class="fas fa-trash"></i></button>
-        '
-    ];
-        });
-
-        return DataTables::of($collection)->rawColumns(['aksi'])->make(true);
+        return DataTables::of($query)
+            ->addColumn('tanggal', function ($inv) {
+                return Carbon::parse($inv->date)->format('d-m-Y');
+            })
+            ->addColumn('down_payment', function ($inv) {
+                return number_format($inv->down_payment ?? 0, 0, ',', '.');
+            })
+            ->addColumn('net_total', function ($inv) {
+                return number_format($inv->net_total ?? 0, 0, ',', '.');
+            })
+            ->addColumn('aksi', function ($inv) {
+                return '
+                    <button data-id="'.$inv->id.'" class="btn btn-sm btn-info btn-edit me-1">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button data-id="'.$inv->id.'" class="btn btn-sm btn-secondary btn-edit me-1">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button data-id="'.$inv->id.'" class="btn btn-sm btn-danger btn-delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['aksi'])
+            ->make(true);
     }
 
     public function create(Request $request)

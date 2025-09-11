@@ -167,12 +167,13 @@
                     @if (in_array(Auth::user()->role_id, [1, 3, 4]))
                         {{-- Master Data --}}
 
-                        <div class="nav-item has-sub ">
+                        <div class="nav-item has-sub {{ request()->routeIs('quotations.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fas fa-retweet"></i><span>Simulasi</span>
                             </a>
                             <div class="submenu-content">
-                                <a href="{{ route('quotations.index') }}" class="menu-item">Quotation</a>
+                                <a href="{{ route('quotations.index') }}"
+                                    class="menu-item {{ request()->routeIs('quotations.index') ? 'active' : '' }}">Quotation</a>
                                 <a href="#" class="menu-item">PAK</a>
 
                             </div>

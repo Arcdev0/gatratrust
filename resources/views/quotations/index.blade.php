@@ -5,7 +5,7 @@
 @section('content')
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">Quotation List</h4>
+            <h3 class="text-primary font-weight-bold">Quotation</h3>
             <a href="{{ route('quotations.create') }}" class="btn btn-primary">+ Create Quotation</a>
         </div>
 
