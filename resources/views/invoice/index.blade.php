@@ -49,22 +49,22 @@
             { data: 'invoice_no', name: 'invoice_no' },
             { data: 'tanggal', name: 'tanggal' },
             { data: 'customer_name', name: 'customer_name' },
-            { 
-                data: 'down_payment', 
+            {
+                data: 'down_payment',
                 name: 'down_payment',
                 render: function(data) {
                     return data ? 'Rp ' + parseFloat(data.replace(/\./g, '')).toLocaleString('id-ID') : 'Rp 0';
                 }
             },
-            { 
-                data: 'net_total', 
+            {
+                data: 'net_total',
                 name: 'net_total',
                 render: function(data) {
                     return data ? 'Rp ' + parseFloat(data.replace(/\./g, '')).toLocaleString('id-ID') : 'Rp 0';
                 }
             },
-            { 
-                data: 'status', 
+            {
+                data: 'status',
                 name: 'status',
                 render: function(data) {
                      let badgeClass = '';
@@ -79,11 +79,11 @@
                     return `<span class="badge bg-${badgeClass} text-white">${data}</span>`;
                 }
             },
-            { 
-                data: 'aksi', 
+            {
+                data: 'aksi',
                 name: 'aksi',
-                orderable: false, 
-                searchable: false 
+                orderable: false,
+                searchable: false
             }
         ],
         order: [[1, 'desc']]
