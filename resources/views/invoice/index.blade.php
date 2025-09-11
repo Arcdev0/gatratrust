@@ -52,25 +52,25 @@ $(document).ready(function() {
             { data: 'tanggal', name: 'tanggal' },
             { data: 'customer', name: 'customer' },
             { data: 'deskripsi', name: 'deskripsi' },
-            { 
-                data: 'down_payment', 
+            {
+                data: 'down_payment',
                 name: 'down_payment',
                 render: function(data) {
                     return data ? 'Rp ' + parseFloat(data.replace(/\./g, '')).toLocaleString('id-ID') : 'Rp 0';
                 }
             },
-            { 
-                data: 'net_total', 
+            {
+                data: 'net_total',
                 name: 'net_total',
                 render: function(data) {
                     return data ? 'Rp ' + parseFloat(data.replace(/\./g, '')).toLocaleString('id-ID') : 'Rp 0';
                 }
             },
-            { 
-                data: 'aksi', 
+            {
+                data: 'aksi',
                 name: 'aksi',
-                orderable: false, 
-                searchable: false 
+                orderable: false,
+                searchable: false
             }
         ],
         order: [[1, 'desc']]
