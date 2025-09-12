@@ -43,23 +43,38 @@ class InvoiceController extends Controller
             ->addColumn('remaining', function ($inv) {
                 return number_format($inv->remaining ?? 0, 0, ',', '.');
             })
-            ->addColumn('aksi', function ($inv) {
+           ->addColumn('aksi', function ($inv) {
                 return '
-                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-info btn-edit me-1">
+                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-info btn-view me-1">
                         <i class="fas fa-eye"></i>
                     </button>
                     <button data-id="' . $inv->id . '" class="btn btn-sm btn-secondary btn-edit me-1">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-danger btn-delete">
+                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-danger btn-delete me-1">
                         <i class="fas fa-trash"></i>
                     </button>
+                    <a href="' . route('invoice.print', $inv->id) . '" target="_blank"
+                    class="btn btn-sm btn-success me-1">
+                        <i class="fas fa-print"></i>
+                    </a>
                 ';
             })
             ->rawColumns(['aksi'])
             ->make(true);
     }
 
+    public function printInvoice($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+
+        // Format angka rupiah helper
+        $formatRupiah = function($angka) {
+            return 'Rp ' . number_format($angka ?? 0, 0, ',', '.');
+        };
+
+        return view('invoice.print', compact('invoice', 'formatRupiah'));
+    }
 
     public function create(Request $request)
     {

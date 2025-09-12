@@ -16,12 +16,13 @@
                     <thead>
                         <tr>
                             <th>No Invoice</th>
-                            <th>Tanggal</th>
+                            <th>Date</th>
                             <th>Customer</th>
                             <th>Down Payment</th>
                             <th>Net Total</th>
+                            <th>Remaining</th>
                             <th>Status</th>
-                            <th>Aksi</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -68,6 +69,14 @@
                     {
                         data: 'net_total',
                         name: 'net_total',
+                        render: function(data) {
+                            return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
+                                .toLocaleString('id-ID') : 'Rp 0';
+                        }
+                    },
+                    {
+                        data: 'remaining',
+                        name: 'remaining',
                         render: function(data) {
                             return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
                                 .toLocaleString('id-ID') : 'Rp 0';

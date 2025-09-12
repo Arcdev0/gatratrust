@@ -152,7 +152,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice/data', [InvoiceController::class, 'getData'])->name('invoice.data');
     Route::get('/invoice/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
     Route::post('/invoice/{id}/update', [InvoiceController::class, 'update'])->name('invoice.update');
-
+    Route::get('/invoice/{id}/print', [InvoiceController::class, 'printInvoice'])->name('invoice.print');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
