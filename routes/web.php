@@ -7,6 +7,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
+use App\Http\Controllers\KwitansiController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuotationController;
@@ -152,6 +153,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice/data', [InvoiceController::class, 'getData'])->name('invoice.data');
     Route::get('/invoice/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
     Route::post('/invoice/{id}/update', [InvoiceController::class, 'update'])->name('invoice.update');
+
+    // Kwitansi
+    Route::get('/kwitansi', [KwitansiController::class, 'index'])->name('kwitansi.index');
+    Route::get('/kwitansi/create', [KwitansiController::class, 'create'])->name('kwitansi.create');
+    Route::post('/kwitansi/store', [KwitansiController::class, 'store'])->name('kwitansi.store');
+    Route::get('/kwitansi/data', [KwitansiController::class, 'data'])->name('kwitansi.data');
+    Route::get('/kwitansi/{id}/edit', [KwitansiController::class, 'edit'])->name('kwitansi.edit');
+    Route::post('/kwitansi/{id}/update', [KwitansiController::class, 'update'])->name('kwitansi.update');
 
 
 
