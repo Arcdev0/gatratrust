@@ -45,11 +45,13 @@ class KwitansiController extends Controller
 
     public function create()
     {
-        $invoices = Invoice::all(); // daftar invoice untuk dropdown
+        $invoices = Invoice::all();
+
+        // dd($invoices);
         return view('kwitansi.create', compact('invoices'));
     }
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $request->validate([
             'invoice_id'   => 'required|exists:invoices,id',
@@ -64,6 +66,19 @@ class KwitansiController extends Controller
             'amount_paid'  => $request->amount_paid,
             'note'         => $request->note,
         ]);
+
+        $invoice = Invoice::with('payments')->findOrFail($request->invoice_id);
+        $invoice->refresh();
+
+        if ($invoice->remaining <= 0) {
+            $invoice->status = 'close';
+        } elseif ($invoice->total_paid > 0) {
+            $invoice->status = 'partial';
+        } else {
+            $invoice->status = 'open';
+        }
+
+        $invoice->save();
 
         return response()->json([
             'success' => true,

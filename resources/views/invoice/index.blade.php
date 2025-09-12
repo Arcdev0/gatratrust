@@ -219,6 +219,9 @@
             `;
 
                         $('#invoiceModalBody').html(html);
+
+                        $('#convertToKwitansiBtn').attr('href',
+                            "{{ route('kwitansi.create') }}?invoice_id=" + inv.id);
                         $('#invoiceModal').modal('show');
                     }
                 });
