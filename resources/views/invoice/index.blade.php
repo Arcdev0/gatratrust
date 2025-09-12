@@ -126,10 +126,10 @@
                 }
             });
 
-            // Event edit dummy
+            // Event edit
             $(document).on('click', '.btn-edit', function() {
                 let id = $(this).data('id');
-                alert("Simulasi Edit Invoice: " + id);
+                window.location.href = "/invoice/" + id + "/edit";
             });
         });
     </script>
