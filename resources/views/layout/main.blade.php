@@ -164,6 +164,11 @@
                             <i class="ik ik-file-text"></i><span>Invoice</span>
                         </a>
                     </div>
+                    <div class="nav-item {{ request()->routeIs('kwitansi.index') ? 'active' : '' }}">
+                        <a href="{{ route('kwitansi.index') }}">
+                            <i class="fas fa-file-invoice"></i><span>Kwitansi</span>
+                        </a>
+                    </div>
                     @if (in_array(Auth::user()->role_id, [1, 3, 4]))
                         {{-- Master Data --}}
 
