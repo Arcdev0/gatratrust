@@ -76,6 +76,16 @@ class InvoiceController extends Controller
         return view('invoice.print', compact('invoice', 'formatRupiah'));
     }
 
+    public function show($id)
+    {
+        $invoice = Invoice::with('payments')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $invoice
+        ]);
+    }
+
     public function create(Request $request)
     {
         $projects = ProjectTbl::orderBy('created_at', 'desc')
@@ -88,7 +98,21 @@ class InvoiceController extends Controller
                 ->findOrFail($request->quotation_id);
         }
 
-        $newInvoiceNo = 'INV-' . str_pad(rand(1, 9999), 5, '0', STR_PAD_LEFT);
+        $now = Carbon::now();
+        $monthYear = $now->format('m-Y');
+
+        $lastInvoice = Invoice::orderBy('id', 'desc')->first();
+
+        if ($lastInvoice) {
+            $lastNumber = intval(explode('/', $lastInvoice->invoice_no)[0]);
+            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '001';
+        }
+
+        $newInvoiceNo = $newNumber . '/INV/GPT/' . $monthYear;
+
+
         return view('invoice.create', compact('newInvoiceNo', 'projects', 'quotation'));
     }
 

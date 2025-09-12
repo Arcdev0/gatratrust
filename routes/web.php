@@ -154,6 +154,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
     Route::post('/invoice/{id}/update', [InvoiceController::class, 'update'])->name('invoice.update');
     Route::get('/invoice/{id}/print', [InvoiceController::class, 'printInvoice'])->name('invoice.print');
+    Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+
+
+
     // Kwitansi
     Route::get('/kwitansi', [KwitansiController::class, 'index'])->name('kwitansi.index');
     Route::get('/kwitansi/create', [KwitansiController::class, 'create'])->name('kwitansi.create');
