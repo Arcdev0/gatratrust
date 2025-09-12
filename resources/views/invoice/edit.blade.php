@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="container-fluid">
-        <h4>Edit Invoice</h4>
+        <h3 class="text-primary font-weight-bold">Edit Invoice</h3>
         <div class="card mb-3">
             <div class="card-body">
                 <form id="invoiceForm" method="POST" action="{{ route('invoice.update', $invoice->id) }}">
@@ -65,7 +65,7 @@
                                         <input type="text" class="form-control amountDisplay text-end" 
                                                value="Rp. {{ number_format($invoice->gross_total, 0, ',', '.') }}">
                                         <input type="hidden" name="inputAmmount" class="amount" 
-                                               value="{{ $invoice->gross_total }}">
+                                               value="{{ (int) $invoice->gross_total }}">
                                     </td>
                                 </tr>
                             </tbody>
@@ -83,7 +83,7 @@
                                                class="form-control text-end" 
                                                value="Rp. {{ number_format($invoice->gross_total, 0, ',', '.') }}" readonly>
                                         <input type="hidden" name="gross_total" id="grossTotal" 
-                                               value="{{ $invoice->gross_total }}">
+                                               value="{{ (int) $invoice->gross_total }}">
                                     </td>
                                 </tr>
                                 <tr>
@@ -116,7 +116,7 @@
                                         <input type="text" id="netTotalDisplay" class="form-control text-end" 
                                                value="Rp. {{ number_format($invoice->net_total, 0, ',', '.') }}" readonly>
                                         <input type="hidden" name="net_total" id="netTotal" 
-                                               value="{{ $invoice->net_total }}">
+                                               value="{{ (int) $invoice->net_total }}">
                                     </td>
                                 </tr>
                             </table>
@@ -163,14 +163,17 @@
                 $('#inputDesc').val(editor.root.innerHTML);
             });
 
-            // Fungsi formatting sama dengan create
+            // Format Rupiah
             function formatRupiah(angka) {
                 return 'Rp. ' + new Intl.NumberFormat('id-ID').format(angka);
             }
             function parseRupiah(str) {
-                return parseFloat(str.replace(/[^0-9]/g, '')) || 0;
+                if (!str) return 0;
+                str = str.toString().replace(/[^0-9]/g, '');
+                return Number(str) || 0;
             }
 
+            // Input jumlah
             $(document).on('input', '.amountDisplay', function() {
                 let val = parseRupiah($(this).val());
                 $(this).val(formatRupiah(val));
@@ -178,28 +181,36 @@
                 calculateTotals();
             });
 
+            // Hitung Gross & Net Total
             function calculateTotals() {
                 let gross = 0;
                 $('.amount').each(function() {
-                    gross += parseRupiah($(this).val());
+                    gross += Number($(this).val()) || 0;
                 });
 
+                // Ambil discount, dp, tax
+                let discount = Number($('#discount').val()) || 0;
+                let downPayment = parseRupiah($('#downPaymentDisplay').val());
+                let tax = Number($('#tax').val()) || 0;
+
+                // Hitung Net
+                let afterDiscount = gross - discount;
+                let afterTax = afterDiscount + (afterDiscount * tax / 100);
+                let net = afterTax - downPayment;
+
+                if (net < 0) net = 0; // jangan sampai minus
+
+                // Tampilkan
                 $('#grossTotalDisplay').val(formatRupiah(gross));
                 $('#grossTotal').val(gross);
 
-                let discount = parseFloat($('#discount').val()) || 0;
-                let downPayment = parseRupiah($('#downPaymentDisplay').val());
-                let taxPercent = parseFloat($('#tax').val()) || 0;
-
-                let afterDiscount = gross - discount - downPayment;
-                let tax = afterDiscount * (taxPercent / 100);
-                let net = afterDiscount + tax;
+                $('#downPayment').val(downPayment);
 
                 $('#netTotalDisplay').val(formatRupiah(net));
                 $('#netTotal').val(net);
-                $('#downPayment').val(downPayment);
             }
 
+            // Format Down Payment
             $(document).on('input', '#downPaymentDisplay', function() {
                 let val = parseRupiah($(this).val());
                 $(this).val(formatRupiah(val));
@@ -210,7 +221,7 @@
 
             calculateTotals();
 
-            // Submit dengan SweetAlert konfirmasi
+            // Submit dengan SweetAlert
             $('#invoiceForm').on('submit', function(e) {
                 e.preventDefault();
                 let form = $(this);

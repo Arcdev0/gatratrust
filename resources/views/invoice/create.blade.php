@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="container-fluid">
-        <h4>Create Invoice</h4>
+        <h3 class="text-primary font-weight-bold">Create Invoice</h3>
         <div class="card mb-3">
             <div class="card-body">
                 <form id="invoiceForm" method="POST" action="{{ route('invoice.store') }}">

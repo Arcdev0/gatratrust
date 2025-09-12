@@ -40,6 +40,9 @@ class InvoiceController extends Controller
             ->addColumn('net_total', function ($inv) {
                 return number_format($inv->net_total ?? 0, 0, ',', '.');
             })
+            ->addColumn('remaining', function ($inv) {
+                return number_format($inv->remaining ?? 0, 0, ',', '.');
+            })
             ->addColumn('aksi', function ($inv) {
                 return '
                     <button data-id="' . $inv->id . '" class="btn btn-sm btn-info btn-edit me-1">
@@ -56,6 +59,7 @@ class InvoiceController extends Controller
             ->rawColumns(['aksi'])
             ->make(true);
     }
+
 
     public function create(Request $request)
     {
@@ -114,16 +118,17 @@ class InvoiceController extends Controller
         // status sengaja tidak diubah disini, biar update fokus ke data utama
     ]);
 
+        $invoice->refresh();
 
-     // Hitung ulang status berdasarkan pembayaran
-    $invoice->refresh(); // supaya data relasi dan accessor terupdateg
-    if ($invoice->remaining <= 0) {
-        $invoice->status = 'paid';
-    } else {
-        $invoice->status = 'unpaid';
-    }
+        if ($invoice->remaining <= 0) {
+            $invoice->status = 'close';
+        } elseif ($invoice->remaining == $invoice->net_total) {
+            $invoice->status = 'open';
+        } else {
+            $invoice->status = 'partial';
+        }
 
-    $invoice->save();
+        $invoice->save();
 
     return response()->json([
         'success' => true,
@@ -164,7 +169,7 @@ class InvoiceController extends Controller
             'down_payment'     => $validated['down_payment'] ?? 0,
             'tax'              => $validated['tax'] ?? 0,
             'net_total'        => $validated['net_total'],
-            'status'           => 'unpaid',
+            'status'           => 'open',
         ]);
 
         return response()->json([
