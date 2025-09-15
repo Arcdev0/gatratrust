@@ -158,21 +158,22 @@
                             <i class="ik ik-folder"></i><span>Project</span>
                         </a>
                     </div>
-                    {{-- Invoice --}}
-                    <div class="nav-item {{ request()->routeIs('invoice.index') ? 'active' : '' }}">
-                        <a href="{{ route('invoice.index') }}">
-                            <i class="ik ik-file-text"></i><span>Invoice</span>
-                        </a>
-                    </div>
-                    <div class="nav-item {{ request()->routeIs('kwitansi.index') ? 'active' : '' }}">
-                        <a href="{{ route('kwitansi.index') }}">
-                            <i class="fas fa-file-invoice"></i><span>Kwitansi</span>
-                        </a>
-                    </div>
-                    @if (in_array(Auth::user()->role_id, [1, 3, 4]))
-                        {{-- Master Data --}}
 
-                        <div class="nav-item has-sub {{ request()->routeIs('quotations.index') ? 'active open' : '' }}">
+                    @if (in_array(Auth::user()->role_id, [1, 3, 4]))
+                        {{-- Invoice --}}
+                        <div class="nav-item {{ request()->routeIs('invoice.index') ? 'active' : '' }}">
+                            <a href="{{ route('invoice.index') }}">
+                                <i class="ik ik-file-text"></i><span>Invoice</span>
+                            </a>
+                        </div>
+                        <div class="nav-item {{ request()->routeIs('kwitansi.index') ? 'active' : '' }}">
+                            <a href="{{ route('kwitansi.index') }}">
+                                <i class="fas fa-file-invoice"></i><span>Kwitansi</span>
+                            </a>
+                        </div>
+                        {{-- Master Data --}}
+                        <div
+                            class="nav-item has-sub {{ request()->routeIs('quotations.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fas fa-retweet"></i><span>Simulasi</span>
                             </a>
