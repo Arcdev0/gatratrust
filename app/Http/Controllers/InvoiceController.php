@@ -218,14 +218,25 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function destroy($invoiceNo)
+    public function destroy($id)
     {
-        $invoices = session()->get('invoices', []);
-        $invoices = array_filter($invoices, fn($inv) => $inv['invoice_no'] !== $invoiceNo);
-        session()->put('invoices', $invoices);
+        // Cari invoice berdasarkan ID
+        $invoice = Invoice::find($id);
+
+        // Jika tidak ditemukan
+        if (!$invoice) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice tidak ditemukan'
+            ], 404);
+        }
+
+        // Hapus invoice
+        $invoice->delete();
 
         return response()->json([
-            'message' => "Invoice $invoiceNo berhasil dihapus (dummy)."
+            'success' => true,
+            'message' => 'Invoice berhasil dihapus'
         ]);
     }
 }

@@ -147,16 +147,52 @@
             // Event delete dummy
             $(document).on('click', '.btn-delete', function() {
                 let id = $(this).data('id');
-                if (confirm("Yakin ingin menghapus invoice " + id + "?")) {
-                    $.ajax({
-                        url: '/invoice/' + id,
-                        type: 'DELETE',
-                        success: function(res) {
-                            alert(res.message);
-                            table.ajax.reload();
-                        }
-                    });
-                }
+
+                Swal.fire({
+                    title: "Yakin?",
+                    text: "Invoice " + id + " akan dihapus!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Ya, hapus!",
+                    cancelButtonText: "Batal"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/invoice/delete/' + id,
+                            type: 'DELETE',
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: "Menghapus...",
+                                    text: "Tunggu sebentar",
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Berhasil",
+                                    text: res.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                table.ajax.reload();
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Gagal",
+                                    text: xhr.responseJSON?.message ||
+                                        "Terjadi kesalahan!"
+                                });
+                            }
+                        });
+                    }
+                });
             });
 
             // Event edit
