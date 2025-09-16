@@ -150,7 +150,7 @@
 
                 Swal.fire({
                     title: "Yakin?",
-                    text: "Invoice " + id + " akan dihapus!",
+                    text: "Invoice akan dihapus!",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#d33",
