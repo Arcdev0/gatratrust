@@ -166,6 +166,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/kwitansi/data', [KwitansiController::class, 'data'])->name('kwitansi.data');
     Route::get('/kwitansi/{id}/edit', [KwitansiController::class, 'edit'])->name('kwitansi.edit');
     Route::post('/kwitansi/{id}/update', [KwitansiController::class, 'update'])->name('kwitansi.update');
+    Route::delete('/kwitansi/delete/{id}', [KwitansiController::class, 'destroy'])->name('kwitansi.destroy');
 
 
 

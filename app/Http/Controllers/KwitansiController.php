@@ -32,11 +32,16 @@ class KwitansiController extends Controller
             })
             ->addColumn('action', function ($row) {
                 $editUrl = route('kwitansi.edit', $row->id);
+                $deleteUrl = route('kwitansi.destroy', $row->id);
                 return '
                     <a href="' . $editUrl . '" class="btn btn-sm btn-secondary">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    <button type="button" 
+                        class="btn btn-sm btn-danger deleteKwitansi" 
+                         data-url="' . $deleteUrl . '">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 ';
             })
             ->rawColumns(['action'])
@@ -51,7 +56,7 @@ class KwitansiController extends Controller
         return view('kwitansi.create', compact('invoices'));
     }
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'invoice_id'   => 'required|exists:invoices,id',
@@ -70,13 +75,21 @@ class KwitansiController extends Controller
         $invoice = Invoice::with('payments')->findOrFail($request->invoice_id);
         $invoice->refresh();
 
-        if ($invoice->remaining <= 0) {
-            $invoice->status = 'close';
-        } elseif ($invoice->total_paid > 0) {
-            $invoice->status = 'partial';
-        } else {
-            $invoice->status = 'open';
-        }
+        // if ($invoice->remaining <= 0) {
+        //     $invoice->status = 'close';
+        // } elseif ($invoice->total_paid > 0) {
+        //     $invoice->status = 'partial';
+        // } elseif ($invoice->remaining === $invoice->net_total) {
+        //     $invoice->status = 'open';
+        // }
+
+       if ($invoice->remaining <= 0) {
+        $invoice->status = 'close';
+       } elseif ($invoice->remaining == $invoice->net_total) {
+         $invoice->status = 'open';
+       } elseif ($invoice->remaining > 0) {
+          $invoice->status = 'partial';
+       }
 
         $invoice->save();
 
@@ -106,10 +119,59 @@ class KwitansiController extends Controller
         $kwitansi = InvoicePayment::findOrFail($id);
         $kwitansi->update($request->only(['invoice_id', 'payment_date', 'amount_paid', 'note']));
 
+        $invoiceId = $kwitansi->invoice_id;
+        $invoice = Invoice::with('payments')->findOrFail($invoiceId);
+        $invoice->refresh();
+        if ($invoice->remaining <= 0) {
+            $invoice->status = 'close';
+        } elseif ($invoice->remaining == $invoice->net_total) {
+            $invoice->status = 'open';
+        } elseif ($invoice->remaining > 0) {
+            $invoice->status = 'partial';
+        }
+
+    $invoice->save();
+
         return response()->json([
             'success' => true,
             'message' => 'Kwitansi berhasil diperbarui.',
             'data'    => $kwitansi
         ]);
     }
+
+    public function destroy($id)
+    {
+    //     $kwitansi = InvoicePayment::findOrFail($id);
+    //     $kwitansi->delete();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Kwitansi berhasil dihapus.'
+    //     ]);
+    // }
+    $kwitansi = InvoicePayment::findOrFail($id);
+    $invoiceId = $kwitansi->invoice_id;
+
+    // Hapus kwitansi
+    $kwitansi->delete();
+
+    // Update status invoice setelah kwitansi dihapus
+    $invoice = Invoice::with('payments')->findOrFail($invoiceId);
+    $invoice->refresh();
+        if ($invoice->remaining <= 0) {
+            $invoice->status = 'close';
+        } elseif ($invoice->remaining == $invoice->net_total) {
+            $invoice->status = 'open';
+        } elseif ($invoice->remaining > 0) {
+            $invoice->status = 'partial';
+        }
+
+
+    $invoice->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Kwitansi berhasil dihapus dan status invoice diperbarui.'
+    ]);
+}
 }
