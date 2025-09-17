@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\CoaController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
@@ -167,6 +168,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/kwitansi/{id}/edit', [KwitansiController::class, 'edit'])->name('kwitansi.edit');
     Route::post('/kwitansi/{id}/update', [KwitansiController::class, 'update'])->name('kwitansi.update');
     Route::delete('/kwitansi/delete/{id}', [KwitansiController::class, 'destroy'])->name('kwitansi.destroy');
+
+// COA
+Route::get('/coa', [CoaController::class, 'index'])->name('coa.index');
+Route::get('/getlistcoa', [CoaController::class, 'getlistcoa'])->name('getlistcoa');
+Route::get('/getNextAccountCode', [CoaController::class, 'getNextAccountCode'])->name('getNextAccountCode');
+Route::post('/coa/store', [CoaController::class, 'store'])->name('coa.store');
+Route::get('/coa/{id}', [CoaController::class, 'show'])->name('coa.show');
+Route::put('/coa/update/{id}', [CoaController::class, 'update'])->name('coa.update');
+Route::delete('/coa/delete/{id}', [CoaController::class, 'destroy'])->name('coa.destroy');
 
 
 

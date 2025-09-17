@@ -210,12 +210,17 @@
                             </a>
                         </div>
 
-                        {{-- Accounting --}}
-                        <div class="nav-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">
-                            <a href="{{ route('accounting.index') }}">
+                        <div
+                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
                                 <i class="fas fa-coins"></i><span>Accounting</span>
                             </a>
-                        </div>
+                            <div class="submenu-content">
+                                <a href="{{ route('coa.index') }}"
+                                    class="menu-item {{ request()->routeIs('coa.index') ? 'active' : '' }}">COA</a>
+                                <a href="{{ route('accounting.index') }}"
+                                    class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Jurnal</a>
+                            </div>
 
                         {{-- Data Karyawan --}}
                         <div class="nav-item {{ request()->routeIs('karyawan.index') ? 'active' : '' }}">
