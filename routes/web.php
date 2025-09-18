@@ -156,6 +156,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice/{id}/print', [InvoiceController::class, 'printInvoice'])->name('invoice.print');
     Route::delete('/invoice/delete/{id}', [InvoiceController::class, 'destroy'])->name('invoice.destroy');
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+    Route::get('/projects/{project}/dp-invoices', [InvoiceController::class, 'getDpInvoices']);
 
 
 

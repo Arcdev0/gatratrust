@@ -125,64 +125,11 @@ class InvoiceController extends Controller
     }
 
     public function update(Request $request, $id)
-{
-    $invoice = Invoice::findOrFail($id);
-
-    $validated = $request->validate([
-        'invoice_no'       => 'required|string|unique:invoices,invoice_no,' . $invoice->id,
-        'date'             => 'required|date',
-        'customer_name'    => 'required|string|max:255',
-        'project_id'       => 'required|integer|exists:projects,id',
-        'customer_address' => 'required|string',
-        'inputDesc'        => 'required|string',
-        'gross_total'      => 'required|numeric',
-        'discount'         => 'nullable|numeric',
-        'down_payment'     => 'nullable|numeric',
-        'tax'              => 'nullable|numeric',
-        'net_total'        => 'required|numeric',
-    ]);
-
-    $invoice->update([
-        'invoice_no'       => $validated['invoice_no'],
-        'date'             => $validated['date'],
-        'project_id'       => $validated['project_id'] ?? null,
-        'customer_name'    => $validated['customer_name'],
-        'customer_address' => $validated['customer_address'],
-        'description'      => $validated['inputDesc'],
-        'gross_total'      => $validated['gross_total'],
-        'discount'         => $validated['discount'] ?? 0,
-        'down_payment'     => $validated['down_payment'] ?? 0,
-        'tax'              => $validated['tax'] ?? 0,
-        'net_total'        => $validated['net_total'],
-        // status sengaja tidak diubah disini, biar update fokus ke data utama
-    ]);
-
-        $invoice->refresh();
-
-        if ($invoice->remaining <= 0) {
-            $invoice->status = 'close';
-        } elseif ($invoice->remaining == $invoice->net_total) {
-            $invoice->status = 'open';
-        } else {
-            $invoice->status = 'partial';
-        }
-
-        $invoice->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Invoice berhasil diperbarui',
-        'data'    => $invoice
-    ]);
-}
-
-    public function store(Request $request)
     {
+        $invoice = Invoice::findOrFail($id);
 
-        // dd($request->all());
-        // Validasi data dulu
         $validated = $request->validate([
-            'invoice_no'       => 'required|string|unique:invoices,invoice_no',
+            'invoice_no'       => 'required|string|unique:invoices,invoice_no,' . $invoice->id,
             'date'             => 'required|date',
             'customer_name'    => 'required|string|max:255',
             'project_id'       => 'required|integer|exists:projects,id',
@@ -195,11 +142,100 @@ class InvoiceController extends Controller
             'net_total'        => 'required|numeric',
         ]);
 
-        // Simpan invoice
-        $invoice = Invoice::create([
+        $invoice->update([
             'invoice_no'       => $validated['invoice_no'],
             'date'             => $validated['date'],
             'project_id'       => $validated['project_id'] ?? null,
+            'customer_name'    => $validated['customer_name'],
+            'customer_address' => $validated['customer_address'],
+            'description'      => $validated['inputDesc'],
+            'gross_total'      => $validated['gross_total'],
+            'discount'         => $validated['discount'] ?? 0,
+            'down_payment'     => $validated['down_payment'] ?? 0,
+            'tax'              => $validated['tax'] ?? 0,
+            'net_total'        => $validated['net_total'],
+        ]);
+
+            $invoice->refresh();
+
+            if ($invoice->remaining <= 0) {
+                $invoice->status = 'close';
+            } elseif ($invoice->remaining == $invoice->net_total) {
+                $invoice->status = 'open';
+            } else {
+                $invoice->status = 'partial';
+            }
+
+            $invoice->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice berhasil diperbarui',
+            'data'    => $invoice
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'invoice_no'       => 'required|string|unique:invoices,invoice_no',
+            'date'             => 'required|date',
+            'customer_name'    => 'required|string|max:255',
+            'project_id'       => 'required|integer|exists:projects,id',
+            'customer_address' => 'required|string',
+            'inputDesc'        => 'required|string',
+            'gross_total'      => 'required|numeric',
+            'discount'         => 'nullable|numeric',
+            'down_payment'     => 'nullable|numeric',
+            'tax'              => 'nullable|numeric',
+            'net_total'        => 'required|numeric',
+            'invoice_type'     => 'required|in:dp,pelunasan,lunas',
+            'no_ref'           => 'nullable|integer|required_if:invoice_type,pelunasan|exists:invoices,id',
+        ]);
+
+        // Kalau DP → generate no_ref
+        if ($validated['invoice_type'] === 'dp') {
+            $existingDP = Invoice::where('project_id', $validated['project_id'])
+                ->where('invoice_type', 'dp')
+                ->first();
+
+            if ($existingDP) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invoice DP untuk project ini sudah ada!',
+                ], 422);
+            }
+
+            $validated['no_ref'] = $this->generateNoRef();
+        }
+
+        // Kalau Pelunasan → pastikan ada DP valid
+        if ($validated['invoice_type'] === 'pelunasan') {
+            $dpInvoice = Invoice::where('id', $validated['no_ref'])
+                ->where('project_id', $validated['project_id'])
+                ->where('invoice_type', 'dp')
+                ->first();
+
+            if (!$dpInvoice) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invoice DP tidak ditemukan atau tidak sesuai project!',
+                ], 422);
+            }
+        }
+
+        // Kalau Lunas → no_ref null
+        if ($validated['invoice_type'] === 'lunas') {
+            $validated['no_ref'] = null;
+        }
+
+        // Simpan invoice
+        $invoice = Invoice::create([
+            'invoice_no'       => $validated['invoice_no'],
+            'no_ref'           => $validated['no_ref'] ?? null,
+            'invoice_type'     => $validated['invoice_type'],
+            'date'             => $validated['date'],
+            'project_id'       => $validated['project_id'],
             'customer_name'    => $validated['customer_name'],
             'customer_address' => $validated['customer_address'],
             'description'      => $validated['inputDesc'],
@@ -216,6 +252,31 @@ class InvoiceController extends Controller
             'message' => 'Invoice berhasil dibuat',
             'data'    => $invoice
         ]);
+    }
+
+    private function generateNoRef()
+    {
+        $lastRef = Invoice::where('invoice_type', 'dp')
+            ->orderBy('id', 'desc')
+            ->value('no_ref');
+
+        if ($lastRef) {
+            $number = intval($lastRef) + 1;
+        } else {
+            $number = 1;
+        }
+
+        return str_pad($number, 4, '0', STR_PAD_LEFT); // 0001, 0002, dst
+    }
+
+
+    public function getDpInvoices($projectId)
+    {
+        $dpInvoices = Invoice::where('project_id', $projectId)
+            ->where('invoice_type', 'dp')
+            ->get(['id', 'invoice_no', 'net_total']);
+
+        return response()->json($dpInvoices);
     }
 
     public function destroy($id)
