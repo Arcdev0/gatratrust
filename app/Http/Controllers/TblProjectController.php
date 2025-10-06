@@ -41,6 +41,13 @@ class TblProjectController extends Controller
                 ->addColumn('client', function ($project) {
                     return $project->client->name ?? '-';
                 })
+                ->addColumn('status', function ($project) {
+                    if ($project->is_lunas) {
+                        return '<span class="badge badge-success">Lunas</span>';
+                    } else {
+                        return '<span class="badge badge-warning">Belum Lunas</span>';
+                    }
+                })
                 ->addColumn('kerjaan', function ($project) {
                     return $project->kerjaan->nama_kerjaan ?? '-';
                 })
@@ -114,7 +121,7 @@ class TblProjectController extends Controller
 
                     return $viewBtn;
                 })
-                ->rawColumns(['periode', 'aksi', 'selesai'])
+                ->rawColumns(['periode', 'aksi', 'selesai', 'status'])
                 ->make(true);
         }
     }

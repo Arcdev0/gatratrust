@@ -65,4 +65,9 @@ class ProjectTbl extends Model
         return $this->total_biaya_project - $this->total_invoice;
     }
 
+        public function getIsLunasAttribute()
+    {
+        return $this->total_invoice >= $this->total_biaya_project;
+    }
+
 }

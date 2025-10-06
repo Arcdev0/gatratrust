@@ -32,16 +32,6 @@ class Invoice extends Model
         return $this->hasMany(InvoicePayment::class);
     }
 
-    public function dpInvoice()
-    {
-        return $this->belongsTo(Invoice::class, 'no_ref');
-    }
-
-    public function pelunasanInvoices()
-    {
-        return $this->hasMany(Invoice::class, 'no_ref');
-    }
-
     public function getTotalPaidAttribute()
     {
         return $this->payments()->sum('amount_paid');

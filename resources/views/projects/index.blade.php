@@ -31,6 +31,7 @@
                                 <th>Company</th>
                                 <th>Jenis Kerjaan</th>
                                 <th>Periode</th>
+                                <th>Status</th>
                                 <th>Progress</th>
                                 <th>Aksi</th>
                             </tr>
@@ -309,6 +310,12 @@
                 {
                     data: 'periode',
                     name: 'periode',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'status',
+                    name: 'status',
                     orderable: false,
                     searchable: false
                 },

@@ -44,7 +44,7 @@
                             <th>Customer</th>
                             <th>Down Payment</th>
                             <th>Net Total</th>
-                            <th>Remaining</th>
+                            {{-- <th>Remaining</th> --}}
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -98,14 +98,14 @@
                                 .toLocaleString('id-ID') : 'Rp 0';
                         }
                     },
-                    {
-                        data: 'remaining',
-                        name: 'remaining',
-                        render: function(data) {
-                            return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
-                                .toLocaleString('id-ID') : 'Rp 0';
-                        }
-                    },
+                    // {
+                    //     data: 'remaining',
+                    //     name: 'remaining',
+                    //     render: function(data) {
+                    //         return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
+                    //             .toLocaleString('id-ID') : 'Rp 0';
+                    //     }
+                    // },
                     {
                         data: 'status',
                         name: 'status',
