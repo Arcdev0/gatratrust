@@ -15,23 +15,6 @@
                             <input type="text" name="invoice_no" value="{{ $newInvoiceNo ?? '' }}" class="form-control"
                                 readonly required>
                         </div>
-                        <div class="col-md-4 my-2">
-                            <label class="form-label">Invoice Type</label>
-                            <select name="invoice_type" id="invoice_type" class="form-control" required>
-                                <option value="">-- Pilih Tipe --</option>
-                                <option value="dp">Down Payment</option>
-                                <option value="pelunasan">Pelunasan</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-4 my-2" id="noRefWrapper" style="display: none;">
-                            <label class="form-label">Referensi DP</label>
-                            <select name="no_ref" id="no_ref" class="form-control">
-                                <option value="">-- Pilih Invoice DP --</option>
-                                {{-- Data akan diisi via AJAX berdasarkan project --}}
-                            </select>
-                        </div>
-
                         <div class="col-md-4">
                             <label class="form-label">Date</label>
                             <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" required>
@@ -42,15 +25,18 @@
                                 value="{{ $quotation->customer_name ?? '' }}" required>
                         </div>
 
-                        <div class="col-md-4 my-2">
+                        <div class="col-md-6 my-2">
                             <label class="form-label">No. Project</label>
-                            <div class="d-flex gap-2 align-items-center">
+                            <div class="d-flex align-items-center">
                                 <select id="no_project" name="project_id" class="form-control" required>
                                     <option value="">-- Pilih No. Project --</option>
                                     @foreach ($projects as $p)
-                                        <option value="{{ $p->id }}">{{ $p->no_project }}</option>
+                                        <option value="{{ $p->id }}" data-sisa="{{ $p->sisa_nominal }}">
+                                            {{ $p->no_project }} ({{ $p->client->name }})
+                                        </option>
                                     @endforeach
                                 </select>
+                                <div id="sisa_nominal_text" class="ml-2" style="font-weight:bold; min-width:200px;"></div>
                             </div>
                         </div>
                     </div>
@@ -161,51 +147,19 @@
                 }
             });
 
-            $('#invoice_type').on('change', function() {
-                let type = $(this).val();
-                let projectId = $('#no_project').val();
-
-                if (type === 'dp') {
-                    // DP tidak perlu no_ref
-                    $('#noRefWrapper').hide();
-                    $('#no_ref').empty().append('<option value="">-- Tidak Perlu --</option>');
-                } else if (type === 'pelunasan') {
-                    if (projectId) {
-                        // cek via ajax apakah project punya DP
-                        $.ajax({
-                            url: "/projects/" + projectId + "/dp-invoices",
-                            method: "GET",
-                            success: function(res) {
-                                if (res.length > 0) {
-                                    // ada DP → tampilkan dropdown
-                                    $('#noRefWrapper').show();
-                                    $('#no_ref').empty().append(
-                                        '<option value="">-- Pilih Invoice DP --</option>');
-                                    $.each(res, function(i, inv) {
-                                        $('#no_ref').append(
-                                            `<option value="${inv.id}"> ${inv.invoice_no} - Rp ${inv.net_total.toLocaleString('id-ID')}</option>`
-                                        );
-                                    });
-                                } else {
-                                    // tidak ada DP → sembunyikan no_ref
-                                    $('#noRefWrapper').hide();
-                                    $('#no_ref').empty().append(
-                                        '<option value="">-- Tidak Ada DP --</option>');
-                                }
-                            }
-                        });
-                    } else {
-                        // belum pilih project
-                        $('#noRefWrapper').hide();
-                    }
-                } else {
-                    $('#noRefWrapper').hide();
-                }
-            });
 
             // Trigger ulang kalau project berubah
-            $('#no_project').on('change', function() {
-                $('#invoice_type').trigger('change');
+            function formatRupiah(angka) {
+                return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
+            }
+
+            $(document).on('change', '#no_project', function() {
+                let sisa = $('option:selected', this).data('sisa');
+                if (sisa !== undefined) {
+                    $('#sisa_nominal_text').text("Sisa nominal: " + formatRupiah(sisa));
+                } else {
+                    $('#sisa_nominal_text').text('');
+                }
             });
 
             // Sinkronisasi ke hidden input

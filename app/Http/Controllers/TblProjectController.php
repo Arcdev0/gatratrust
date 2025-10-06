@@ -97,6 +97,7 @@ class TblProjectController extends Controller
                                 data-client="' . $project->client_id . '"
                                 data-kerjaan="' . $project->kerjaan_id . '"
                                 data-deskripsi="' . $project->deskripsi . '"
+                                data-biaya="' . $project->total_biaya_project . '"
                                 data-start="' . optional($project->start)->format('Y-m-d') . '"
                                 data-end="' . optional($project->end)->format('Y-m-d') . '">
                                 <i class="fas fa-edit"></i>
@@ -179,6 +180,7 @@ class TblProjectController extends Controller
                 'client_id' => 'required|exists:users,id',
                 'kerjaan_id' => 'required|exists:kerjaans,id',
                 'deskripsi' => 'nullable|string',
+                'total_biaya_project' => 'nullable|numeric',
                 'start' => 'required|date',
                 'end' => 'required|date|after_or_equal:start'
             ]);
@@ -315,12 +317,14 @@ class TblProjectController extends Controller
 
     public function update(Request $request, ProjectTbl $project)
     {
+        // dd($request->all());
         $validated = $request->validate([
             'nama_project' => 'required|string|max:100',
             'no_project' => 'required|string|unique:projects,no_project,' . $project->id,
             'client_id' => 'required|exists:users,id',
             'kerjaan_id' => 'required|exists:kerjaans,id',
             'deskripsi' => 'nullable|string',
+            'total_biaya_project' => 'nullable|numeric',
             'start' => 'nullable|date',
             'end' => 'nullable|date|after_or_equal:start'
         ]);

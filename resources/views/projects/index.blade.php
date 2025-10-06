@@ -90,6 +90,11 @@
                             <textarea name="deskripsi" placeholder="Masukkan deskripsi" class="form-control"></textarea>
                         </div>
                         <div class="form-group">
+                            <label>Biaya Project</label>
+                            <input type="text" class="form-control input-biaya" placeholder="Masukkan Biaya Project">
+                            <input type="hidden" name="total_biaya_project" class="biaya-hidden">
+                        </div>
+                        <div class="form-group">
                             <label>Mulai</label>
                             <input type="date" name="start" class="form-control" id="start" required>
                         </div>
@@ -153,6 +158,11 @@
                         <div class="form-group">
                             <label>Deskripsi (Optional)</label>
                             <textarea name="deskripsi" class="form-control" id="edit_deskripsi"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Biaya Project</label>
+                            <input type="text" id="edit_biaya_display" class="form-control input-biaya">
+                            <input type="hidden" name="total_biaya_project" id="edit_biaya" class="biaya-hidden">
                         </div>
                         <div class="form-group">
                             <label>Mulai</label>
@@ -323,6 +333,13 @@
             $(this).find('form')[0].reset();
         });
 
+        function formatRupiah(angka) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
+        }
+
+        function parseRupiah(str) {
+            return parseInt(str.replace(/[^0-9]/g, '')) || 0;
+        }
 
         // Tambah Project
         $('#formTambahProject').on('submit', function(e) {
@@ -364,7 +381,7 @@
 
         $(document).on('click', '.btn-edit-project', function() {
             // Ambil data dari tombol yang diklik
-            var projectId = $(this).data('id'); // pastikan tombol punya data-id
+            var projectId = $(this).data('id');
             var no = $(this).data('no');
             var nama = $(this).data('nama');
             var client = $(this).data('client');
@@ -372,6 +389,7 @@
             var deskripsi = $(this).data('deskripsi');
             var start = $(this).data('start');
             var end = $(this).data('end');
+            var biaya = $(this).data('biaya'); // pastikan tombol punya data-biaya
 
             // Isi form dalam modal dengan data
             $('#edit_no_project').val(no);
@@ -382,9 +400,18 @@
             $('#edit_start').val(start);
             $('#edit_end').val(end);
 
-            // Set form action ke URL update dan simpan projectId di data form
-            // $('#formEditProject').attr('action', '/projects/update/' + projectId);
+            // isi biaya (tampilkan dalam format Rp di input, dan angka asli di hidden)
+            $('#edit_biaya_display').val(formatRupiah(biaya.toString()));
+            $('#edit_biaya').val(biaya);
+
+            // Simpan projectId di form (untuk action / AJAX update)
             $('#formEditProject').data('project-id', projectId);
+        });
+
+        $(document).on('input', '.input-biaya', function() {
+            let angka = parseRupiah($(this).val());
+            $(this).siblings('.biaya-hidden').val(angka);
+            $(this).val(formatRupiah(angka));
         });
 
         // Edit Project - Submit

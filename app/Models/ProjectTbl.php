@@ -17,6 +17,7 @@ class ProjectTbl extends Model
         'client_id',
         'kerjaan_id',
         'deskripsi',
+        'total_biaya_project',
         'start',
         'end',
         'created_by'
@@ -53,4 +54,15 @@ class ProjectTbl extends Model
     {
         return $this->hasMany(Invoice::class, 'project_id');
     }
+
+    public function getTotalInvoiceAttribute()
+    {
+        return $this->invoices()->sum('net_total');
+    }
+
+    public function getSisaNominalAttribute()
+    {
+        return $this->total_biaya_project - $this->total_invoice;
+    }
+
 }

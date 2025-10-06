@@ -88,8 +88,13 @@ class InvoiceController extends Controller
 
     public function create(Request $request)
     {
-        $projects = ProjectTbl::orderBy('created_at', 'desc')
-            ->get();
+       $projects = ProjectTbl::with('invoices', 'client')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->filter(function ($p) {
+            return $p->total_invoice < $p->total_biaya_project;
+        });
+
 
         $quotation = null;
 
@@ -189,51 +194,11 @@ class InvoiceController extends Controller
             'down_payment'     => 'nullable|numeric',
             'tax'              => 'nullable|numeric',
             'net_total'        => 'required|numeric',
-            'invoice_type'     => 'required|in:dp,pelunasan,lunas',
-            'no_ref'           => 'nullable|integer|required_if:invoice_type,pelunasan|exists:invoices,id',
         ]);
-
-        // Kalau DP → generate no_ref
-        if ($validated['invoice_type'] === 'dp') {
-            $existingDP = Invoice::where('project_id', $validated['project_id'])
-                ->where('invoice_type', 'dp')
-                ->first();
-
-            if ($existingDP) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invoice DP untuk project ini sudah ada!',
-                ], 422);
-            }
-
-            $validated['no_ref'] = $this->generateNoRef();
-        }
-
-        // Kalau Pelunasan → pastikan ada DP valid
-        if ($validated['invoice_type'] === 'pelunasan') {
-            $dpInvoice = Invoice::where('id', $validated['no_ref'])
-                ->where('project_id', $validated['project_id'])
-                ->where('invoice_type', 'dp')
-                ->first();
-
-            if (!$dpInvoice) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invoice DP tidak ditemukan atau tidak sesuai project!',
-                ], 422);
-            }
-        }
-
-        // Kalau Lunas → no_ref null
-        if ($validated['invoice_type'] === 'lunas') {
-            $validated['no_ref'] = null;
-        }
 
         // Simpan invoice
         $invoice = Invoice::create([
             'invoice_no'       => $validated['invoice_no'],
-            'no_ref'           => $validated['no_ref'] ?? null,
-            'invoice_type'     => $validated['invoice_type'],
             'date'             => $validated['date'],
             'project_id'       => $validated['project_id'],
             'customer_name'    => $validated['customer_name'],

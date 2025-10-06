@@ -51,4 +51,15 @@ class Invoice extends Model
     {
         return $this->net_total - $this->total_paid;
     }
+
+    public function getTotalInvoiceAttribute()
+    {
+        return $this->invoices()->sum('net_total');
+    }
+
+    public function getIsLunasAttribute()
+    {
+        return $this->total_invoice >= $this->total_biaya_project;
+    }
+
 }
