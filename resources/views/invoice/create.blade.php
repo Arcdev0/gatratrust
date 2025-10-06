@@ -101,7 +101,7 @@
                                 <tr class="table-light">
                                     <th>Net Total</th>
                                     <td>
-                                        <input type="text" id="netTotalDisplay" class="form-control text-end" readonly>
+                                        <input type="text" id="netTotalDisplay" class="form-control text-end">
                                         <input type="hidden" name="net_total" id="netTotal">
                                     </td>
                                 </tr>
@@ -206,7 +206,6 @@
                     gross += parseRupiah($(this).val());
                 });
 
-                // update display & hidden
                 $('#grossTotalDisplay').val(formatRupiah(gross));
                 $('#grossTotal').val(gross);
 
@@ -218,10 +217,14 @@
                 let tax = afterDiscount * (taxPercent / 100);
                 let net = afterDiscount + tax;
 
-                $('#netTotalDisplay').val(formatRupiah(net));
-                $('#netTotal').val(net);
+                if (!netTotalManual) {
+                    $('#netTotalDisplay').val(formatRupiah(net));
+                    $('#netTotal').val(net);
+                }
+
                 $('#downPayment').val(downPayment);
             }
+
 
             // format input down payment saat ketik
             $(document).on('input', '#downPaymentDisplay', function() {
@@ -230,8 +233,29 @@
                 calculateTotals();
             });
 
+            let netTotalManual = false;
+
+            // Saat user edit net total, set flag manual
+            $(document).on('input', '#netTotalDisplay', function() {
+                let val = parseRupiah($(this).val());
+                let gross = parseRupiah($('#grossTotal').val());
+
+                // Batasi supaya tidak lebih dari gross
+                if (val > gross) {
+                    val = gross;
+                }
+
+                $(this).val(formatRupiah(val));
+                $('#netTotal').val(val);
+                netTotalManual = true; // aktifkan manual mode
+            });
+
+
             // recalc jika ada perubahan
-            $(document).on('input', '.amount, #discount, #tax', calculateTotals);
+            $(document).on('input', '.amount, #discount, #tax, #downPaymentDisplay', function() {
+                netTotalManual = false;
+                calculateTotals();
+            });
 
             calculateTotals();
 
