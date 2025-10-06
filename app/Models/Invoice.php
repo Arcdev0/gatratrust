@@ -11,6 +11,8 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_no',
+        'no_ref',
+        'invoice_type',
         'date',
         'project_id',
         'customer_name',
@@ -24,9 +26,20 @@ class Invoice extends Model
         'status'
     ];
 
+    // Relasi ke tabel pembayaran
     public function payments()
     {
         return $this->hasMany(InvoicePayment::class);
+    }
+
+    public function dpInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'no_ref');
+    }
+
+    public function pelunasanInvoices()
+    {
+        return $this->hasMany(Invoice::class, 'no_ref');
     }
 
     public function getTotalPaidAttribute()
