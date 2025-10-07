@@ -296,7 +296,7 @@
 
         <table class="no-border">
             <tr>
-                <td class="text-right" style="width:80%;">Total</td>
+                <td class="text-right" style="width:80%;">Sub Total</td>
                 <td class="text-right">{{ number_format($quotation->total_amount, 0, ',', '.') }}</td>
             </tr>
             <tr>
@@ -304,7 +304,7 @@
                 <td class="text-right">{{ number_format($quotation->discount, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td class="text-right"><b>Sub Total</b></td>
+                <td class="text-right"><b>Total</b></td>
                 <td class="text-right"><b>{{ number_format($quotation->sub_total, 0, ',', '.') }}</b></td>
             </tr>
         </table>

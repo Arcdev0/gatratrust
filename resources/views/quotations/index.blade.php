@@ -266,14 +266,28 @@
                     </thead>
                     <tbody>
                         ${q.items.map(i => `
-                                                                                            <tr>
-                                                                                                <td>${i.description}</td>
-                                                                                                <td>${i.qty}</td>
-                                                                                                <td>${formatRupiah(i.unit_price)}</td>
-                                                                                                <td>${formatRupiah(i.total_price)}</td>
-                                                                                            </tr>
-                                                                                        `).join('')}
+                            <tr>
+                                <td>${i.description}</td>
+                                <td>${i.qty}</td>
+                                <td>${formatRupiah(i.unit_price)}</td>
+                                <td>${formatRupiah(i.total_price)}</td>
+                            </tr>
+                        `).join('')}
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Sub Total</th>
+                            <th>${formatRupiah(q.total_amount)}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3" class="text-end">Discount</th>
+                            <th>${formatRupiah(q.discount)}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3" class="text-end">Total</th>
+                            <th>${formatRupiah(q.sub_total)}</th>
+                        </tr>
+                    </tfoot>
                 </table>
 
                 ${q.scopes.length > 0 ? `
