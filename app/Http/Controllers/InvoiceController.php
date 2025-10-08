@@ -9,9 +9,13 @@ use App\Models\Quotation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use App\Traits\LogsActivity;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
+    use LogsActivity;
+
     public function index()
     {
         return view('invoice.index');
@@ -180,7 +184,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+ public function store(Request $request)
     {
         $validated = $request->validate([
             'invoice_no'       => 'required|string|unique:invoices,invoice_no',
@@ -196,27 +200,42 @@ class InvoiceController extends Controller
             'net_total'        => 'required|numeric',
         ]);
 
-        // Simpan invoice
-        $invoice = Invoice::create([
-            'invoice_no'       => $validated['invoice_no'],
-            'date'             => $validated['date'],
-            'project_id'       => $validated['project_id'],
-            'customer_name'    => $validated['customer_name'],
-            'customer_address' => $validated['customer_address'],
-            'description'      => $validated['inputDesc'],
-            'gross_total'      => $validated['gross_total'],
-            'discount'         => $validated['discount'] ?? 0,
-            'down_payment'     => $validated['down_payment'] ?? 0,
-            'tax'              => $validated['tax'] ?? 0,
-            'net_total'        => $validated['net_total'],
-            'status'           => 'open',
-        ]);
+        DB::beginTransaction();
+        try {
+            // Simpan invoice
+            $invoice = Invoice::create([
+                'invoice_no'       => $validated['invoice_no'],
+                'date'             => $validated['date'],
+                'project_id'       => $validated['project_id'],
+                'customer_name'    => $validated['customer_name'],
+                'customer_address' => $validated['customer_address'],
+                'description'      => $validated['inputDesc'],
+                'gross_total'      => $validated['gross_total'],
+                'discount'         => $validated['discount'] ?? 0,
+                'down_payment'     => $validated['down_payment'] ?? 0,
+                'tax'              => $validated['tax'] ?? 0,
+                'net_total'        => $validated['net_total'],
+                'status'           => 'open',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Invoice berhasil dibuat',
-            'data'    => $invoice
-        ]);
+            // Simpan log aktivitas
+            $this->logActivity("Membuat Invoice {$invoice->invoice_no}", $invoice->invoice_no);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil dibuat',
+                'data'    => $invoice
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     private function generateNoRef()
