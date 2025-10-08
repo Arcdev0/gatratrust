@@ -15,4 +15,10 @@ class ActivityLog extends Model
         'description',
         'created_at',
     ];
+
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

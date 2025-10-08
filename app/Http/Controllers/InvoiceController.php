@@ -151,19 +151,22 @@ class InvoiceController extends Controller
             'net_total'        => 'required|numeric',
         ]);
 
-        $invoice->update([
-            'invoice_no'       => $validated['invoice_no'],
-            'date'             => $validated['date'],
-            'project_id'       => $validated['project_id'] ?? null,
-            'customer_name'    => $validated['customer_name'],
-            'customer_address' => $validated['customer_address'],
-            'description'      => $validated['inputDesc'],
-            'gross_total'      => $validated['gross_total'],
-            'discount'         => $validated['discount'] ?? 0,
-            'down_payment'     => $validated['down_payment'] ?? 0,
-            'tax'              => $validated['tax'] ?? 0,
-            'net_total'        => $validated['net_total'],
-        ]);
+        DB::beginTransaction();
+        try {
+            // Update data utama
+            $invoice->update([
+                'invoice_no'       => $validated['invoice_no'],
+                'date'             => $validated['date'],
+                'project_id'       => $validated['project_id'],
+                'customer_name'    => $validated['customer_name'],
+                'customer_address' => $validated['customer_address'],
+                'description'      => $validated['inputDesc'],
+                'gross_total'      => $validated['gross_total'],
+                'discount'         => $validated['discount'] ?? 0,
+                'down_payment'     => $validated['down_payment'] ?? 0,
+                'tax'              => $validated['tax'] ?? 0,
+                'net_total'        => $validated['net_total'],
+            ]);
 
             $invoice->refresh();
 
@@ -177,11 +180,23 @@ class InvoiceController extends Controller
 
             $invoice->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Invoice berhasil diperbarui',
-            'data'    => $invoice
-        ]);
+            $this->logActivity("Memperbarui Invoice {$invoice->invoice_no}", $invoice->invoice_no);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil diperbarui',
+                'data'    => $invoice
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
  public function store(Request $request)

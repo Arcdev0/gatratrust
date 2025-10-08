@@ -193,6 +193,8 @@
                             <div class="submenu-content">
                                 <a href="{{ route('user.tampilan') }}"
                                     class="menu-item {{ request()->routeIs('user.tampilan') ? 'active' : '' }}">User</a>
+                                <a href="{{ route('activity-logs.index') }}"
+                                    class="menu-item {{ request()->routeIs('activity-logs.index') ? 'active' : '' }}">Aktifitas Log</a>
                                 <a href="{{ route('listproses.index') }}"
                                     class="menu-item {{ request()->routeIs('listproses.index') ? 'active' : '' }}">List
                                     Proses</a>

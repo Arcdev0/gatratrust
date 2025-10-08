@@ -168,6 +168,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/kwitansi/{id}/edit', [KwitansiController::class, 'edit'])->name('kwitansi.edit');
     Route::post('/kwitansi/{id}/update', [KwitansiController::class, 'update'])->name('kwitansi.update');
 
+    //Log
+    Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('/activity-logs/data', [\App\Http\Controllers\ActivityLogController::class, 'data'])->name('activity-logs.data');
+
+
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
