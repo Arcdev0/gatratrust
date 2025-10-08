@@ -6,9 +6,14 @@ use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Traits\LogsActivity;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class KwitansiController extends Controller
 {
+
+     use LogsActivity;
     public function index()
     {
         $kwitansi = InvoicePayment::with('invoice')->latest()->get();
@@ -51,7 +56,7 @@ class KwitansiController extends Controller
         return view('kwitansi.create', compact('invoices'));
     }
 
-   public function store(Request $request)
+ public function store(Request $request)
     {
         $request->validate([
             'invoice_id'   => 'required|exists:invoices,id',
@@ -60,31 +65,66 @@ class KwitansiController extends Controller
             'note'         => 'nullable|string',
         ]);
 
-        $kwitansi = InvoicePayment::create([
-            'invoice_id'   => $request->invoice_id,
-            'payment_date' => $request->payment_date,
-            'amount_paid'  => $request->amount_paid,
-            'note'         => $request->note,
-        ]);
+        DB::beginTransaction();
+        try {
+            // Generate nomor kwitansi otomatis
+            $now = Carbon::now();
+            $monthYear = $now->format('m-Y');
 
-        $invoice = Invoice::with('payments')->findOrFail($request->invoice_id);
-        $invoice->refresh();
+            $lastPayment = InvoicePayment::orderBy('id', 'desc')->first();
 
-        if ($invoice->remaining <= 0) {
-            $invoice->status = 'close';
-        } elseif ($invoice->total_paid > 0) {
-            $invoice->status = 'partial';
-        } else {
-            $invoice->status = 'open';
+            if ($lastPayment && $lastPayment->no_payment) {
+                $lastNumber = intval(explode('/', $lastPayment->no_payment)[0]);
+                $newNumber  = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '001';
+            }
+
+            $newPaymentNo = $newNumber . '/KW/GPT/' . $monthYear;
+
+            // Simpan kwitansi baru
+            $kwitansi = InvoicePayment::create([
+                'invoice_id'   => $request->invoice_id,
+                'payment_date' => $request->payment_date,
+                'amount_paid'  => $request->amount_paid,
+                'note'         => $request->note,
+                'no_payment'   => $newPaymentNo,
+            ]);
+
+            // Update status invoice terkait
+            $invoice = Invoice::with('payments')->findOrFail($request->invoice_id);
+            $invoice->refresh();
+
+            if ($invoice->remaining <= 0) {
+                $invoice->status = 'close';
+            } elseif ($invoice->total_paid > 0) {
+                $invoice->status = 'partial';
+            } else {
+                $invoice->status = 'open';
+            }
+
+            $invoice->save();
+
+            $this->logActivity(
+                "Membuat Kwitansi {$kwitansi->no_payment} untuk Invoice {$invoice->invoice_no} sebesar " . number_format($request->amount_paid, 0, ',', '.'),
+                $kwitansi->no_payment
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kwitansi berhasil disimpan.',
+                'data'    => $kwitansi
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $invoice->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Kwitansi berhasil disimpan.',
-            'data'    => $kwitansi
-        ]);
     }
 
     public function edit($id)

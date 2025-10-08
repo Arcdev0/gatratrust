@@ -16,6 +16,7 @@
                 <table id="kwitansiTable" class="table table-bordered table-striped w-100">
                     <thead>
                         <tr>
+                             <th>No. Kwitansi</th>
                             <th>No. Invoice</th>
                             <th>Tanggal Pembayaran</th>
                             <th>Jumlah Dibayarkan</th>
@@ -38,21 +39,22 @@ $(document).ready(function() {
         serverSide: true,
         ajax: "{{ route('kwitansi.data') }}",
         columns: [
+            { data: 'no_payment', name: 'no_payment' },
             { data: 'invoice_no', name: 'invoice_no' },
             { data: 'payment_date', name: 'payment_date' },
-            { 
-                data: 'amount_paid', 
+            {
+                data: 'amount_paid',
                 name: 'amount_paid',
                 render: function(data) {
                     return 'Rp. ' + new Intl.NumberFormat('id-ID').format(data);
                 }
             },
             { data: 'note', name: 'note' },
-            { 
-                data: 'action', 
-                name: 'action', 
-                orderable: false, 
-                searchable: false 
+            {
+                data: 'action',
+                name: 'action',
+                orderable: false,
+                searchable: false
             },
         ]
     });
