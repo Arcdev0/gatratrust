@@ -26,12 +26,12 @@
                         <thead>
                             <tr>
                                 <th>No. Project</th>
-                                <th>Nama Project</th>
                                 <th>PIC</th>
                                 <th>Company</th>
                                 <th>Jenis Kerjaan</th>
                                 <th>Periode</th>
-                                <th>Status</th>
+                                <th>Nilai Project</th>
+                                <th>Sisa Pembayaran</th>
                                 <th>Progress</th>
                                 <th>Aksi</th>
                             </tr>
@@ -292,10 +292,6 @@
                     name: 'no_project'
                 },
                 {
-                    data: 'nama_project',
-                    name: 'nama_project'
-                },
-                {
                     data: 'client',
                     name: 'client.name'
                 },
@@ -312,6 +308,16 @@
                     name: 'periode',
                     orderable: false,
                     searchable: false
+                },
+                {
+                    data: 'total_biaya_project',
+                    name: 'total_biaya_project',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        if (data == null) return '-';
+                        return 'Rp ' + parseInt(data).toLocaleString('id-ID');
+                    }
                 },
                 {
                     data: 'status',

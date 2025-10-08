@@ -42,11 +42,19 @@ class TblProjectController extends Controller
                     return $project->client->name ?? '-';
                 })
                 ->addColumn('status', function ($project) {
-                    if ($project->is_lunas) {
-                        return '<span class="badge badge-success">Lunas</span>';
-                    } else {
-                        return '<span class="badge badge-warning">Belum Lunas</span>';
+                    $totalInvoice = $project->total_biaya_project;
+                    $totalPaid    = $project->invoices->flatMap->payments->sum('amount_paid');
+                    $remaining    = $totalInvoice - $totalPaid;
+
+                    if ($totalInvoice == 0) {
+                        return '<span class="badge badge-secondary">Belum Ada Invoice</span>';
                     }
+
+                    if ($remaining <= 0) {
+                        return '<span class="badge badge-success">Lunas</span>';
+                    }
+
+                    return '<span class="badge badge-warning">Sisa: ' . number_format($remaining, 0, ',', '.') . '</span>';
                 })
                 ->addColumn('kerjaan', function ($project) {
                     return $project->kerjaan->nama_kerjaan ?? '-';

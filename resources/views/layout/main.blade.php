@@ -152,6 +152,19 @@
                 <nav id="main-menu-navigation" class="navigation-main">
                     <div class="nav-lavel">Gatra Consultant</div>
 
+                    @if (in_array(Auth::user()->role_id, [1, 3, 4]))
+                        <div class="nav-item has-sub {{ request()->routeIs('quotations.index') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="fas fa-retweet"></i><span>Simulasi</span>
+                            </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('quotations.index') }}"
+                                    class="menu-item {{ request()->routeIs('quotations.index') ? 'active' : '' }}">Quotation</a>
+                                <a href="#" class="menu-item">PAK</a>
+
+                            </div>
+                        </div>
+                    @endif
                     {{-- Project --}}
                     <div class="nav-item {{ request()->routeIs('projects.tampilan') ? 'active' : '' }}">
                         <a href="{{ route('projects.tampilan') }}">
@@ -172,18 +185,6 @@
                             </a>
                         </div>
                         {{-- Master Data --}}
-                        <div
-                            class="nav-item has-sub {{ request()->routeIs('quotations.index') ? 'active open' : '' }}">
-                            <a href="javascript:void(0)">
-                                <i class="fas fa-retweet"></i><span>Simulasi</span>
-                            </a>
-                            <div class="submenu-content">
-                                <a href="{{ route('quotations.index') }}"
-                                    class="menu-item {{ request()->routeIs('quotations.index') ? 'active' : '' }}">Quotation</a>
-                                <a href="#" class="menu-item">PAK</a>
-
-                            </div>
-                        </div>
                         <div
                             class="nav-item has-sub {{ request()->routeIs('user.tampilan') || request()->routeIs('listproses.index') || request()->routeIs('kerjaan.show') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">

@@ -52,4 +52,9 @@ class Invoice extends Model
         return $this->total_invoice >= $this->total_biaya_project;
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'project_id');
+    }
+
 }
