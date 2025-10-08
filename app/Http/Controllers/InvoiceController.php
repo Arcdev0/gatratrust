@@ -280,23 +280,39 @@ class InvoiceController extends Controller
 
     public function destroy($id)
     {
-        // Cari invoice berdasarkan ID
-        $invoice = Invoice::find($id);
+        DB::beginTransaction();
+        try {
+            // Cari invoice berdasarkan ID
+            $invoice = Invoice::find($id);
 
-        // Jika tidak ditemukan
-        if (!$invoice) {
+            // Jika tidak ditemukan
+            if (!$invoice) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invoice tidak ditemukan'
+                ], 404);
+            }
+
+            $invoiceNo = $invoice->invoice_no;
+
+            // Hapus invoice
+            $invoice->delete();
+
+            $this->logActivity("Menghapus Invoice {$invoiceNo}", $invoiceNo);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Invoice tidak ditemukan'
-            ], 404);
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Hapus invoice
-        $invoice->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Invoice berhasil dihapus'
-        ]);
     }
 }
