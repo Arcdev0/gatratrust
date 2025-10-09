@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
+use App\Traits\LogsActivity;
 
 class TblProjectController extends Controller
 {
+
+    use LogsActivity;
     public function index()
     {
         $projects = ProjectTbl::with(['client', 'kerjaan', 'creator'])
@@ -232,7 +235,10 @@ class TblProjectController extends Controller
                 $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
             }
 
-
+            $this->logActivity(
+                "Menambahkan Project {$project->no_project} - {$project->nama_project}",
+                $project->no_project
+            );
 
             DB::commit();
 
@@ -386,6 +392,12 @@ class TblProjectController extends Controller
             }
         }
 
+          $this->logActivity(
+                "Mengupdate Project {$project->no_project} - {$project->nama_project}",
+                $project->no_project
+            );
+
+
         if ($request->ajax()) {
             return response()->json(['success' => true]);
         }
@@ -395,20 +407,31 @@ class TblProjectController extends Controller
     }
 
 
-    public function destroy(ProjectTbl $project, Request $request)
+  public function destroy(ProjectTbl $project, Request $request)
     {
+        DB::beginTransaction();
         try {
+
+            $noProject   = $project->no_project;
+            $namaProject = $project->nama_project;
             $project->delete();
+            $this->logActivity(
+                "Menghapus Project {$noProject} - {$namaProject}",
+                $noProject
+            );
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Project berhasil dihapus.'
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus project.',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
