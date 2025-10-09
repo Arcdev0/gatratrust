@@ -212,8 +212,6 @@ class TblProjectController extends Controller
                 ->orderBy('urutan', 'asc')
                 ->get();
 
-            // dd($listProses);
-
             $startPlan = Carbon::parse($validated['start']);
 
             foreach ($listProses as $proses) {
@@ -235,9 +233,12 @@ class TblProjectController extends Controller
                 $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
             }
 
+            // Simpan log aktivitas dengan old_data = null, new_data = project yang baru dibuat
             $this->logActivity(
                 "Menambahkan Project {$project->no_project} - {$project->nama_project}",
-                $project->no_project
+                $project->no_project,
+                null,
+                $project->toArray()
             );
 
             DB::commit();
@@ -250,9 +251,6 @@ class TblProjectController extends Controller
                 ->with('success', 'Project berhasil ditambahkan');
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // Anda bisa menambahkan log error di sini jika perlu
-            // \Log::error($e->getMessage());
 
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
@@ -354,6 +352,8 @@ class TblProjectController extends Controller
         $oldStart = $project->start;
         $oldKerjaanId = $project->kerjaan_id;
 
+        $oldData = $project->toArray();
+
         // Update project
         $project->update($validated);
 
@@ -392,9 +392,11 @@ class TblProjectController extends Controller
             }
         }
 
-          $this->logActivity(
-                "Mengupdate Project {$project->no_project} - {$project->nama_project}",
-                $project->no_project
+            $this->logActivity(
+                 "Memperbaharui Project {$project->no_project} - {$project->nama_project}",
+                $project->no_project,
+                $oldData,
+                $project->toArray()
             );
 
 
@@ -412,12 +414,14 @@ class TblProjectController extends Controller
         DB::beginTransaction();
         try {
 
-            $noProject   = $project->no_project;
-            $namaProject = $project->nama_project;
+            $oldData = $project->toArray();
             $project->delete();
+
             $this->logActivity(
-                "Menghapus Project {$noProject} - {$namaProject}",
-                $noProject
+                "Menghapus Project {$project->no_project} - {$project->nama_project}",
+                $project->no_project,
+                $oldData,
+                null
             );
 
             DB::commit();

@@ -41,7 +41,6 @@ class KwitansiController extends Controller
                     <a href="' . $editUrl . '" class="btn btn-sm btn-secondary">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
                 ';
             })
             ->rawColumns(['action'])
@@ -56,7 +55,7 @@ class KwitansiController extends Controller
         return view('kwitansi.create', compact('invoices'));
     }
 
- public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'invoice_id'   => 'required|exists:invoices,id',
@@ -105,9 +104,12 @@ class KwitansiController extends Controller
 
             $invoice->save();
 
+            // Simpan log aktivitas (new_data berisi detail kwitansi)
             $this->logActivity(
                 "Membuat Kwitansi {$kwitansi->no_payment} untuk Invoice {$invoice->invoice_no} sebesar " . number_format($request->amount_paid, 0, ',', '.'),
-                $kwitansi->no_payment
+                $kwitansi->no_payment,
+                null, // old_data
+                $kwitansi->toArray() // new_data
             );
 
             DB::commit();
@@ -143,13 +145,52 @@ class KwitansiController extends Controller
             'note'         => 'nullable|string',
         ]);
 
-        $kwitansi = InvoicePayment::findOrFail($id);
-        $kwitansi->update($request->only(['invoice_id', 'payment_date', 'amount_paid', 'note']));
+        DB::beginTransaction();
+        try {
+            $kwitansi = InvoicePayment::findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kwitansi berhasil diperbarui.',
-            'data'    => $kwitansi
-        ]);
+            // simpan data lama
+            $oldData = $kwitansi->toArray();
+
+            // update kwitansi
+            $kwitansi->update($request->only(['invoice_id', 'payment_date', 'amount_paid', 'note']));
+            $kwitansi->refresh();
+
+            // update status invoice terkait
+            $invoice = Invoice::with('payments')->findOrFail($kwitansi->invoice_id);
+            $invoice->refresh();
+
+            if ($invoice->remaining <= 0) {
+                $invoice->status = 'close';
+            } elseif ($invoice->total_paid > 0) {
+                $invoice->status = 'partial';
+            } else {
+                $invoice->status = 'open';
+            }
+            $invoice->save();
+
+            // log activity
+            $this->logActivity(
+                "Memperbarui Kwitansi {$kwitansi->no_payment} untuk Invoice {$invoice->invoice_no}",
+                $kwitansi->no_payment,
+                $oldData,
+                $kwitansi->toArray()
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kwitansi berhasil diperbarui.',
+                'data'    => $kwitansi
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
