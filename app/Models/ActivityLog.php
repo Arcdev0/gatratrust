@@ -13,6 +13,8 @@ class ActivityLog extends Model
         'user_id',
         'reference',
         'description',
+        'old_data',
+        'new_data',
         'created_at',
     ];
 
