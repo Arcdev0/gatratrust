@@ -25,14 +25,63 @@
                             <tr>
                                 <th>No</th>
                                 <th>User</th>
-                                <th>Rerferensi</th>
+                                <th>Referensi</th>
                                 <th>Deskripsi</th>
                                 <th>Dibuat pada</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
-                        </tbody>
+                        <tbody></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="activityLogModal" tabindex="-1" role="dialog" aria-labelledby="activityLogModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Detail Activity Log</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <p><strong>User:</strong> <span id="modalUser"></span></p>
+                            <p><strong>Reference:</strong> <span id="modalReference"></span></p>
+                            <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+                            <p><strong>Tanggal:</strong> <span id="modalCreatedAt"></span></p>
+                        </div>
+
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-toggle="tab" href="#oldDataTab">Old Data</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-toggle="tab" href="#newDataTab">New Data</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content mt-3">
+                            <div class="tab-pane fade show active" id="oldDataTab">
+                                <div id="modalOldData"></div>
+                            </div>
+                            <div class="tab-pane fade" id="newDataTab">
+                                <div id="modalNewData"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            Tutup
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -81,7 +130,61 @@
                     data: 'created_at',
                     name: 'created_at'
                 },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false
+                }
             ]
+        });
+
+        function renderDataAsTable(data) {
+            if (!data) return '<p><em>Tidak ada data</em></p>';
+
+            let table = '<table class="table table-bordered table-sm">';
+            table += '<thead class="thead-light"><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
+
+            for (const key in data) {
+                if (['id', 'created_at', 'updated_at'].includes(key)) continue;
+
+                let value = data[key];
+
+                if (key === 'description') {
+                    value =
+                    `<div class="p-2 border rounded bg-light" style="max-height:200px;overflow:auto">${value}</div>`;
+                }
+
+                table += `<tr><td><strong>${key.replace(/_/g, ' ')}</strong></td><td>${value}</td></tr>`;
+            }
+
+            table += '</tbody></table>';
+            return table;
+        }
+
+        // pakai event delegation karena button dibuat oleh DataTables
+        $(document).on('click', '.view-detail', function() {
+            let id = $(this).data('id');
+
+            $.ajax({
+                url: '/activity-logs/' + id,
+                type: 'GET',
+                success: function(response) {
+                    // $('#modalTitle').text('Detail Log #' + response.id);
+                    $('#modalUser').text(response.user);
+                    $('#modalReference').text(response.reference);
+                    $('#modalDescription').text(response.description);
+                    $('#modalCreatedAt').text(response.created_at);
+
+                    $('#modalOldData').html(renderDataAsTable(response.old_data));
+                    $('#modalNewData').html(renderDataAsTable(response.new_data));
+
+                    $('#activityLogModal').modal('show');
+                },
+                error: function(xhr) {
+                    alert("Gagal mengambil data log");
+                }
+            });
         });
 
         // reload ketika tanggal berubah

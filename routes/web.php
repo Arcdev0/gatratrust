@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
@@ -169,8 +170,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/kwitansi/{id}/update', [KwitansiController::class, 'update'])->name('kwitansi.update');
 
     //Log
-    Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
-    Route::get('/activity-logs/data', [\App\Http\Controllers\ActivityLogController::class, 'data'])->name('activity-logs.data');
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('/activity-logs/data', [ActivityLogController::class, 'data'])->name('activity-logs.data');
+    Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
 
 

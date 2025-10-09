@@ -289,7 +289,7 @@ class InvoiceController extends Controller
         return response()->json($dpInvoices);
     }
 
-    public function destroy($id)
+   public function destroy($id)
     {
         DB::beginTransaction();
         try {
@@ -305,11 +305,18 @@ class InvoiceController extends Controller
             }
 
             $invoiceNo = $invoice->invoice_no;
+            $oldData   = $invoice->toArray();
 
             // Hapus invoice
             $invoice->delete();
 
-            $this->logActivity("Menghapus Invoice {$invoiceNo}", $invoiceNo);
+            // Simpan log aktivitas
+            $this->logActivity(
+                "Menghapus Invoice {$invoiceNo}",
+                $invoiceNo,
+                $oldData,
+                null
+            );
 
             DB::commit();
 
