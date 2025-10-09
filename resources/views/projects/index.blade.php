@@ -30,8 +30,12 @@
                                 <th>Company</th>
                                 <th>Jenis Kerjaan</th>
                                 <th>Periode</th>
-                                <th>Nilai Project</th>
-                                <th>Sisa Pembayaran</th>
+
+                                @if (Auth::user()->role_id == 1)
+                                    <th>Nilai Project</th>
+                                    <th>Sisa Pembayaran</th>
+                                @endif
+
                                 <th>Progress</th>
                                 <th>Aksi</th>
                             </tr>
@@ -285,7 +289,7 @@
         let table = $('#projectTable').DataTable({
             processing: true,
             serverSide: true,
-            resposive: true,
+            responsive: true,
             ajax: '{{ route('projects.list') }}',
             columns: [{
                     data: 'no_project',
@@ -309,22 +313,23 @@
                     orderable: false,
                     searchable: false
                 },
-                {
-                    data: 'total_biaya_project',
-                    name: 'total_biaya_project',
-                    orderable: false,
-                    searchable: false,
-                    render: function(data, type, row) {
-                        if (data == null) return '-';
-                        return 'Rp ' + parseInt(data).toLocaleString('id-ID');
-                    }
-                },
-                {
-                    data: 'status',
-                    name: 'status',
-                    orderable: false,
-                    searchable: false
-                },
+                @if (Auth::user()->role_id == 1)
+                    {
+                        data: 'total_biaya_project',
+                        name: 'total_biaya_project',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            if (data == null) return '-';
+                            return 'Rp ' + parseInt(data).toLocaleString('id-ID');
+                        }
+                    }, {
+                        data: 'status',
+                        name: 'status',
+                        orderable: false,
+                        searchable: false
+                    },
+                @endif
                 {
                     data: 'selesai',
                     name: 'selesai',
@@ -338,7 +343,7 @@
                     searchable: false
                 }
             ],
-            "autoWidth": false
+            autoWidth: false
         });
 
 

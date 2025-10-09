@@ -407,10 +407,12 @@
                                         <th>Dibuat Oleh</th>
                                         <td>{{ $project->creator->name }}</td>
                                     </tr>
-                                    <tr>
-                                        <th>Total Biaya Project</th>
-                                        <td>Rp {{ number_format($project->total_biaya_project ?? 0, 0, ',', '.') }}</td>
-                                    </tr>
+                                    @if (Auth::user()->role_id == 1)
+                                        <tr>
+                                            <th>Total Biaya Project</th>
+                                            <td>Rp {{ number_format($project->total_biaya_project ?? 0, 0, ',', '.') }}</td>
+                                        </tr>
+                                    @endif
                                 </table>
                             </div>
                         </div>
@@ -831,10 +833,10 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     ${isAdmin ? `
-                                                    <button class="btn btn-outline-danger btn-sm btn-delete-fileadmin" data-id="${file.id}">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                ` : ''}
+                                                        <button class="btn btn-outline-danger btn-sm btn-delete-fileadmin" data-id="${file.id}">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1083,9 +1085,9 @@
                                     <div>
                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
                                             ${k.role_name ? `
-                                                                                                                                                                        <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
-                                                                                                                                                                            ${k.role_name}
-                                                                                                                                                                        </span>` : ''}
+                                                                                                                                                                            <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                                                                                                                                ${k.role_name}
+                                                                                                                                                                            </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>

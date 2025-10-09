@@ -44,6 +44,14 @@ class TblProjectController extends Controller
                 ->addColumn('client', function ($project) {
                     return $project->client->name ?? '-';
                 })
+
+                // hanya tampilkan kalau role == 1
+                ->addColumn('total_biaya_project', function ($project) {
+                    if (auth()->user()->role_id == 1) {
+                        return $project->total_biaya_project;
+                    }
+                    return null;
+                })
                 ->addColumn('status', function ($project) {
                     $totalInvoice = $project->total_biaya_project;
                     $totalPaid    = $project->invoices->flatMap->payments->sum('amount_paid');
