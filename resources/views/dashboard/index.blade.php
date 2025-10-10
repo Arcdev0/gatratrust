@@ -189,7 +189,7 @@
                     },
                     title: {
                         display: true,
-                        text: 'Revenue per Bulan (Real Data)'
+                        text: 'Revenue per Bulan'
                     }
                 }
             }
