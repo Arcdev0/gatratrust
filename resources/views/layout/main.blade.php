@@ -153,6 +153,14 @@
                     <div class="nav-lavel">Gatra Consultant</div>
 
                     @if (in_array(Auth::user()->role_id, [1, 3, 4]))
+                        <div class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <a href="{{ route('dashboard') }}">
+                                <i class="ik ik-bar-chart-2"></i><span>Dashboard</span>
+                            </a>
+                        </div>
+                    @endif
+
+                    @if (in_array(Auth::user()->role_id, [1, 3, 4]))
                         <div class="nav-item has-sub {{ request()->routeIs('quotations.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fas fa-retweet"></i><span>Simulasi</span>
@@ -194,7 +202,8 @@
                                 <a href="{{ route('user.tampilan') }}"
                                     class="menu-item {{ request()->routeIs('user.tampilan') ? 'active' : '' }}">User</a>
                                 <a href="{{ route('activity-logs.index') }}"
-                                    class="menu-item {{ request()->routeIs('activity-logs.index') ? 'active' : '' }}">Aktifitas Log</a>
+                                    class="menu-item {{ request()->routeIs('activity-logs.index') ? 'active' : '' }}">Aktifitas
+                                    Log</a>
                                 <a href="{{ route('listproses.index') }}"
                                     class="menu-item {{ request()->routeIs('listproses.index') ? 'active' : '' }}">List
                                     Proses</a>

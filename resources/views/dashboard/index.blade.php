@@ -20,7 +20,7 @@
                         <small class="text-small mt-10 d-block">{{ $activeProjects }} Active Projects</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: 50%"></div>
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
             </div>
@@ -42,7 +42,7 @@
                             {{ $invoiceStatus['close'] ?? 0 }} Closed</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 80%"></div>
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
             </div>
@@ -63,7 +63,7 @@
                         <small class="text-small mt-10 d-block">+20% dibanding bulan lalu</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: 70%"></div>
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                         <small class="text-small mt-10 d-block">Harus ditagih</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
             </div>
@@ -125,7 +125,7 @@
                 </div> --}}
             </div>
             <div class="card-body">
-                <table id="project_table" class="table">
+                <table id="project_table" class="table table-hover">
                     <thead>
                         <tr>
                             <th>No Project</th>
@@ -139,7 +139,8 @@
                     </thead>
                     <tbody>
                         @foreach ($projects as $p)
-                            <tr>
+                            <tr class="clickable-row" data-href="{{ route('projects.show', $p->id) }}"
+                                style="cursor: pointer;">
                                 <td>{{ $p->no_project }}</td>
                                 <td>{{ $p->nama_project }}</td>
                                 <td>{{ $p->client_name }}</td>
@@ -161,6 +162,13 @@
 @endsection
 
 @section('script')
+    <script>
+        $(document).ready(function() {
+            $('.clickable-row').on('click', function() {
+                window.location = $(this).data('href');
+            });
+        });
+    </script>
     <script>
         const revenueData = {
             labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
