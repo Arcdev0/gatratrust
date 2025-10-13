@@ -60,7 +60,15 @@
                                 <i class="ik ik-dollar-sign"></i>
                             </div>
                         </div>
-                        <small class="text-small mt-10 d-block">+20% dibanding bulan lalu</small>
+                        <small class="text-small mt-10 d-block">
+                            @if ($growthPercentage === null)
+                                -
+                            @elseif ($growthPercentage >= 0)
+                                +{{ $growthPercentage }}% dibanding bulan lalu
+                            @else
+                                {{ $growthPercentage }}% dibanding bulan lalu
+                            @endif
+                        </small>
                     </div>
                     <div class="progress progress-sm">
                         <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>

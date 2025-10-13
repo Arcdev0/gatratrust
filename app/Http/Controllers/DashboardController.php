@@ -117,6 +117,29 @@ class DashboardController extends Controller
             ];
         }
 
+        $currentMonth = now()->month;
+        $lastMonth = $currentMonth == 1 ? 12 : $currentMonth - 1;
+        $lastMonthYear = $currentMonth == 1 ? $currentYear - 1 : $currentYear;
+
+        // Total pendapatan bulan lalu
+        $lastMonthRevenue = DB::table('invoice_payments')
+            ->whereMonth('payment_date', $lastMonth)
+            ->whereYear('payment_date', $lastMonthYear)
+            ->sum('amount_paid');
+
+        // Total pendapatan bulan ini
+        $currentMonthRevenue = DB::table('invoice_payments')
+            ->whereMonth('payment_date', $currentMonth)
+            ->whereYear('payment_date', $currentYear)
+            ->sum('amount_paid');
+
+        // Hitung pertumbuhan (growth)
+        if ($lastMonthRevenue > 0) {
+            $growthPercentage = round((($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 2);
+        } else {
+            $growthPercentage = null; // belum ada data untuk dibandingkan
+        }
+
         // Progress percentages (hindari division by zero)
         $totalProjectsPct = $totalProjects ? round($activeProjects / $totalProjects * 100) : 0;
         $invoiceClosed = $invoiceStatus['close'] ?? 0;
@@ -138,7 +161,8 @@ class DashboardController extends Controller
             'totalProjectsPct',
             'invoicesPct',
             'paymentsPct',
-            'outstandingPct'
+            'outstandingPct',
+            'growthPercentage'
         ));
     }
 }
