@@ -192,10 +192,19 @@
                                 <i class="fas fa-file-invoice"></i><span>Kwitansi</span>
                             </a>
                         </div>
-                        <div class="nav-item {{ request()->routeIs('vendor.index') ? 'active' : '' }}">
-                            <a href="{{ route('vendor.index') }}">
-                                <i class="fas fa-file-invoice"></i><span>Vendor</span>
+                        <div
+                            class="nav-item has-sub {{ request()->routeIs('vendor.index') || request()->routeIs('listproses.index') || request()->routeIs('kerjaan.show') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="ik ik-truck"></i><span>Vendor</span>
                             </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('vendor.index') }}"
+                                    class="menu-item {{ request()->routeIs('vendor.index') ? 'active' : '' }}">Daftar
+                                    vendor</a>
+                                <a href="" class="menu-item">Invoice</a>
+                                <a href="" class="menu-item">Kwitansi</a>
+
+                            </div>
                         </div>
 
                         {{-- Master Data --}}
