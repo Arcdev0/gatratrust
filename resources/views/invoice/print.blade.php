@@ -37,7 +37,17 @@
         <!-- Invoice To -->
         <div class="field" style="top: 37mm; left: 23mm">
             <span style="font-weight: bold">{{ $invoice->customer_name }}</span><br />
-            <span class="small-text" style="width: 60mm;">{{ $invoice->customer_address }}</span>
+            <span class="small-text"
+                style="
+        display: block;
+        width: 100%;
+        max-width: 70mm;
+        white-space: normal;
+        word-wrap: break-word;
+        line-height: 1.2;
+    ">
+                {{ $invoice->customer_address }}
+            </span>
         </div>
 
         <!-- Invoice No -->
