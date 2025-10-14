@@ -192,6 +192,12 @@
                                 <i class="fas fa-file-invoice"></i><span>Kwitansi</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('vendor.index') ? 'active' : '' }}">
+                            <a href="{{ route('vendor.index') }}">
+                                <i class="fas fa-file-invoice"></i><span>Vendor</span>
+                            </a>
+                        </div>
+
                         {{-- Master Data --}}
                         <div
                             class="nav-item has-sub {{ request()->routeIs('user.tampilan') || request()->routeIs('listproses.index') || request()->routeIs('kerjaan.show') ? 'active open' : '' }}">

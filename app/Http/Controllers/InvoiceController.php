@@ -128,7 +128,12 @@ class InvoiceController extends Controller
     public function edit($id)
     {
         $invoice = Invoice::findOrFail($id);
-        $projects = ProjectTbl::orderBy('created_at', 'desc')->get();
+        $projects = ProjectTbl::with('invoices', 'client')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->filter(function ($p) {
+            return $p->total_invoice < $p->total_biaya_project;
+        });
 
         return view('invoice.edit', compact('invoice', 'projects'));
     }

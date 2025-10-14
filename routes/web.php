@@ -14,6 +14,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\TblProjectController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VendorController;
 use App\Models\KaryawanData;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -175,6 +176,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
 
+    Route::get('/vendor', [VendorController::class, 'index'])->name('vendor.index');
+    Route::get('/vendor/data', [VendorController::class, 'getData'])->name('vendor.getData');
+    Route::get('/vendor/{id}', [VendorController::class, 'show'])->name('vendor.show');
+    Route::post('/vendor', [VendorController::class, 'store'])->name('vendor.store');
+    Route::put('/vendor/{id}', [VendorController::class, 'update'])->name('vendor.update');
+    Route::delete('/vendor/{id}', [VendorController::class, 'destroy'])->name('vendor.destroy');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

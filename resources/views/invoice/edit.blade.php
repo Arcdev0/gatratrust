@@ -12,12 +12,12 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Invoice No.</label>
-                            <input type="text" name="invoice_no" value="{{ $invoice->invoice_no }}" 
+                            <input type="text" name="invoice_no" value="{{ $invoice->invoice_no }}"
                                    class="form-control" readonly required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Date</label>
-                            <input type="date" name="date" class="form-control" 
+                            <input type="date" name="date" class="form-control"
                                    value="{{ $invoice->date }}" required>
                         </div>
                         <div class="col-md-4">
@@ -26,18 +26,18 @@
                                    value="{{ $invoice->customer_name }}" required>
                         </div>
 
-                        <div class="col-md-4 my-2">
+                         <div class="col-md-6 my-2">
                             <label class="form-label">No. Project</label>
-                            <div class="d-flex gap-2 align-items-center">
+                            <div class="d-flex align-items-center">
                                 <select id="no_project" name="project_id" class="form-control" required>
                                     <option value="">-- Pilih No. Project --</option>
                                     @foreach ($projects as $p)
-                                        <option value="{{ $p->id }}" 
-                                            {{ $invoice->project_id == $p->id ? 'selected' : '' }}>
-                                            {{ $p->no_project }}
+                                        <option value="{{ $p->id }}" data-sisa="{{ $p->sisa_nominal }}">
+                                            {{ $p->no_project }} ({{ $p->client->name }})
                                         </option>
                                     @endforeach
                                 </select>
+                                <div id="sisa_nominal_text" class="ml-2" style="font-weight:bold; min-width:200px;"></div>
                             </div>
                         </div>
                     </div>
@@ -58,13 +58,13 @@
                                 <tr>
                                     <td>
                                         <div id="editor-0" class="quill-editor" style="height:50vh;"></div>
-                                        <input type="hidden" name="inputDesc" id="inputDesc" 
+                                        <input type="hidden" name="inputDesc" id="inputDesc"
                                                value="{{ $invoice->description }}">
                                     </td>
                                     <td>
-                                        <input type="text" class="form-control amountDisplay text-end" 
+                                        <input type="text" class="form-control amountDisplay text-end"
                                                value="Rp. {{ number_format($invoice->gross_total, 0, ',', '.') }}">
-                                        <input type="hidden" name="inputAmmount" class="amount" 
+                                        <input type="hidden" name="inputAmmount" class="amount"
                                                value="{{ (int) $invoice->gross_total }}">
                                     </td>
                                 </tr>
@@ -79,17 +79,17 @@
                                 <tr>
                                     <th>Gross Total</th>
                                     <td>
-                                        <input type="text" id="grossTotalDisplay" 
-                                               class="form-control text-end" 
+                                        <input type="text" id="grossTotalDisplay"
+                                               class="form-control text-end"
                                                value="Rp. {{ number_format($invoice->gross_total, 0, ',', '.') }}" readonly>
-                                        <input type="hidden" name="gross_total" id="grossTotal" 
+                                        <input type="hidden" name="gross_total" id="grossTotal"
                                                value="{{ (int) $invoice->gross_total }}">
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Discount</th>
                                     <td>
-                                        <input type="number" name="discount" id="discount" 
+                                        <input type="number" name="discount" id="discount"
                                                class="form-control text-end"
                                                value="{{ $invoice->discount ?? 0 }}">
                                     </td>
@@ -99,7 +99,7 @@
                                     <td>
                                         <input type="text" id="downPaymentDisplay" class="form-control text-end"
                                                value="Rp. {{ number_format($invoice->down_payment ?? 0, 0, ',', '.') }}">
-                                        <input type="hidden" name="down_payment" id="downPayment" 
+                                        <input type="hidden" name="down_payment" id="downPayment"
                                                value="{{ $invoice->down_payment ?? 0 }}">
                                     </td>
                                 </tr>
@@ -113,9 +113,9 @@
                                 <tr class="table-light">
                                     <th>Net Total</th>
                                     <td>
-                                        <input type="text" id="netTotalDisplay" class="form-control text-end" 
-                                               value="Rp. {{ number_format($invoice->net_total, 0, ',', '.') }}" readonly>
-                                        <input type="hidden" name="net_total" id="netTotal" 
+                                        <input type="text" id="netTotalDisplay" class="form-control text-end"
+                                               value="Rp. {{ number_format($invoice->net_total, 0, ',', '.') }}">
+                                        <input type="hidden" name="net_total" id="netTotal"
                                                value="{{ (int) $invoice->net_total }}">
                                     </td>
                                 </tr>

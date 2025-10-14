@@ -133,39 +133,41 @@
                 </div> --}}
             </div>
             <div class="card-body">
-                <table id="project_table" class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>No Project</th>
-                            <th>Nama Project</th>
-                            <th>Client</th>
-                            <th>Tanggal Mulai</th>
-                            <th>Tanggal Selesai</th>
-                            <th>Total Biaya</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($projects as $p)
-                            <tr class="clickable-row" data-href="{{ route('projects.show', $p->id) }}"
-                                style="cursor: pointer;">
-                                <td>{{ $p->no_project }}</td>
-                                <td>{{ $p->nama_project }}</td>
-                                <td>{{ $p->client_name }}</td>
-                                <td>{{ $p->start }}</td>
-                                <td>{{ $p->end }}</td>
-                                <td>Rp {{ number_format($p->total_biaya_project, 0, ',', '.') }}</td>
-                                <td>
-                                    <span class="badge badge-success">Aktif</span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <div class="container">
+                        <table id="project_table" class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>No Project</th>
+                                    <th>Nama Project</th>
+                                    <th>Client</th>
+                                    <th>Tanggal Mulai</th>
+                                    <th>Tanggal Selesai</th>
+                                    <th>Total Biaya</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($projects as $p)
+                                    <tr class="clickable-row" data-href="{{ route('projects.show', $p->id) }}"
+                                        style="cursor: pointer;">
+                                        <td>{{ $p->no_project }}</td>
+                                        <td>{{ $p->nama_project }}</td>
+                                        <td>{{ $p->client_name }}</td>
+                                        <td>{{ $p->start }}</td>
+                                        <td>{{ $p->end }}</td>
+                                        <td>Rp {{ number_format($p->total_biaya_project, 0, ',', '.') }}</td>
+                                        <td>
+                                            <span class="badge badge-success">Aktif</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-
-
     </div>
 @endsection
 
