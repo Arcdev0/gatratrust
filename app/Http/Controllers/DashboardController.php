@@ -111,8 +111,8 @@ class DashboardController extends Controller
         $currentYear = Carbon::now()->year;
 
         $yearsFromProjects = DB::table('projects')
-            ->selectRaw('YEAR(created_at) as year')
-            ->whereNotNull('created_at')
+            ->selectRaw('YEAR(start) as year')
+            ->whereNotNull('start')
             ->groupBy('year')
             ->pluck('year')
             ->toArray();
@@ -134,33 +134,46 @@ class DashboardController extends Controller
             sort($availableYears);
         }
 
+         // Projects list (active)
+        // NOTE: asumsi tabel clients ada, kalau beda sesuaikan joinnya
+        $projects = DB::table('projects')
+            ->join('users', 'projects.client_id', '=', 'users.id')
+            ->select('projects.*', 'users.name as client_name')
+            ->where('projects.end', '>=', now())
+            ->get();
+
         // kirim ke view
         return view('dashboard.index', [
             'availableYears' => $availableYears,
             'currentYear' => $currentYear,
+            'projects' => $projects,
         ]);
     }
 
-    public function getData(Request $request)
+   public function getData(Request $request)
     {
         $year = (int) $request->query('year', Carbon::now()->year);
 
-        // Total Project (filter by created_at year; ubah field jika perlu)
+        // ----------------- SUMMARY (projects berdasarkan start) -----------------
+        // Total Project (filter by start year)
         $totalProjects = (int) DB::table('projects')
-            ->whereYear('created_at', $year)
+            ->whereNotNull('start')
+            ->whereYear('start', $year)
             ->count();
 
-        // Total nilai project (sum)
+        // Total nilai project (sum) berdasarkan start year
         $totalNominalProject = (float) DB::table('projects')
-            ->whereYear('created_at', $year)
+            ->whereNotNull('start')
+            ->whereYear('start', $year)
             ->sum('total_biaya_project');
 
-        // Total pendapatan = sum invoice_payments.amount_paid pada tahun
+        // ----------------- PAYMENTS / INVOICES (tetap pakai invoices.date & payment_date) -----------------
+        // Total pendapatan = sum invoice_payments.amount_paid pada tahun (payment_date)
         $totalPayments = (float) DB::table('invoice_payments')
             ->whereYear('payment_date', $year)
             ->sum('amount_paid');
 
-        // Total invoice amount di tahun (dipakai untuk outstanding)
+        // Total invoice amount di tahun (dipakai untuk outstanding) berdasarkan invoices.date
         $totalInvoiceAmount = (float) DB::table('invoices')
             ->whereYear('date', $year)
             ->sum('net_total');
@@ -168,9 +181,9 @@ class DashboardController extends Controller
         $outstanding = $totalInvoiceAmount - $totalPayments;
 
         // ---------- BAR CHART: paid vs unpaid per month ----------
-        // invoicedByMonth: sum net_total grouped by MONTH(date)
+        // invoicedByMonth: sum net_total grouped by MONTH(date) (invoices.date)
         $invoicedRows = DB::table('invoices')
-            ->selectRaw('MONTH(date) as month, SUM(net_total) as total')
+            ->selectRaw('MONTH(date) as month, COALESCE(SUM(net_total),0) as total')
             ->whereYear('date', $year)
             ->groupBy('month')
             ->pluck('total', 'month')
@@ -178,55 +191,47 @@ class DashboardController extends Controller
 
         // paidByMonth: sum amount_paid grouped by MONTH(payment_date)
         $paidRows = DB::table('invoice_payments')
-            ->selectRaw('MONTH(payment_date) as month, SUM(amount_paid) as total')
+            ->selectRaw('MONTH(payment_date) as month, COALESCE(SUM(amount_paid),0) as total')
             ->whereYear('payment_date', $year)
             ->groupBy('month')
             ->pluck('total', 'month')
             ->toArray();
 
-
+        // ---------- PROJECT NOMINAL PER MONTH (berdasarkan start) ----------
         $projectNominalRows = DB::table('projects')
-            ->selectRaw('MONTH(created_at) as month, COALESCE(SUM(total_biaya_project),0) as total')
-            ->whereYear('created_at', $year)
+            ->selectRaw('MONTH(start) as month, COALESCE(SUM(total_biaya_project),0) as total')
+            ->whereNotNull('start')
+            ->whereYear('start', $year)
             ->groupBy('month')
             ->pluck('total', 'month')
             ->toArray();
 
-
-        $projectNominalByMonth = [];
-        for ($m = 1; $m <= 12; $m++) {
-            $projectNominalByMonth[] = isset($projectNominalRows[$m]) ? (float)$projectNominalRows[$m] : 0.0;
-        }
-
         $invoicedByMonth = [];
         $paidByMonth = [];
         $unpaidByMonth = [];
+        $projectNominalByMonth = [];
 
         for ($m = 1; $m <= 12; $m++) {
             $inv = isset($invoicedRows[$m]) ? (float)$invoicedRows[$m] : 0.0;
             $paid = isset($paidRows[$m]) ? (float)$paidRows[$m] : 0.0;
+            $projNom = isset($projectNominalRows[$m]) ? (float)$projectNominalRows[$m] : 0.0;
 
-            // Jika pembayaran melebihi invoiced di bulan itu, cap paid ke invoiced.
-            // Ini memastikan stacked bar total == invoiced. Jika mau tampilkan overflow, ubah logika.
-            if ($paid > $inv) {
-                $paidCapped = $inv;
-            } else {
-                $paidCapped = $paid;
-            }
-
+            // cap paid to invoiced to keep stacked bar total == invoiced
+            $paidCapped = ($paid > $inv) ? $inv : $paid;
             $unpaid = $inv - $paidCapped;
             if ($unpaid < 0) $unpaid = 0.0;
 
             $invoicedByMonth[] = $inv;
             $paidByMonth[] = $paidCapped;
             $unpaidByMonth[] = $unpaid;
+            $projectNominalByMonth[] = $projNom;
         }
 
-        // ---------- DONUT CHART: PROJECT PROGRESS (aggregated) ----------
-        // Kita ambil semua project di tahun yang dipilih
+        // ---------- DONUT CHART: PROJECT PROGRESS (aggregated) based on projects with start in year ----------
         $projects = DB::table('projects')
             ->select('id', 'kerjaan_id')
-            ->whereYear('created_at', $year)
+            ->whereNotNull('start')
+            ->whereYear('start', $year)
             ->get();
 
         $projectsTotal = $projects->count();
@@ -234,7 +239,6 @@ class DashboardController extends Controller
         $projectsInProgress = 0;
         $sumPercentAll = 0;
 
-        // NOTE: loop per project. Jika dataset besar, nanti kita bisa optimalkan.
         foreach ($projects as $project) {
             // ambil list proses untuk pekerjaan ini
             $listProses = DB::table('kerjaan_list_proses')
@@ -247,13 +251,10 @@ class DashboardController extends Controller
             if ($totalProses === 0) {
                 $persen = 0;
             } else {
-                // hitung berapa proses yang sudah "done" untuk project ini
                 $prosesSelesaiQuery = DB::table('project_details')
                     ->where('project_id', $project->id)
                     ->where('status', 'done');
 
-                // build where clause untuk setiap list proses (OR conditions)
-                // Note: ini mirip kode yang kamu kirim — kalau struktur DB berbeda, ubah sesuai
                 $prosesSelesaiQuery->where(function ($q) use ($listProses) {
                     foreach ($listProses as $proses) {
                         $q->orWhere(function ($sub) use ($proses) {
@@ -277,9 +278,10 @@ class DashboardController extends Controller
 
         $avgProgressPercent = $projectsTotal > 0 ? round($sumPercentAll / $projectsTotal, 2) : 0;
 
-        // ---------- Years available (opsional) ----------
+        // ---------- Years available dari projects berdasarkan start ----------
         $yearsRaw = DB::table('projects')
-            ->selectRaw('YEAR(created_at) as year')
+            ->selectRaw('YEAR(start) as year')
+            ->whereNotNull('start')
             ->groupBy('year')
             ->orderBy('year', 'asc')
             ->pluck('year')
@@ -302,11 +304,9 @@ class DashboardController extends Controller
                 'outstanding' => $outstanding,
             ],
             'charts' => [
-                // bar chart stacked: paid (hijau) dan unpaid (merah)
-                'invoicedByMonth' => $invoicedByMonth, // total invoiced per month (optional)
-                'paidByMonth' => $paidByMonth,         // hijau
-                'unpaidByMonth' => $unpaidByMonth,     // merah
-                // donut chart: projects progress (green = finished, red = in progress)
+                'invoicedByMonth' => $invoicedByMonth,
+                'paidByMonth' => $paidByMonth,
+                'unpaidByMonth' => $unpaidByMonth,
                 'projectProgress' => [
                     'total' => $projectsTotal,
                     'finished' => $projectsFinished,
