@@ -33,6 +33,7 @@ Route::controller(LoginController::class)->group(function () {
 Route::middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/data', [DashboardController::class, 'getData'])->name('dashboard.data');
 
     // Projects Resource
     Route::get('/projects', [TblProjectController::class, 'index'])->name('projects.tampilan');
