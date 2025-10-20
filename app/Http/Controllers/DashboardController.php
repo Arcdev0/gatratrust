@@ -150,15 +150,25 @@ class DashboardController extends Controller
         ]);
     }
 
-   public function getData(Request $request)
+    public function getData(Request $request)
     {
         $year = (int) $request->query('year', Carbon::now()->year);
+        $prevYear = $year - 1;
+        $today = Carbon::now();
 
-        // ----------------- SUMMARY (projects berdasarkan start) -----------------
-        // Total Project (filter by start year)
+        // ----------------- PROJECTS (berdasarkan start) -----------------
         $totalProjects = (int) DB::table('projects')
             ->whereNotNull('start')
             ->whereYear('start', $year)
+            ->count();
+
+        // activeProjects: start di year & (end null OR end >= today)
+        $activeProjects = (int) DB::table('projects')
+            ->whereNotNull('start')
+            ->whereYear('start', $year)
+            ->where(function($q) use ($today) {
+                $q->whereNull('end')->orWhere('end', '>=', $today);
+            })
             ->count();
 
         // Total nilai project (sum) berdasarkan start year
@@ -167,11 +177,30 @@ class DashboardController extends Controller
             ->whereYear('start', $year)
             ->sum('total_biaya_project');
 
-        // ----------------- PAYMENTS / INVOICES (tetap pakai invoices.date & payment_date) -----------------
-        // Total pendapatan = sum invoice_payments.amount_paid pada tahun (payment_date)
+        // Prev year nominal (untuk perbandingan)
+        $totalNominalProjectPrev = (float) DB::table('projects')
+            ->whereNotNull('start')
+            ->whereYear('start', $prevYear)
+            ->sum('total_biaya_project');
+
+        $totalNominalChangePct = null;
+        if ($totalNominalProjectPrev > 0) {
+            $totalNominalChangePct = round((($totalNominalProject - $totalNominalProjectPrev) / $totalNominalProjectPrev) * 100, 2);
+        }
+
+        // ----------------- PAYMENTS / INVOICES -----------------
         $totalPayments = (float) DB::table('invoice_payments')
             ->whereYear('payment_date', $year)
             ->sum('amount_paid');
+
+        $totalPaymentsPrev = (float) DB::table('invoice_payments')
+            ->whereYear('payment_date', $prevYear)
+            ->sum('amount_paid');
+
+        $totalPaymentsChangePct = null;
+        if ($totalPaymentsPrev > 0) {
+            $totalPaymentsChangePct = round((($totalPayments - $totalPaymentsPrev) / $totalPaymentsPrev) * 100, 2);
+        }
 
         // Total invoice amount di tahun (dipakai untuk outstanding) berdasarkan invoices.date
         $totalInvoiceAmount = (float) DB::table('invoices')
@@ -181,7 +210,6 @@ class DashboardController extends Controller
         $outstanding = $totalInvoiceAmount - $totalPayments;
 
         // ---------- BAR CHART: paid vs unpaid per month ----------
-        // invoicedByMonth: sum net_total grouped by MONTH(date) (invoices.date)
         $invoicedRows = DB::table('invoices')
             ->selectRaw('MONTH(date) as month, COALESCE(SUM(net_total),0) as total')
             ->whereYear('date', $year)
@@ -189,7 +217,6 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
-        // paidByMonth: sum amount_paid grouped by MONTH(payment_date)
         $paidRows = DB::table('invoice_payments')
             ->selectRaw('MONTH(payment_date) as month, COALESCE(SUM(amount_paid),0) as total')
             ->whereYear('payment_date', $year)
@@ -197,7 +224,6 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
-        // ---------- PROJECT NOMINAL PER MONTH (berdasarkan start) ----------
         $projectNominalRows = DB::table('projects')
             ->selectRaw('MONTH(start) as month, COALESCE(SUM(total_biaya_project),0) as total')
             ->whereNotNull('start')
@@ -206,17 +232,12 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
-        $invoicedByMonth = [];
-        $paidByMonth = [];
-        $unpaidByMonth = [];
-        $projectNominalByMonth = [];
-
+        $invoicedByMonth = $paidByMonth = $unpaidByMonth = $projectNominalByMonth = [];
         for ($m = 1; $m <= 12; $m++) {
             $inv = isset($invoicedRows[$m]) ? (float)$invoicedRows[$m] : 0.0;
             $paid = isset($paidRows[$m]) ? (float)$paidRows[$m] : 0.0;
             $projNom = isset($projectNominalRows[$m]) ? (float)$projectNominalRows[$m] : 0.0;
 
-            // cap paid to invoiced to keep stacked bar total == invoiced
             $paidCapped = ($paid > $inv) ? $inv : $paid;
             $unpaid = $inv - $paidCapped;
             if ($unpaid < 0) $unpaid = 0.0;
@@ -227,7 +248,7 @@ class DashboardController extends Controller
             $projectNominalByMonth[] = $projNom;
         }
 
-        // ---------- DONUT CHART: PROJECT PROGRESS (aggregated) based on projects with start in year ----------
+        // ---------- DONUT CHART: PROJECT PROGRESS (aggregate for all projects in year) ----------
         $projects = DB::table('projects')
             ->select('id', 'kerjaan_id')
             ->whereNotNull('start')
@@ -240,40 +261,34 @@ class DashboardController extends Controller
         $sumPercentAll = 0;
 
         foreach ($projects as $project) {
-            // ambil list proses untuk pekerjaan ini
             $listProses = DB::table('kerjaan_list_proses')
                 ->where('kerjaan_id', $project->kerjaan_id)
                 ->select('list_proses_id', 'urutan')
                 ->get();
 
             $totalProses = $listProses->count();
-
             if ($totalProses === 0) {
                 $persen = 0;
             } else {
                 $prosesSelesaiQuery = DB::table('project_details')
                     ->where('project_id', $project->id)
-                    ->where('status', 'done');
-
-                $prosesSelesaiQuery->where(function ($q) use ($listProses) {
-                    foreach ($listProses as $proses) {
-                        $q->orWhere(function ($sub) use ($proses) {
-                            $sub->where('kerjaan_list_proses_id', $proses->list_proses_id)
-                                ->where('urutan_id', $proses->urutan);
-                        });
-                    }
-                });
+                    ->where('status', 'done')
+                    ->where(function ($q) use ($listProses) {
+                        foreach ($listProses as $proses) {
+                            $q->orWhere(function ($sub) use ($proses) {
+                                $sub->where('kerjaan_list_proses_id', $proses->list_proses_id)
+                                    ->where('urutan_id', $proses->urutan);
+                            });
+                        }
+                    });
 
                 $prosesSelesai = (int) $prosesSelesaiQuery->count();
                 $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
             }
 
             $sumPercentAll += $persen;
-            if ($persen >= 100) {
-                $projectsFinished++;
-            } else {
-                $projectsInProgress++;
-            }
+            if ($persen >= 100) $projectsFinished++;
+            else $projectsInProgress++;
         }
 
         $avgProgressPercent = $projectsTotal > 0 ? round($sumPercentAll / $projectsTotal, 2) : 0;
@@ -298,8 +313,13 @@ class DashboardController extends Controller
             'availableYears' => $yearsRaw,
             'summary' => [
                 'totalProjects' => $totalProjects,
+                'activeProjects' => $activeProjects,
                 'totalNominalProject' => $totalNominalProject,
+                'totalNominalProjectPrev' => $totalNominalProjectPrev,
+                'totalNominalChangePct' => $totalNominalChangePct,
                 'totalPayments' => $totalPayments,
+                'totalPaymentsPrev' => $totalPaymentsPrev,
+                'totalPaymentsChangePct' => $totalPaymentsChangePct,
                 'totalInvoiceAmount' => $totalInvoiceAmount,
                 'outstanding' => $outstanding,
             ],

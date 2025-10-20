@@ -209,25 +209,52 @@
 
             // render summary widgets
             function renderSummary(summary) {
+                // total project
                 $('#w-total-project').text(summary.totalProjects ?? 0);
-                // kalau API tidak mengirim activeProjects, tampilkan '-' (kamu bisa tambahkan di controller)
-                $('#w-active-projects').text((summary.activeProjects ?? '-') + ' Active Projects');
-                $('#w-total-nominal').text(formatRupiah(summary.totalNominalProject ?? 0));
-                if (summary.invoiceStatus) {
-                    $('#w-invoice-status-count').text(
-                        `${summary.invoiceStatus.open ?? 0} Open, ${summary.invoiceStatus.close ?? 0} Closed`);
-                } else {
-                    $('#w-invoice-status-count').text('-');
-                }
-                $('#w-total-payments').text(formatRupiah(summary.totalPayments ?? 0));
-                $('#w-outstanding').text(formatRupiah(summary.outstanding ?? 0));
+                $('#w-active-projects').text((summary.activeProjects ?? 0) + ' Active Projects');
 
-                const gp = summary.growthPercentage;
-                if (gp === null || gp === undefined) {
-                    $('#w-growth').text('-');
+                // total nilai project
+                $('#w-total-nominal').text(formatRupiah(summary.totalNominalProject ?? 0));
+                const nomPct = summary.totalNominalChangePct;
+                const nomPrev = summary.totalNominalProjectPrev ?? 0;
+                const $nomEl = $('#w-invoice-status-count');
+
+                if (!nomPrev || nomPrev === 0 || nomPct === null || nomPct === undefined) {
+                    $nomEl.text('-');
+                    $nomEl.css('color', '');
                 } else {
-                    $('#w-growth').text((gp >= 0 ? '+' : '') + gp + '% dibanding bulan lalu');
+                    const sign = nomPct >= 0 ? '+' : '';
+                    const arrow = nomPct >= 0 ? '▲' : '▼';
+                    const color = nomPct >= 0 ? '#2E7D32' : '#C62828';
+                    $nomEl
+                        .html(
+                            `<span style="color:${color}; font-weight:600">${arrow} ${sign}${nomPct}%</span> dari tahun sebelumnya`
+                            )
+                        .css('color', color);
                 }
+
+                // total pendapatan
+                $('#w-total-payments').text(formatRupiah(summary.totalPayments ?? 0));
+                const payPct = summary.totalPaymentsChangePct;
+                const payPrev = summary.totalPaymentsPrev ?? 0;
+                const $payEl = $('#w-growth');
+
+                if (!payPrev || payPrev === 0 || payPct === null || payPct === undefined) {
+                    $payEl.text('-');
+                    $payEl.css('color', '');
+                } else {
+                    const sign2 = payPct >= 0 ? '+' : '';
+                    const arrow2 = payPct >= 0 ? '▲' : '▼';
+                    const color2 = payPct >= 0 ? '#2E7D32' : '#C62828';
+                    $payEl
+                        .html(
+                            `<span style="color:${color2}; font-weight:600">${arrow2} ${sign2}${payPct}%</span> dari tahun sebelumnya`
+                            )
+                        .css('color', color2);
+                }
+
+                // outstanding
+                $('#w-outstanding').text(formatRupiah(summary.outstanding ?? 0));
             }
 
             // render stacked bar (paid - green, unpaid - red)
