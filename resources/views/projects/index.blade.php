@@ -329,8 +329,7 @@
                         orderable: false,
                         searchable: false
                     },
-                @endif
-                {
+                @endif {
                     data: 'selesai',
                     name: 'selesai',
                     orderable: false,
@@ -432,21 +431,60 @@
             $(this).val(formatRupiah(angka));
         });
 
-        // Edit Project - Submit
+
+        let originalKerjaan = null;
+        let originalStart = null;
+
+        // Simpan nilai awal setelah data dimasukkan ke form
+        $('#EditProjectModal').on('shown.bs.modal', function() {
+            originalKerjaan = $('#edit_kerjaan_id').val();
+            originalStart = $('#edit_start').val() ? $('#edit_start').val().split('T')[0] : null; // normalize
+        });
+
+        // Saat form submit
         $('#formEditProject').on('submit', function(e) {
             e.preventDefault();
-            var form = $(this);
-            var btn = form.find('button[type="submit"]');
-            var projectId = form.data('project-id'); // ambil projectId dari data form
-            var actionUrl = '/projects/update/' + projectId;
-            btn.prop('disabled', true).text('Menyimpan...');
 
+            const form = $(this);
+            const btn = form.find('button[type="submit"]');
+            const projectId = form.data('project-id');
+            const actionUrl = '/projects/update/' + projectId;
+
+            const newKerjaan = $('#edit_kerjaan_id').val();
+            const newStartRaw = $('#edit_start').val();
+            const newStart = newStartRaw ? newStartRaw.split('T')[0] : null; // normalize format
+
+            const kerjaanChanged = newKerjaan !== originalKerjaan;
+            const startChanged = newStart !== originalStart;
+
+            if (kerjaanChanged || startChanged) {
+                Swal.fire({
+                    title: "Perubahan Sensitif!",
+                    html: "Mengubah <b>Jenis Kerjaan</b> atau <b>Tanggal Mulai</b> akan <span style='color:red;'>menghapus semua detail project lama</span> dan membuat ulang dari awal.<br><br>Apakah Anda yakin ingin melanjutkan?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Ya, lanjutkan",
+                    cancelButtonText: "Batal"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        submitEditAjax(form, btn, actionUrl);
+                    }
+                });
+            } else {
+                submitEditAjax(form, btn, actionUrl);
+            }
+        });
+
+        // Fungsi AJAX update project
+        function submitEditAjax(form, btn, actionUrl) {
+            btn.prop('disabled', true).text('Menyimpan...');
             $.ajax({
                 url: actionUrl,
                 method: "POST",
                 data: form.serialize(),
                 success: function(res) {
-
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
@@ -466,52 +504,52 @@
                     });
                 },
                 complete: function() {
-                    btn.prop('disabled', false).text('Simpan');
+                    btn.prop('disabled', false).text('Update');
                 }
             });
+        }
 
 
 
-            //hapus project
-            $(document).on('click', '.DeleteProjectModal', function() {
-                var projectId = $(this).data('id');
-                var projectName = $(this).data('name');
-                // Konfirmasi penghapusan
-                Swal.fire({
-                    title: 'Apakah Anda yakin?',
-                    text: "Data ini akan dihapus!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Ya, hapus!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: `/projects/delete/${projectId}`,
-                            type: 'DELETE',
-                            data: {
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(res) {
-                                Swal.fire(
-                                    'Deleted!',
-                                    'Project berhasil dihapus.',
-                                    'success'
-                                ).then(() => {
-                                    table.ajax.reload();
-                                });
-                            },
-                            error: function(xhr) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Gagal',
-                                    text: 'Gagal menghapus project. Pastikan data sudah benar.'
-                                });
-                            }
-                        });
-                    }
-                });
+        //hapus project
+        $(document).on('click', '.DeleteProjectModal', function() {
+            var projectId = $(this).data('id');
+            var projectName = $(this).data('name');
+            // Konfirmasi penghapusan
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data ini akan dihapus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/projects/delete/${projectId}`,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(res) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Project berhasil dihapus.',
+                                'success'
+                            ).then(() => {
+                                table.ajax.reload();
+                            });
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: 'Gagal menghapus project. Pastikan data sudah benar.'
+                            });
+                        }
+                    });
+                }
             });
         });
     </script>

@@ -365,8 +365,13 @@ class TblProjectController extends Controller
         // Update project
         $project->update($validated);
 
-        // Cek apakah start date atau kerjaan_id berubah
-        if (($validated['start'] ?? $oldStart) != $oldStart || $validated['kerjaan_id'] != $oldKerjaanId) {
+       $startChanged = isset($validated['start']) &&
+            Carbon::parse($validated['start'])->format('Y-m-d') !==
+            Carbon::parse($oldStart)->format('Y-m-d');
+
+        $kerjaanChanged = $validated['kerjaan_id'] != $oldKerjaanId;
+
+        if ($startChanged || $kerjaanChanged) {
             // Ambil list proses sesuai kerjaan baru
             $listProses = DB::table('kerjaan_list_proses')
                 ->where('kerjaan_id', $validated['kerjaan_id'])
