@@ -171,13 +171,11 @@ class DashboardController extends Controller
             })
             ->count();
 
-        // Total nilai project (sum) berdasarkan start year
         $totalNominalProject = (float) DB::table('projects')
             ->whereNotNull('start')
             ->whereYear('start', $year)
             ->sum('total_biaya_project');
 
-        // Prev year nominal (untuk perbandingan)
         $totalNominalProjectPrev = (float) DB::table('projects')
             ->whereNotNull('start')
             ->whereYear('start', $prevYear)

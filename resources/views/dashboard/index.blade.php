@@ -229,7 +229,7 @@
                     $nomEl
                         .html(
                             `<span style="color:${color}; font-weight:600">${arrow} ${sign}${nomPct}%</span> dari tahun sebelumnya`
-                            )
+                        )
                         .css('color', color);
                 }
 
@@ -249,7 +249,7 @@
                     $payEl
                         .html(
                             `<span style="color:${color2}; font-weight:600">${arrow2} ${sign2}${payPct}%</span> dari tahun sebelumnya`
-                            )
+                        )
                         .css('color', color2);
                 }
 
@@ -261,53 +261,52 @@
             function renderRevenueChart(labels, paidData, unpaidData, projectNominalLabels) {
                 const ctx = $('#chartRevenue')[0].getContext('2d');
 
-                // custom plugin: draw label di atas tiap bar (top of stack)
+                // plugin yang lebih stabil: gunakan getPixelForValue(totalValue)
                 const topLabelPlugin = {
                     id: 'topLabelPlugin',
                     afterDatasetsDraw: function(chart) {
                         const ctx = chart.ctx;
-                        const datasets = chart.data.datasets;
-                        const meta0 = chart.getDatasetMeta(0); // dataset 0 = Paid
-                        const meta1 = chart.getDatasetMeta(1); // dataset 1 = Unpaid
+                        const meta0 = chart.getDatasetMeta(0);
+                        const meta1 = chart.getDatasetMeta(1);
+                        const paidData = chart.data.datasets[0].data || [];
+                        const unpaidData = chart.data.datasets[1].data || [];
+                        const projectNominal = chart.options.plugins.topLabelData || [];
 
-                        // loop tiap bar index
+                        const yScale = chart.scales['y'];
+
                         for (let i = 0; i < chart.data.labels.length; i++) {
-                            // cari posisi paling atas (y terkecil) dari kedua stack untuk index i
-                            let ys = [];
-                            [meta0, meta1].forEach(meta => {
-                                if (meta && meta.data[i]) {
-                                    const el = meta.data[i];
-                                    // bar rectangle top y = el.y (Chart v3+ menggunakan el.y)
-                                    // tapi untuk bar stacked, el.y adalah top/bottom bergantung dataset — aman ambil el.getProps if needed
-                                    // gunakan getProps jika tersedia, fallback ke el.y
-                                    let topY = (el && el.y !== undefined) ? el.y : (el._model ? el
-                                        ._model.y : null);
-                                    if (topY !== null && topY !== undefined) ys.push(topY);
-                                }
-                            });
+                            // hitung total stack value (paid + unpaid) atau gunakan invoiced jika ada
+                            const paidVal = Number(paidData[i] || 0);
+                            const unpaidVal = Number(unpaidData[i] || 0);
+                            const totalStackVal = paidVal +
+                            unpaidVal; // ini tinggi stack yang ingin kita tandai
 
-                            if (ys.length === 0) continue;
-                            const top = Math.min.apply(null, ys);
+                            // jika total 0, skip
+                            if (!totalStackVal) continue;
 
-                            // posisi x: ambil dari salah satu elemen (meta0 atau meta1)
+                            // x position -> ambil dari salah satu elemen yang ada
                             let x = null;
                             if (meta0 && meta0.data[i]) x = meta0.data[i].x;
                             else if (meta1 && meta1.data[i]) x = meta1.data[i].x;
                             if (x === null) continue;
 
-                            // ambil nominal project untuk bulan i
-                            const val = (projectNominalLabels && projectNominalLabels[i]) ?
-                                projectNominalLabels[i] : 0;
+                            // dapatkan y pixel tepat untuk nilai totalStackVal
+                            const topPixel = yScale.getPixelForValue(totalStackVal);
 
-                            // draw text
+                            // ambil project nominal (yang mau ditampilkan). kalau 0 skip
+                            const val = (projectNominal && projectNominal[i]) ? projectNominal[i] : 0;
+                            if (!val) continue;
+
+                            // draw text sedikit di atas topPixel
                             ctx.save();
                             ctx.font = '12px Arial';
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'bottom';
-                            ctx.fillStyle = '#111'; // warna teks
+                            ctx.fillStyle = '#111';
                             const text = formatRupiah(val);
-                            // letakkan 6px di atas top bar
-                            ctx.fillText(text, x, top - 6);
+                            // kurangi 6-10 px agar teks tidak menempel ke chart border
+                            const y = topPixel - 8;
+                            ctx.fillText(text, x, y);
                             ctx.restore();
                         }
                     }
@@ -328,17 +327,13 @@
                 ];
 
                 if (revenueChart) {
-                    // update data + plugin data (plugin akan mengambil projectNominalLabels dari closure)
                     revenueChart.data.labels = labels;
                     revenueChart.data.datasets[0].data = paidData;
                     revenueChart.data.datasets[1].data = unpaidData;
-                    // tidak ada tempat langsung menyimpan projectNominalLabels di chart.data,
-                    // jadi kita re-register plugin dengan closure capture: easiest way = destroy & recreate chart
                     revenueChart.destroy();
                     revenueChart = null;
                 }
 
-                // create chart and register plugin specifically for this chart instance
                 revenueChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -352,10 +347,10 @@
                             intersect: false
                         },
                         plugins: {
-                            title: {
-                                display: true,
-                                text: 'Paid vs Unpaid per Bulan'
-                            },
+                            // title: {
+                            //     display: true,
+                            //     text: 'Paid vs Unpaid per Bulan'
+                            // },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
