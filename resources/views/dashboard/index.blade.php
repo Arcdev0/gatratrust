@@ -142,24 +142,10 @@
                                     <th>Tanggal Selesai</th>
                                     <th>Total Biaya</th>
                                     <th>Status</th>
+                                    {{-- <th>Aksi</th> --}}
                                 </tr>
                             </thead>
-                            <tbody>
-                                @foreach ($projects as $p)
-                                    <tr class="clickable-row" data-href="{{ route('projects.show', $p->id) }}"
-                                        style="cursor: pointer;">
-                                        <td>{{ $p->no_project }}</td>
-                                        <td>{{ $p->nama_project }}</td>
-                                        <td>{{ $p->client_name }}</td>
-                                        <td>{{ $p->start }}</td>
-                                        <td>{{ $p->end }}</td>
-                                        <td>Rp {{ number_format($p->total_biaya_project, 0, ',', '.') }}</td>
-                                        <td>
-                                            <span class="badge badge-success">Aktif</span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
@@ -172,13 +158,13 @@
 
 
 @section('script')
-    <script>
+    {{-- <script>
         $(document).ready(function() {
             $('.clickable-row').on('click', function() {
                 window.location = $(this).data('href');
             });
         });
-    </script>
+    </script> --}}
 
     <script>
         $(function() {
@@ -279,7 +265,7 @@
                             const paidVal = Number(paidData[i] || 0);
                             const unpaidVal = Number(unpaidData[i] || 0);
                             const totalStackVal = paidVal +
-                            unpaidVal; // ini tinggi stack yang ingin kita tandai
+                                unpaidVal; // ini tinggi stack yang ingin kita tandai
 
                             // jika total 0, skip
                             if (!totalStackVal) continue;
@@ -526,6 +512,80 @@
                 const y = $(this).val();
                 loadDashboard(y);
             });
+
+            $(function() {
+                const table = $('#project_table').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '{{ route('dashboard.projects-data') }}',
+                        data: function(d) {
+                            d.year = $('#filterYear').val() || {{ $currentYear }};
+                        }
+                    },
+                    columns: [{
+                            data: 'no_project',
+                            name: 'no_project'
+                        },
+                        {
+                            data: 'nama_project',
+                            name: 'nama_project'
+                        },
+                        {
+                            data: 'client_name',
+                            name: 'users.name'
+                        },
+                        {
+                            data: 'start',
+                            name: 'projects.start'
+                        },
+                        {
+                            data: 'end',
+                            name: 'projects.end'
+                        },
+                        {
+                            data: 'total_biaya_project',
+                            name: 'projects.total_biaya_project',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'status',
+                            name: 'status',
+                            orderable: false,
+                            searchable: false
+                        }
+                        // {
+                        //     data: 'action',
+                        //     name: 'action',
+                        //     orderable: false,
+                        //     searchable: false
+                        // }
+                    ],
+                    createdRow: function(row, data, dataIndex) {
+                        $(row).addClass('clickable-row').css('cursor', 'pointer');
+                        // optional: klik baris navigasi ke link 'action' pertama
+                        $(row).off('click').on('click', function(e) {
+                            // jangan trigger saat klik tombol action
+                            if ($(e.target).closest('a, button').length === 0) {
+                                window.location.href = '/projects/show/' + data
+                                    .id; // atau gunakan data.action_url jika dikirim
+                            }
+                        });
+                    },
+                    drawCallback: function(settings) {
+                        // tooltip atau inisialisasi lain kalau perlu
+                    }
+                });
+
+                // reload table saat select tahun berubah
+                $('#filterYear').on('change', function() {
+                    table.ajax.reload();
+                    // juga panggil loadDashboard untuk charts jika perlu
+                    if (typeof loadDashboard === 'function') loadDashboard($(this).val());
+                });
+            });
+
         });
     </script>
 

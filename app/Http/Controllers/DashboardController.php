@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Yajra\DataTables\Facades\DataTables;
 
 class DashboardController extends Controller
 {
@@ -334,5 +335,55 @@ class DashboardController extends Controller
                 'projectNominalByMonth' => $projectNominalByMonth,
             ],
         ]);
+    }
+
+    public function projectsData(Request $request)
+    {
+        // ambil tahun dari query param (fallback current year)
+        $year = (int) $request->query('year', Carbon::now()->year);
+
+        // query dasar: projects yang start di tahun terpilih, join ke users untuk client name
+        $query = DB::table('projects')
+            ->join('users', 'projects.client_id', '=', 'users.id')
+            ->select(
+                'projects.id',
+                'projects.no_project',
+                'projects.nama_project',
+                'users.name as client_name',
+                'projects.start',
+                'projects.end',
+                'projects.total_biaya_project'
+            )
+            ->whereNotNull('projects.start')
+            ->whereYear('projects.start', $year);
+
+        // kalau mau filter hanya project aktif (seperti sebelumnya): uncomment
+        // ->where(function($q){ $q->whereNull('projects.end')->orWhere('projects.end', '>=', now()); })
+
+        return DataTables::of($query)
+            ->editColumn('start', function($row){
+                return $row->start ? Carbon::parse($row->start)->format('Y-m-d') : '-';
+            })
+            ->editColumn('end', function($row){
+                return $row->end ? Carbon::parse($row->end)->format('Y-m-d') : '-';
+            })
+            ->editColumn('total_biaya_project', function($row){
+                return 'Rp ' . number_format((float)$row->total_biaya_project, 0, ',', '.');
+            })
+            ->addColumn('status', function($row){
+                $today = now();
+                $end = $row->end ? Carbon::parse($row->end) : null;
+                if (!$row->end || ($end && $end >= $today)) {
+                    return '<span class="badge badge-success">Aktif</span>';
+                }
+                return '<span class="badge badge-danger">Selesai</span>';
+            })
+            // ->addColumn('action', function($row){
+            //     // kalau mau row clickable, bisa return link atau data-href
+            //     $url = route('projects.show', $row->id);
+            //     return '<a href="'. $url .'" class="btn btn-sm btn-outline-primary">Lihat</a>';
+            // })
+            ->rawColumns(['status','action'])
+            ->make(true);
     }
 }
