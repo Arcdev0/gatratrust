@@ -10,6 +10,7 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\KwitansiController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\MpiTestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\TblProjectController;
@@ -177,13 +178,29 @@ Route::middleware('auth')->group(function () {
     Route::get('/activity-logs/data', [ActivityLogController::class, 'data'])->name('activity-logs.data');
     Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
-
+    //Vendor
     Route::get('/vendor', [VendorController::class, 'index'])->name('vendor.index');
     Route::get('/vendor/data', [VendorController::class, 'getData'])->name('vendor.getData');
     Route::get('/vendor/{id}', [VendorController::class, 'show'])->name('vendor.show');
     Route::post('/vendor', [VendorController::class, 'store'])->name('vendor.store');
     Route::put('/vendor/{id}', [VendorController::class, 'update'])->name('vendor.update');
     Route::delete('/vendor/{id}', [VendorController::class, 'destroy'])->name('vendor.destroy');
+
+    //Mpi Test
+    Route::get('/mpi-tests', [MpiTestController::class, 'index'])->name('mpi.index');
+    Route::get('/mpi-tests', [MpiTestController::class, 'index'])->name('mpi.index');
+    Route::get('/mpi-tests/data', [MpiTestController::class, 'testsData'])->name('mpi.tests.data');
+    Route::post('/mpi-tests', [MpiTestController::class, 'store'])->name('mpi.store');
+    Route::get('/mpi-tests/{id}', [MpiTestController::class, 'show'])->name('mpi.show');
+    Route::put('/mpi-tests/{id}', [MpiTestController::class, 'update'])->name('mpi.update');
+    Route::delete('/mpi-tests/{id}', [MpiTestController::class, 'destroy'])->name('mpi.destroy');
+    Route::post('/mpi-tests/{testId}/items', [MpiTestController::class, 'storeItem'])->name('mpi.items.store');
+    Route::get('/mpi-items/{id}/edit', [MpiTestController::class, 'editItem'])->name('mpi.items.edit');
+    Route::put('/mpi-items/{id}', [MpiTestController::class, 'updateItem'])->name('mpi.items.update');
+    Route::delete('/mpi-items/{id}', [MpiTestController::class, 'destroyItem'])->name('mpi.items.destroy');
+
+    // export using maatwebsite
+    Route::get('/mpi-tests/{id}/export', [MpiTestController::class, 'exportExcel'])->name('mpi.tests.export');
 
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
