@@ -345,16 +345,21 @@ class TblProjectController extends Controller
     public function update(Request $request, ProjectTbl $project)
     {
         // dd($request->all());
-        $validated = $request->validate([
+      $validated = $request->validate([
             'nama_project' => 'required|string|max:100',
             'no_project' => 'required|string|unique:projects,no_project,' . $project->id,
             'client_id' => 'required|exists:users,id',
             'kerjaan_id' => 'required|exists:kerjaans,id',
             'deskripsi' => 'nullable|string',
             'total_biaya_project' => 'nullable|numeric',
-            'start' => 'nullable|date',
-            'end' => 'nullable|date|after_or_equal:start'
+            'start_project' => 'nullable|date',
+            'end_project' => 'nullable|date|after_or_equal:start_project',
         ]);
+
+        $validated['start'] = $validated['start_project'] ?? null;
+        $validated['end']   = $validated['end_project'] ?? null;
+
+        unset($validated['start_project'], $validated['end_project']);
 
         // Simpan data lama untuk cek perubahan
         $oldStart = $project->start;

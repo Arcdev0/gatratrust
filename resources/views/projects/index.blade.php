@@ -171,11 +171,11 @@
                         </div>
                         <div class="form-group">
                             <label>Mulai</label>
-                            <input type="date" name="start" class="form-control" id="edit_start">
+                            <input type="date" name="start_project" class="form-control" id="edit_start">
                         </div>
                         <div class="form-group">
                             <label>Selesai</label>
-                            <input type="date" name="end" class="form-control" id="edit_end">
+                            <input type="date" name="end_project" class="form-control" id="edit_end">
                         </div>
                     </div>
                     <div class="modal-footer">
