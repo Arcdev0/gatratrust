@@ -1,72 +1,122 @@
-
 @extends('layout.app')
 
-@section('title', 'Profile')
+@section('title', 'Proposal Anggaran Kerja')
 
 @section('content')
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow">
-                <div class="card-header bg-green text-white">
-                    <h5 class="mb-0">Profil Saya</h5>
-                </div>
-                <div class="card-body">
-                    {{-- Pesan sukses/error --}}
-                    @if(session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                    @endif
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach($errors->all() as $err)
-                                    <li>{{ $err }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
 
-                    <div class="row">
-                        {{-- Form Update Profile --}}
-                        <div class="col-md-6 border-right">
-                            <form method="POST" action="{{ route('profile.update') }}">
-                                @csrf
-                                <div class="form-group">
-                                    <label>Nama</label>
-                                    <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
-                                </div>
-                                <div class="form-group">
-                                    <label>Email</label>
-                                    <input type="email" name="email" class="form-control" value="{{ Auth::user()->email }}" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Company</label>
-                                    <input type="text" name="company" class="form-control" value="{{ Auth::user()->company }}" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Update Profile</button>
-                        </div>
-                        {{-- Form Ganti Password --}}
-                        <div class="col-md-6">
-                          
-                                <div class="form-group">
-                                    <label>Password Lama</label>
-                                    <input type="password" name="current_password" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Password Baru</label>
-                                    <input type="password" name="new_password" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Konfirmasi Password Baru</label>
-                                    <input type="password" name="new_password_confirmation" class="form-control" required>
-                                </div>
-                                <button type="submit" class="btn btn-success">Ganti Password</button>
-                            </form>
-                        </div>
+    <div class="container-fluid">
+        <!-- Alert Messages -->
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="text-primary font-weight-bold">PAK</h3>
+            <a href="{{ route('pak.create') }}" class="btn btn-primary">+ PAK</a>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <div class="container">
+                        <table class="table" id="pakTable">
+                            <thead>
+                                <tr>
+                                    <th>Project Number</th>
+                                    <th>Project Name</th>
+                                    <th>Project Value</th>
+                                    <th>Employee</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($paks as $pak)
+                                    <tr>
+                                        <td>{{ $pak->project_number }}</td>
+                                        <td>{{ $pak->project_name }}</td>
+                                        <td>Rp {{ number_format($pak->project_value, 0, ',', '.') }}</td>
+                                        <td>{{ $pak->employee }}</td>
+                                        <td>
+                                            <a href="{{ route('pak.show', $pak->pak_id) }}" class="btn btn-sm btn-info" title="Lihat Detail">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('pak.edit', $pak->pak_id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('pak.destroy', $pak->pak_id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="btn btn-sm btn-danger delete-pak" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">Belum ada data PAK</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#pakTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json"
+        },
+        "order": [[0, "desc"]]
+    });
+
+    // Delete confirmation
+    $(document).on('click', '.delete-pak', function(e) {
+        e.preventDefault();
+        const form = $(this).closest('form');
+        
+        if(typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data PAK akan dihapus permanen!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        } else {
+            if(confirm('Apakah Anda yakin ingin menghapus data PAK ini?')) {
+                form.submit();
+            }
+        }
+    });
+});
+</script>
+@endpush
 @endsection

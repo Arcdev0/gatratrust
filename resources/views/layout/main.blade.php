@@ -168,9 +168,11 @@
                             <div class="submenu-content">
                                 <a href="{{ route('quotations.index') }}"
                                     class="menu-item {{ request()->routeIs('quotations.index') ? 'active' : '' }}">Quotation</a>
-                                <a href="#" class="menu-item">PAK</a>
+                                <a href="{{ route('pak.index') }}" 
+                                class="menu-item {{ request()->routeIs('pak.index') ? 'active' : '' }} }}">PAK</a>
 
                             </div>
+                            
                         </div>
                     @endif
                     {{-- Project --}}

@@ -215,7 +215,7 @@
                         <td>
                             <input type="text" class="form-control unit_price" value="${formatRupiah(item.unit_price)}">
                             <input type="hidden" name="items[${i}][unit_price]" class="unit_price_raw" value="${item.unit_price}">
-                        </td>
+                        </td>=
                         <td>
                             <input type="text" class="form-control total_price" value="${formatRupiah(item.total_price)}">
                             <input type="hidden" name="items[${i}][total_price]" class="total_price_raw" value="${item.total_price}">

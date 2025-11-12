@@ -11,6 +11,7 @@ use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\KwitansiController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MpiTestController;
+use App\Http\Controllers\PakController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\TblProjectController;
@@ -199,6 +200,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/mpi-items/{id}', [MpiTestController::class, 'updateItem'])->name('mpi.items.update');
     Route::delete('/mpi-items/{id}', [MpiTestController::class, 'destroyItem'])->name('mpi.items.destroy');
 
+    //PAK
+    Route::resource('pak', PakController::class);
+    Route::get('pak-data', [PakController::class, 'data'])->name('pak.data');
+    
     // export using maatwebsite
     Route::get('/mpi-tests/{id}/export', [MpiTestController::class, 'exportExcel'])->name('mpi.tests.export');
 
