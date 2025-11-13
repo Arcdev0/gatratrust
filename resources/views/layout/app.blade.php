@@ -44,6 +44,15 @@
         .app-sidebar.collapsed .logo-mini {
             display: inline-block !important;
         }
+
+        .select2-selection__choice {
+            padding-left: 1.6em !important;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            height: 1.6em;
+            line-height: 1.6em;
+        }
     </style>
 
 </head>

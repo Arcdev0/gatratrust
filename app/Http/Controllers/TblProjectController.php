@@ -26,13 +26,14 @@ class TblProjectController extends Controller
             ->get();
         $listclient = User::where('role_id', 2)->get();
         $listkerjaan = Kerjaan::select('id', 'nama_kerjaan')->get();
-        return view('projects.index', compact('projects', 'listclient', 'listkerjaan'));
+        $listUser = User::where('role_id', 1)->get();
+        return view('projects.index', compact('projects', 'listclient', 'listkerjaan', 'listUser'));
     }
 
     public function getListProject(Request $request)
     {
         if ($request->ajax()) {
-            $query = ProjectTbl::with(['client', 'kerjaan'])->select('projects.*')
+            $query = ProjectTbl::with(['client', 'kerjaan', 'pics'])->select('projects.*')
                 ->orderBy('id', 'desc');
 
             // Jika user adalah client, filter hanya project miliknya
@@ -123,7 +124,9 @@ class TblProjectController extends Controller
                                 data-deskripsi="' . $project->deskripsi . '"
                                 data-biaya="' . $project->total_biaya_project . '"
                                 data-start="' . optional($project->start)->format('Y-m-d') . '"
-                                data-end="' . optional($project->end)->format('Y-m-d') . '">
+                                data-end="' . optional($project->end)->format('Y-m-d') . '"
+                                data-pics="' . $project->pics->pluck('id')->implode(';') . '"
+                                >
                                 <i class="fas fa-edit"></i>
                             </button>';
 
@@ -138,7 +141,15 @@ class TblProjectController extends Controller
 
                     return $viewBtn;
                 })
-                ->rawColumns(['periode', 'aksi', 'selesai', 'status'])
+                ->addColumn('pic', function ($project) {
+                    if (!$project->pics || $project->pics->isEmpty()) {
+                        return '-';
+                    }
+
+                    // Gabungkan semua nama PIC dengan tanda ";"
+                    return $project->pics->pluck('name')->implode(';');
+                })
+                ->rawColumns(['periode', 'aksi', 'selesai', 'status', 'pic'])
                 ->make(true);
 
 
@@ -168,35 +179,10 @@ class TblProjectController extends Controller
         ]);
     }
 
-
-
-    // public function store(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'nama_project' => 'required|string|max:100',
-    //         'no_project' => 'required|string|unique:projects',
-    //         'client_id' => 'required|exists:users,id',
-    //         'kerjaan_id' => 'required|exists:kerjaans,id',
-    //         'deskripsi' => 'nullable|string',
-    //         'start' => 'nullable|date',
-    //         'end' => 'nullable|date|after_or_equal:start'
-    //     ]);
-
-    //     $validated['created_by'] = Auth::id();
-
-    //     ProjectTbl::create($validated);
-
-    //     if ($request->ajax()) {
-    //         return response()->json(['success' => true]);
-    //     }
-
-    //     return redirect()->route('projects.tampilan')
-    //         ->with('success', 'Project berhasil ditambahkan');
-    // }
-
-
     public function store(Request $request)
     {
+
+        // dd($request->all());
         try {
             DB::beginTransaction();
 
@@ -208,7 +194,9 @@ class TblProjectController extends Controller
                 'deskripsi' => 'nullable|string',
                 'total_biaya_project' => 'nullable|numeric',
                 'start' => 'required|date',
-                'end' => 'required|date|after_or_equal:start'
+                'end' => 'required|date|after_or_equal:start',
+                'pic_id' => 'required|array|min:1',
+                'pic_id.*' => 'exists:users,id'
             ]);
 
             $validated['created_by'] = Auth::id();
@@ -240,6 +228,17 @@ class TblProjectController extends Controller
 
                 $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
             }
+
+            // Simpan PIC (bisa lebih dari 1)
+            $picData = collect($validated['pic_id'])->map(function ($userId) use ($project) {
+                return [
+                    'project_id' => $project->id,
+                    'user_id' => $userId,
+                    'created_at' => now()
+                ];
+            })->toArray();
+
+            DB::table('project_user')->insert($picData);
 
             // Simpan log aktivitas dengan old_data = null, new_data = project yang baru dibuat
             $this->logActivity(
@@ -354,6 +353,8 @@ class TblProjectController extends Controller
             'total_biaya_project' => 'nullable|numeric',
             'start_project' => 'nullable|date',
             'end_project' => 'nullable|date|after_or_equal:start_project',
+            'pics' => 'required|array|min:1',
+            'pics.*' => 'exists:users,id'
         ]);
 
         $validated['start'] = $validated['start_project'] ?? null;
@@ -361,7 +362,6 @@ class TblProjectController extends Controller
 
         unset($validated['start_project'], $validated['end_project']);
 
-        // Simpan data lama untuk cek perubahan
         $oldStart = $project->start;
         $oldKerjaanId = $project->kerjaan_id;
 
@@ -370,7 +370,9 @@ class TblProjectController extends Controller
         // Update project
         $project->update($validated);
 
-       $startChanged = isset($validated['start']) &&
+        $project->pics()->sync($validated['pics']);
+
+        $startChanged = isset($validated['start']) &&
             Carbon::parse($validated['start'])->format('Y-m-d') !==
             Carbon::parse($oldStart)->format('Y-m-d');
 
