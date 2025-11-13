@@ -41,11 +41,15 @@ class TblProjectController extends Controller
             }
 
             return DataTables::of($query)
-                ->addColumn('client', function ($project) {
-                    return $project->client->name ?? '-';
+                ->addColumn('project_name', function ($project) {
+                    return $project->nama_project ?? '-';
                 })
+                ->addColumn('client', function ($project) {
+                    $name = $project->client->name ?? '-';
+                    $company = $project->client->company ?? null;
 
-                // hanya tampilkan kalau role == 1
+                    return $company ? "{$name} ({$company})" : $name;
+                })
                 ->addColumn('total_biaya_project', function ($project) {
                     if (auth()->user()->role_id == 1) {
                         return $project->total_biaya_project;
@@ -67,17 +71,12 @@ class TblProjectController extends Controller
 
                     return '<span class="badge badge-warning">Sisa: ' . number_format($remaining, 0, ',', '.') . '</span>';
                 })
-                ->addColumn('kerjaan', function ($project) {
-                    return $project->kerjaan->nama_kerjaan ?? '-';
-                })
-                ->addColumn('company', function ($project) {
-                    return $project->client->company ?? '-';
-                })
                 ->addColumn('selesai', function ($project) {
                     $listProses = DB::table('kerjaan_list_proses')
                         ->where('kerjaan_id', $project->kerjaan_id)
                         ->select('list_proses_id', 'urutan')
                         ->get();
+
                     $totalProses = $listProses->count();
                     $prosesSelesai = DB::table('project_details')
                         ->where('project_id', $project->id)
@@ -85,7 +84,7 @@ class TblProjectController extends Controller
                             foreach ($listProses as $proses) {
                                 $query->orWhere(function ($q) use ($proses) {
                                     $q->where('kerjaan_list_proses_id', $proses->list_proses_id)
-                                        ->where('urutan_id', $proses->urutan);
+                                    ->where('urutan_id', $proses->urutan);
                                 });
                             }
                         })
@@ -93,7 +92,6 @@ class TblProjectController extends Controller
                         ->count();
 
                     $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
-
                     $icon = $persen == 100 ? '<i class="fas fa-check text-success ml-1"></i>' : '';
 
                     return "$persen% $icon";
@@ -130,10 +128,10 @@ class TblProjectController extends Controller
                             </button>';
 
                         $deleteBtn = '
-                                <button modal type="button" class="btn btn-sm btn-danger btnDeletProject"
-                                    data-id="' . $project->id . '">
-                                    <i class="fas fa-trash"></i>
-                                </button>';
+                            <button type="button" class="btn btn-sm btn-danger btnDeletProject"
+                                data-id="' . $project->id . '">
+                                <i class="fas fa-trash"></i>
+                            </button>';
 
                         return $viewBtn . ' ' . $editBtn . ' ' . $deleteBtn;
                     }
@@ -142,6 +140,8 @@ class TblProjectController extends Controller
                 })
                 ->rawColumns(['periode', 'aksi', 'selesai', 'status'])
                 ->make(true);
+
+
         }
     }
 

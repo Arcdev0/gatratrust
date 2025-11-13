@@ -26,9 +26,8 @@
                         <thead>
                             <tr>
                                 <th>No. Project</th>
-                                <th>PIC</th>
-                                <th>Company</th>
-                                <th>Jenis Kerjaan</th>
+                                <th>Nama Project</th>
+                                <th>Client (Company)</th>
                                 <th>Periode</th>
 
                                 @if (Auth::user()->role_id == 1)
@@ -296,16 +295,14 @@
                     name: 'no_project'
                 },
                 {
+                    data: 'project_name',
+                    name: 'project_name'
+                },
+                {
                     data: 'client',
-                    name: 'client.name'
-                },
-                {
-                    data: 'company',
-                    name: 'client.company'
-                },
-                {
-                    data: 'kerjaan',
-                    name: 'kerjaan.nama_kerjaan'
+                    name: 'client.name',
+                    orderable: false,
+                    searchable: false
                 },
                 {
                     data: 'periode',
