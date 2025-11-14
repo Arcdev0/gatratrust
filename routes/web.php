@@ -201,9 +201,19 @@ Route::middleware('auth')->group(function () {
     Route::delete('/mpi-items/{id}', [MpiTestController::class, 'destroyItem'])->name('mpi.items.destroy');
 
     //PAK
-    Route::resource('pak', PakController::class);
-    Route::get('pak-data', [PakController::class, 'data'])->name('pak.data');
-    
+    // Routes untuk PAK
+    Route::prefix('pak')->name('pak.')->group(function () {
+        Route::get('/', [PakController::class, 'index'])->name('index');
+        Route::get('/datatable', [PakController::class, 'getDataTable'])->name('datatable');
+        Route::get('/create', [PakController::class, 'create'])->name('create');
+        Route::post('/store', [PakController::class, 'store'])->name('store');
+        Route::get('/{id}', [PakController::class, 'show'])->name('show');
+        Route::get('/{id}/copy', [PakController::class, 'copy'])->name('copy');
+        Route::get('/{id}/edit', [PakController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [PakController::class, 'update'])->name('update');
+        Route::delete('/{id}', [PakController::class, 'destroy'])->name('destroy');
+    });
+
     // export using maatwebsite
     Route::get('/mpi-tests/{id}/export', [MpiTestController::class, 'exportExcel'])->name('mpi.tests.export');
 
