@@ -7,46 +7,135 @@ use Illuminate\Http\Request;
 use App\Models\Pak;
 use App\Models\PakItem;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class PakController extends Controller
 {
     public function index()
     {
-        $paks = Pak::with('items')->orderBy('created_at', 'desc')->get();
-        return view('pak.index', compact('paks'));
+        return view('pak.index');
     }
 
+    public function getDataTable(Request $request)
+{
+    if ($request->ajax()) {
+
+        $data = Pak::select(
+            'id',
+            'pak_number',
+            'pak_name',
+            'pak_value',
+            'location',
+            'date',
+            'total_pak_cost',
+            'estimated_profit'
+        )->orderBy('created_at', 'desc');
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+
+            ->editColumn('pak_value', function ($row) {
+                return 'Rp ' . number_format($row->pak_value, 0, ',', '.');
+            })
+
+            ->editColumn('total_pak_cost', function ($row) {
+                return 'Rp ' . number_format($row->total_pak_cost, 0, ',', '.');
+            })
+
+            ->editColumn('estimated_profit', function ($row) {
+                return 'Rp ' . number_format($row->estimated_profit, 0, ',', '.');
+            })
+
+            ->editColumn('date', function ($row) {
+                return $row->date
+                    ? \Carbon\Carbon::parse($row->date)->format('d-m-Y')
+                    : '-';
+            })
+
+            ->editColumn('location', function ($row) {
+                return $row->location === 'dalam_kota'
+                    ? 'Dalam Kota'
+                    : 'Luar Kota';
+            })
+
+            ->addColumn('action', function ($row) {
+                return '
+                    <button class="btn btn-sm btn-info showBtn" data-id="'.$row->id.'">
+                        <i class="fas fa-eye"></i>
+                    </button>
+
+                    <a href="'.route('pak.edit', $row->id).'" class="btn btn-sm btn-warning">
+                        <i class="fas fa-edit"></i>
+                    </a>
+
+                    <button class="btn btn-sm btn-danger deleteBtn" data-id="'.$row->id.'">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ';
+            })
+
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+}
     public function create()
     {
         $employees = KaryawanData::orderBy('nama_lengkap', 'asc')->get();
-        return view('pak.create', compact('employees'));
+        
+        // Generate PAK number (opsional, sesuaikan dengan format Anda)
+        $lastPak = Pak::orderBy('id', 'desc')->first();
+        $newNumber = $lastPak ? $lastPak->id + 1 : 1;
+        $newPakNo = 'PAK-' . date('Y') . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        
+        // Get existing PAKs for copy feature
+        $paks = Pak::orderBy('created_at', 'desc')->get();
+        
+        return view('pak.create', compact('employees', 'newPakNo', 'paks'));
+    }
+
+    public function copy($id)
+    {
+        $pak = Pak::with('items')->findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $pak,
+        ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'project_name' => 'required|string|max:255',
-            'project_number' => 'required|string|max:100',
-            'project_value' => 'required|numeric|min:0',
-            'location_project' => 'required|string|max:255',
-            'date' => 'required|date',
-            'employee' => 'required|array|min:1',
-            'employee.*' => 'exists:karyawan_data,id',
-            'items' => 'required|array|min:1',
-            'items.*.category_id' => 'required|string',
-            'items.*.name' => 'required|string|max:255',
-            'items.*.description' => 'nullable|string',
-            'items.*.quantity' => 'required|numeric|min:0',
-            'items.*.unit' => 'nullable|string|max:50',
-            'items.*.unit_cost' => 'required|numeric|min:0',
-            'items.*.total_cost' => 'required|numeric|min:0',
-            'items.*.remarks' => 'nullable|string',
-        ]);
-
         DB::beginTransaction();
 
         try {
-            // Create PAK
+            // Validasi data
+            $validated = $request->validate([
+                'project_name' => 'required|string|max:255',
+                'project_number' => 'required|string|max:100',
+                'project_value' => 'required|numeric|min:0',
+                'location_project' => 'required|string|max:255',
+                'date' => 'required|date',
+                'employee' => 'required|array|min:1',
+                'employee.*' => 'exists:karyawan_data,id',
+                'operational_needs' => 'required|array|min:1',
+                'operational_needs.*' => 'required|string|max:255',
+                'description' => 'nullable|array',
+                'description.*' => 'nullable|string',
+                'unit_qty' => 'required|array',
+                'unit_qty.*' => 'required|numeric|min:0',
+                'unit_cost' => 'required|array',
+                'unit_cost.*' => 'required|numeric|min:0',
+                'total_cost' => 'required|array',
+                'total_cost.*' => 'required|numeric|min:0',
+                'max_cost' => 'nullable|array',
+                'max_cost.*' => 'nullable|numeric|min:0',
+                'percent' => 'nullable|array',
+                'percent.*' => 'nullable|string',
+                'status' => 'nullable|array',
+                'status.*' => 'nullable|string',
+            ]);
+
+            // Simpan PAK utama
             $pak = Pak::create([
                 'project_name' => $validated['project_name'],
                 'project_number' => $validated['project_number'],
@@ -56,69 +145,101 @@ class PakController extends Controller
                 'employee' => json_encode($validated['employee']),
             ]);
 
-            // Create PAK Items
-            foreach ($validated['items'] as $item) {
+            // Simpan PAK Items
+            $operationalNeeds = $validated['operational_needs'];
+            $descriptions = $validated['description'] ?? [];
+            $unitQtys = $validated['unit_qty'];
+            $unitCosts = $validated['unit_cost'];
+            $totalCosts = $validated['total_cost'];
+            $maxCosts = $validated['max_cost'] ?? [];
+            $percents = $validated['percent'] ?? [];
+            $statuses = $validated['status'] ?? [];
+
+            foreach ($operationalNeeds as $index => $need) {
+                // Tentukan category berdasarkan section
+                $category = $this->determineCategoryFromIndex($index, count($operationalNeeds));
+                
                 PakItem::create([
-                    'pak_id' => $pak->pak_id,
-                    'category_id' => $item['category_id'],
-                    'name' => $item['name'],
-                    'description' => $item['description'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'unit' => $item['unit'] ?? null,
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['total_cost'],
-                    'remarks' => $item['remarks'] ?? null,
+                    'pak_id' => $pak->id,
+                    'category' => $category,
+                    'operational_needs' => $need,
+                    'description' => $descriptions[$index] ?? null,
+                    'unit_qty' => $unitQtys[$index],
+                    'unit_cost' => $unitCosts[$index],
+                    'total_cost' => $totalCosts[$index],
+                    'max_cost' => $maxCosts[$index] ?? $totalCosts[$index],
+                    'percent' => $percents[$index] ?? null,
+                    'status' => $statuses[$index] ?? 'OK',
                 ]);
             }
 
             DB::commit();
 
-            return redirect()->route('pak.index')
-                ->with('success', 'PAK berhasil ditambahkan!');
+            return response()->json([
+                'success' => true,
+                'status' => 201,
+                'message' => 'PAK berhasil ditambahkan!'
+            ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'status' => 500,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 
     public function show($id)
     {
-        $pak = Pak::with('items.category')->findOrFail($id);
-        return view('pak.show', compact('pak'));
+        $pak = Pak::with('items')->findOrFail($id);
+        
+        // Decode employee JSON
+        $employeeIds = json_decode($pak->employee, true);
+        $employees = KaryawanData::whereIn('id', $employeeIds)->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pak' => $pak,
+                'employees' => $employees
+            ]
+        ]);
     }
 
     public function edit($id)
     {
         $pak = Pak::with('items')->findOrFail($id);
-        return view('pak.edit', compact('pak'));
+        $employees = KaryawanData::orderBy('nama_lengkap', 'asc')->get();
+        
+        // Decode employee JSON
+        $selectedEmployees = json_decode($pak->employee, true);
+        
+        return view('pak.edit', compact('pak', 'employees', 'selectedEmployees'));
     }
 
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'project_name' => 'required|string|max:255',
-            'project_number' => 'required|string|max:100',
-            'project_value' => 'required|numeric|min:0',
-            'location_project' => 'required|string|max:255',
-            'date' => 'required|date',
-            'employee' => 'required|string|max:255',
-            'items' => 'required|array|min:1',
-            'items.*.category_id' => 'required|string',
-            'items.*.name' => 'required|string|max:255',
-            'items.*.description' => 'nullable|string',
-            'items.*.quantity' => 'required|numeric|min:0',
-            'items.*.unit' => 'nullable|string|max:50',
-            'items.*.unit_cost' => 'required|numeric|min:0',
-            'items.*.total_cost' => 'required|numeric|min:0',
-            'items.*.remarks' => 'nullable|string',
-        ]);
-
         DB::beginTransaction();
 
         try {
+            $validated = $request->validate([
+                'project_name' => 'required|string|max:255',
+                'project_number' => 'required|string|max:100',
+                'project_value' => 'required|numeric|min:0',
+                'location_project' => 'required|string|max:255',
+                'date' => 'required|date',
+                'employee' => 'required|array|min:1',
+                'employee.*' => 'exists:karyawan_data,id',
+                'operational_needs' => 'required|array|min:1',
+                'operational_needs.*' => 'required|string|max:255',
+                'description' => 'nullable|array',
+                'unit_qty' => 'required|array',
+                'unit_cost' => 'required|array',
+                'total_cost' => 'required|array',
+            ]);
+
             $pak = Pak::findOrFail($id);
 
             // Update PAK
@@ -128,36 +249,45 @@ class PakController extends Controller
                 'project_value' => $validated['project_value'],
                 'location_project' => $validated['location_project'],
                 'date' => $validated['date'],
-                'employee' => $validated['employee'],
+                'employee' => json_encode($validated['employee']),
             ]);
 
             // Delete old items and create new ones
             $pak->items()->delete();
 
-            foreach ($validated['items'] as $item) {
+            $operationalNeeds = $validated['operational_needs'];
+            $descriptions = $validated['description'] ?? [];
+            $unitQtys = $validated['unit_qty'];
+            $unitCosts = $validated['unit_cost'];
+            $totalCosts = $validated['total_cost'];
+
+            foreach ($operationalNeeds as $index => $need) {
+                $category = $this->determineCategoryFromIndex($index, count($operationalNeeds));
+                
                 PakItem::create([
-                    'pak_id' => $pak->pak_id,
-                    'category_id' => $item['category_id'],
-                    'name' => $item['name'],
-                    'description' => $item['description'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'unit' => $item['unit'] ?? null,
-                    'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['total_cost'],
-                    'remarks' => $item['remarks'] ?? null,
+                    'pak_id' => $pak->id,
+                    'category' => $category,
+                    'operational_needs' => $need,
+                    'description' => $descriptions[$index] ?? null,
+                    'unit_qty' => $unitQtys[$index],
+                    'unit_cost' => $unitCosts[$index],
+                    'total_cost' => $totalCosts[$index],
                 ]);
             }
 
             DB::commit();
 
-            return redirect()->route('pak.index')
-                ->with('success', 'PAK berhasil diupdate!');
+            return response()->json([
+                'success' => true,
+                'message' => 'PAK berhasil diupdate!'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -168,12 +298,34 @@ class PakController extends Controller
             $pak->items()->delete();
             $pak->delete();
 
-            return redirect()->route('pak.index')
-                ->with('success', 'PAK berhasil dihapus!');
+            return response()->json([
+                'success' => true,
+                'message' => 'PAK berhasil dihapus!'
+            ]);
 
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper function to determine category based on item index
+     */
+    private function determineCategoryFromIndex($index, $total)
+    {
+        // Logika sederhana: bisa disesuaikan dengan kebutuhan
+       
+        $third = ceil($total / 3);
+        
+        if ($index < $third) {
+            return 'honorarium';
+        } elseif ($index < $third * 2) {
+            return 'operational';
+        } else {
+            return 'consumable';
         }
     }
 }
