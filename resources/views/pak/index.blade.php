@@ -152,89 +152,68 @@
                         if (!response || !response.success) {
                             $('#showModalBody').html(
                                 '<div class="alert alert-danger">Data tidak ditemukan</div>'
-                                );
+                            );
                             return;
                         }
 
                         const pak = response.data.pak || {};
                         const employees = response.data.employees || response.data.karyawans ||
                             [];
+                        const categories = response.data.categories ||
+                    []; // <-- ambil dari response.show
+                        const items = response.data.items || pak.items || [];
 
-                        // helper fallback getter
+                        // fallback getter
                         const g = (obj, keys, def = '') => {
                             for (let k of keys) {
                                 if (obj && (obj[k] !== undefined && obj[k] !== null))
-                                return obj[k];
+                                    return obj[k];
                             }
                             return def;
                         };
 
                         const projectName = g(pak, ['project_name', 'pak_name', 'name']);
                         const projectNumber = g(pak, ['project_number', 'pak_number',
-                        'number']);
+                            'number'
+                        ]);
                         const projectValue = Number(g(pak, ['project_value', 'pak_value',
                             'value'
-                        ], 0));
+                        ], 0)) || 0;
                         const location = g(pak, ['location', 'location_project']);
                         const dateVal = g(pak, ['date', 'created_at']);
-                        const items = response.data.items || pak.items || [];
 
                         let employeeList = Array.isArray(employees) ? employees.map(emp => emp
                             .nama_lengkap || emp.name || emp.nama || '-').join(', ') : '-';
 
-                        // mapping category id -> section key & title & max label
-                        const categoryMap = {
-                            1: {
-                                key: 'honorarium',
-                                title: 'A. Honorarium',
-                                maxLabel: 'TOTAL I (MAX 70%)'
-                            },
-                            2: {
-                                key: 'operational',
-                                title: 'B. Operational',
-                                maxLabel: 'TOTAL II (MAX 10%)'
-                            },
-                            3: {
-                                key: 'consumable',
-                                title: 'C. Consumable',
-                                maxLabel: 'TOTAL III (MAX 5%)'
-                            },
-                            // jika ada kategori lain, tambahkan di sini
-                        };
+                        // Build category maps and order
+                        const categoryMapById = {};
+                        const categoryOrder = [];
+                        if (Array.isArray(categories)) {
+                            categories.forEach(cat => {
+                                const cid = Number(cat.id);
+                                categoryMapById[cid] = cat;
+                                categoryOrder.push(cid);
+                            });
+                        }
 
-                        // init containers
-                        let itemsBySection = {};
-                        Object.values(categoryMap).forEach(v => itemsBySection[v.key] = []);
+                        // init itemsByCategory based on categories (keep order)
+                        let itemsByCategory = {};
+                        categoryOrder.forEach(cid => itemsByCategory[cid] = []);
 
-                        // Fallback: if items have category stored as string keys (like 'honorarium'), allow that too
+                        // assign items to categories; fallback to first category if missing
                         items.forEach(item => {
-                            // determine category id or key
-                            let catId = item.category_id ?? item.category ?? item
-                                .section ?? null;
-                            let sectionKey = null;
-
-                            // if numeric and mapped, use mapping
-                            if (catId !== null && catId !== undefined && String(catId)
-                                .match(/^\d+$/)) {
-                                const m = categoryMap[Number(catId)];
-                                sectionKey = m ? m.key : null;
+                            const cidRaw = item.category_id ?? item.category ?? null;
+                            const cid = (cidRaw !== null && cidRaw !== undefined) ?
+                                Number(cidRaw) : (categoryOrder[0] ?? null);
+                            const key = (cid && categoryMapById[cid]) ? cid : (
+                                categoryOrder[0] ?? null);
+                            if (key !== null) {
+                                itemsByCategory[key] = itemsByCategory[key] || [];
+                                itemsByCategory[key].push(item);
                             }
-
-                            // if not numeric, maybe it's already a key like 'honorarium'
-                            if (!sectionKey && typeof catId === 'string') {
-                                if (itemsBySection[catId]) sectionKey = catId;
-                            }
-
-                            // default to 'operational' if unknown
-                            if (!sectionKey) sectionKey = 'operational';
-
-                            // push item
-                            itemsBySection[sectionKey] = itemsBySection[sectionKey] ||
-                            [];
-                            itemsBySection[sectionKey].push(item);
                         });
 
-                        // build html header
+                        // build header
                         let html = `
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -246,7 +225,10 @@
                     </div>
                     <div class="col-md-6">
                         <table class="table table-sm table-borderless">
-                            <tr><th width="150">Location</th><td>${escapeHtml(location)}</td></tr>
+                         <tr>
+                            <th width="150">Location</th>
+                            <td>${escapeHtml(location === 'dalam_kota' ? 'Batam' : 'Luar Batam')}</td>
+                         </tr>
                             <tr><th>Date</th><td>${dateVal ? new Date(dateVal).toLocaleDateString('id-ID') : '-'}</td></tr>
                             <tr><th>Employees</th><td>${escapeHtml(employeeList)}</td></tr>
                         </table>
@@ -255,22 +237,21 @@
                 <h5 class="mb-3">Items Detail</h5>
             `;
 
-                        // helper render section table
-                        function renderSection(sectionKey) {
-                            const rows = itemsBySection[sectionKey] || [];
-                            if (rows.length === 0) return '';
+                        // render each category/section in defined order
+                        categoryOrder.forEach(catId => {
+                            const cat = categoryMapById[catId];
+                            const rows = itemsByCategory[catId] || [];
 
-                            // get title and maxLabel from mapping (if exists)
-                            let mappingEntry = Object.values(categoryMap).find(v => v.key ===
-                                sectionKey) || {
-                                title: sectionKey,
-                                maxLabel: ''
-                            };
-                            let title = mappingEntry.title || sectionKey;
-                            let maxLabel = mappingEntry.maxLabel || '';
+                            // skip if empty (optional)
+                            if (!rows.length) return;
 
-                            let s = `
-                    <h6 class="bg-light p-2">${escapeHtml(title)}</h6>
+                            // compute allowed for this category
+                            const maxPct = Number(cat.max_percentage) || 0;
+                            const allowed = Math.round(projectValue * (maxPct / 100));
+
+                            // prepare table
+                            html += `
+                    <h6 class="bg-light p-2">${escapeHtml(cat.code)}. ${escapeHtml(cat.name)} <small class="text-muted"> (Max ${maxPct}%)</small></h6>
                     <div class="table-responsive mb-3">
                         <table class="table table-sm table-bordered">
                             <thead>
@@ -281,65 +262,83 @@
                                     <th style="width:60px">Qty</th>
                                     <th style="width:120px">Unit Cost</th>
                                     <th style="width:120px">Total Cost</th>
-                                    <th style="width:100px">Status</th>
+                                    <th style="width:120px">Row Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                 `;
 
-                            let total = 0;
+                            // running total to decide which rows push section over allowed
+                            let running = 0;
                             rows.forEach((item, idx) => {
-                                // fallback field names
-                                const name = item.operational_needs ?? item.name ?? item
-                                    .nama ?? '-';
-                                const desc = item.description ?? item.remarks ?? '-';
-                                const qty = item.unit_qty ?? item.quantity ?? 0;
-                                const unitCost = Number(item.unit_cost ?? item
-                                    .unit_cost ?? 0);
-                                const totalCost = Number(item.total_cost ?? (qty *
-                                    unitCost) ?? 0);
-                                const status = item.status ?? item.remarks ?? 'OK';
-                                total += isFinite(totalCost) ? parseFloat(totalCost) :
-                                0;
+                                const name = item.operational_needs ?? item
+                                    .name ?? '-';
+                                const desc = item.description ?? item.remarks ??
+                                    '-';
+                                const qty = Number(item.unit_qty ?? item
+                                    .quantity ?? 0) || 0;
+                                const unitCost = Number(item.unit_cost ?? 0) ||
+                                    0;
+                                const totalCost = Number(item.total_cost ?? (
+                                    qty * unitCost) ?? 0) || 0;
 
-                                s += `
-                        <tr>
+                                running += totalCost;
+
+                                // compute status: if running > allowed then this row is OVER; else OK
+                                // also respect explicit item.status if set but computed status takes precedence for visibility
+                                const computedStatus = (allowed > 0 && running >
+                                    allowed) ? 'OVER' : 'OK';
+                                const finalStatus =
+                                    computedStatus; // change to item.status ?? computedStatus if you prefer server status
+                                const badgeClass = finalStatus === 'OK' ?
+                                    'badge-success' : 'badge-danger';
+
+                                // optional: highlight only rows that are OVER
+                                const rowStyle = (finalStatus === 'OVER') ?
+                                    'style="background:#fff5f5"' : '';
+
+                                html += `
+                        <tr ${rowStyle}>
                             <td>${idx + 1}</td>
                             <td>${escapeHtml(name)}</td>
                             <td>${escapeHtml(desc || '-')}</td>
                             <td class="text-center">${escapeHtml(qty)}</td>
                             <td class="text-right">${formatRupiah(unitCost)}</td>
                             <td class="text-right">${formatRupiah(totalCost)}</td>
-                            <td class="text-center"><span class="badge ${status === 'OK' ? 'badge-success' : 'badge-danger'}">${escapeHtml(status || 'OK')}</span></td>
+                            <td class="text-center"><span class="badge ${badgeClass}">${escapeHtml(finalStatus)}</span></td>
                         </tr>
                     `;
                             });
 
-                            s += `
+                            // section totals (compute total again)
+                            let sectionTotal = rows.reduce((s, it) => s + (Number(it
+                                .total_cost ?? ((it.unit_qty ?? it
+                                    .quantity ?? 0) * (it.unit_cost ??
+                                    0))) || 0), 0);
+                            const percentOfProject = projectValue ? (sectionTotal /
+                                projectValue * 100) : 0;
+                            const sectionStatus = (allowed > 0 && sectionTotal >
+                                allowed) ? 'OVER' : 'OK';
+                            const sectionBadge = sectionStatus === 'OK' ?
+                                'badge-success' : 'badge-danger';
+
+                            html += `
                         <tr class="font-weight-bold">
-                            <td colspan="5" class="text-right">${escapeHtml(maxLabel)}</td>
-                            <td class="text-right">${formatRupiah(total)}</td>
-                            <td></td>
+                            <td colspan="4" class="text-right">TOTAL (${escapeHtml(cat.code)})</td>
+                            <td class="text-right">Allowed: ${formatRupiah(allowed)}</td>
+                            <td class="text-right">${formatRupiah(sectionTotal)}<br><small>${percentOfProject.toFixed(2)}%</small></td>
+                            <td class="text-center"><span class="badge ${sectionBadge}">${sectionStatus}</span></td>
                         </tr>
                     </tbody>
                 </table>
                 </div>
                 `;
-
-                            return s;
-                        }
-
-                        // render sections in preferred order A, B, C
-                        html += renderSection('honorarium');
-                        html += renderSection('operational');
-                        html += renderSection('consumable');
+                        });
 
                         // grand total
-                        let grandTotal = 0;
-                        (items || []).forEach(it => {
-                            grandTotal += Number(it.total_cost ?? (it.quantity && it
-                                .unit_cost ? it.quantity * it.unit_cost : 0)) || 0;
-                        });
+                        let grandTotal = items.reduce((s, it) => s + (Number(it.total_cost ?? ((
+                            it.unit_qty ?? it.quantity ?? 0) * (it
+                            .unit_cost ?? 0))) || 0), 0);
 
                         html += `
                 <div class="row">
@@ -364,7 +363,7 @@
                 });
             });
 
-            // small helper to escape HTML (prevent XSS)
+
             function escapeHtml(text) {
                 if (text === null || text === undefined) return '';
                 return String(text)

@@ -73,15 +73,17 @@ class PakController extends Controller
                             <i class="fas fa-eye"></i>
                         </button>
 
-                        <a href="' . route('pak.edit', $row->id) . '" class="btn btn-sm btn-secondary">
-                            <i class="fas fa-edit"></i>
-                        </a>
+
 
                         <button class="btn btn-sm btn-danger deleteBtn" data-id="' . $row->id . '">
                             <i class="fas fa-trash"></i>
                         </button>
                     ';
                 })
+
+                    // <a href="' . route('pak.edit', $row->id) . '" class="btn btn-sm btn-secondary">
+                    //         <i class="fas fa-edit"></i>
+                    //     </a>
 
                 ->rawColumns(['action'])
                 ->make(true);
@@ -261,6 +263,8 @@ class PakController extends Controller
                 }
             }
 
+            $categories = DB::table('categories')->get();
+
             // Optional: jika ingin memformat angka/tanggal di response, lakukan mapping di sini.
             // Contoh sederhana mengembalikan raw model + employees
             return response()->json([
@@ -269,6 +273,7 @@ class PakController extends Controller
                     'pak' => $pak,
                     'employees' => $employees,
                     'items' => $pak->items ?? collect([]),
+                    'categories' =>  $categories
                 ],
             ], 200);
 

@@ -298,7 +298,7 @@
                                 <!-- PPH23 -->
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>PPH 23 (Optional)</label>
+                                        <label>PPH 23 atau PPH Final (Optional)</label>
 
                                         <!-- Input tampilan -->
                                         <input type="text" class="form-control rupiah-display" id="pph23_display"
