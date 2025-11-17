@@ -22,30 +22,33 @@ class PakController extends Controller
     {
         if ($request->ajax()) {
 
-            $data = Pak::select(
-                'id',
-                'pak_number',
-                'pak_name',
-                'pak_value',
-                'location',
-                'date',
-                'total_pak_cost',
-                'estimated_profit'
-            )->orderBy('created_at', 'desc');
+            $data = Pak::with('karyawans')
+                ->select(
+                    'id',
+                    'pak_number as project_number',
+                    'pak_name as project_name',
+                    'pak_value as project_value',
+                    'location',
+                    'date',
+                    'total_pak_cost',
+                    'estimated_profit',
+                    'created_at'
+                );
 
             return DataTables::of($data)
                 ->addIndexColumn()
 
-                ->editColumn('pak_value', function ($row) {
-                    return 'Rp ' . number_format($row->pak_value, 0, ',', '.');
+                // format project_value
+                ->editColumn('project_value', function ($row) {
+                    return 'Rp ' . number_format($row->project_value ?? 0, 0, ',', '.');
                 })
 
                 ->editColumn('total_pak_cost', function ($row) {
-                    return 'Rp ' . number_format($row->total_pak_cost, 0, ',', '.');
+                    return 'Rp ' . number_format($row->total_pak_cost ?? 0, 0, ',', '.');
                 })
 
                 ->editColumn('estimated_profit', function ($row) {
-                    return 'Rp ' . number_format($row->estimated_profit, 0, ',', '.');
+                    return 'Rp ' . number_format($row->estimated_profit ?? 0, 0, ',', '.');
                 })
 
                 ->editColumn('date', function ($row) {
@@ -55,22 +58,26 @@ class PakController extends Controller
                 })
 
                 ->editColumn('location', function ($row) {
-                    return $row->location === 'dalam_kota'
-                        ? 'Dalam Kota'
-                        : 'Luar Kota';
+                    return $row->location === 'dalam_kota' ? 'Dalam Kota' : 'Luar Kota';
+                })
+
+                // kembalikan employees sebagai array of objects (client akan meng-render)
+                ->addColumn('employees', function ($row) {
+                    // pastikan relasi bernama 'karyawans' dan model Karyawan punya attribute nama_lengkap
+                    return $row->karyawans ? $row->karyawans->toArray() : [];
                 })
 
                 ->addColumn('action', function ($row) {
                     return '
-                        <button class="btn btn-sm btn-info showBtn" data-id="'.$row->id.'">
+                        <button class="btn btn-sm btn-info showBtn" data-id="' . $row->id . '">
                             <i class="fas fa-eye"></i>
                         </button>
 
-                        <a href="'.route('pak.edit', $row->id).'" class="btn btn-sm btn-warning">
+                        <a href="' . route('pak.edit', $row->id) . '" class="btn btn-sm btn-secondary">
                             <i class="fas fa-edit"></i>
                         </a>
 
-                        <button class="btn btn-sm btn-danger deleteBtn" data-id="'.$row->id.'">
+                        <button class="btn btn-sm btn-danger deleteBtn" data-id="' . $row->id . '">
                             <i class="fas fa-trash"></i>
                         </button>
                     ';
@@ -226,20 +233,60 @@ class PakController extends Controller
 
     public function show($id)
     {
-        $pak = Pak::with('items')->findOrFail($id);
+        try {
+            // Eager load items dan karyawans (jika relasi ada)
+            $pak = Pak::with(['items', 'karyawans'])->findOrFail($id);
 
-        // Decode employee JSON
-        $employeeIds = json_decode($pak->employee, true);
-        $employees = KaryawanData::whereIn('id', $employeeIds)->get();
+            // Ambil employees:
+            // - jika relasi karyawans ada dan terisi, pakai itu
+            // - jika relasi kosong tapi ada kolom legacy 'employee' yang menyimpan JSON, fallback ke sana
+            $employees = collect([]);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'pak' => $pak,
-                'employees' => $employees
-            ]
-        ]);
+            if ($pak->relationLoaded('karyawans') && $pak->karyawans->isNotEmpty()) {
+                $employees = $pak->karyawans;
+            } else {
+                // fallback: coba decode kolom employee (legacy)
+                $employeeIds = null;
+                if (!empty($pak->employee)) {
+                    // Kalau sudah array, gunakan langsung; kalau string JSON, decode
+                    if (is_array($pak->employee)) {
+                        $employeeIds = $pak->employee;
+                    } else {
+                        $employeeIds = @json_decode($pak->employee, true);
+                    }
+                }
+
+                if (is_array($employeeIds) && count($employeeIds) > 0) {
+                    $employees = KaryawanData::whereIn('id', $employeeIds)->get();
+                }
+            }
+
+            // Optional: jika ingin memformat angka/tanggal di response, lakukan mapping di sini.
+            // Contoh sederhana mengembalikan raw model + employees
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'pak' => $pak,
+                    'employees' => $employees,
+                    'items' => $pak->items ?? collect([]),
+                ],
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PAK tidak ditemukan.',
+            ], 404);
+
+        } catch (\Exception $e) {
+            // Log error jika perlu: \Log::error($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
+
 
     public function edit($id)
     {

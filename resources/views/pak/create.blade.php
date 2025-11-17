@@ -147,8 +147,8 @@
 
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered text-center align-middle table-sm" id="pak-table">
-                            <thead class="text-white" style="background-color: #007A33;">
-                                <tr style="color:white; font-weight:bold;">
+                            <thead  style="background-color: #007A33; color: white;">
+                                <tr style="font-weight:bold;">
                                     <th style="width:40px;">NO</th>
                                     <th style="width:180px;">Operational Needs</th>
                                     <th>Description</th>
@@ -357,7 +357,7 @@
                                     </tr>
 
                                     <tr style="background: #d9d9d9; font-weight: bold;">
-                                        <td class="text-start">ESTIMATED PROFIT (min 15%)</td>
+                                        <td class="text-start">ESTIMATED PROFIT (min 10%)</td>
                                         <td id="profit_cell" style="background: red; color: white;">
                                             <span id="estimated_profit">Rp 0</span>
                                         </td>
@@ -733,7 +733,7 @@
                 let profitNow = projectValue - totalCost;
 
                 // MINIMUM PROFIT 15%
-                let minProfit = projectValue * 0.15;
+                let minProfit = projectValue * 0.10;
 
                 // PROFIT PERCENT
                 let profitPercent = projectValue > 0 ?
