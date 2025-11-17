@@ -11,25 +11,28 @@ class PakItem extends Model
 
     protected $table = 'pak_items';
     protected $primaryKey = 'id';
-    
+
+    // kolom yang boleh di-mass-assignment
     protected $fillable = [
         'pak_id',
-        'category',
-        'operational_needs',
+        'category_id',
+        'name',
         'description',
-        'unit_qty',
+        'unit',
+        'quantity',
         'unit_cost',
         'total_cost',
-        'max_cost',
-        'percent',
-        'status',
+        'remarks',
+        'created_by',
     ];
 
     protected $casts = [
-        'unit_qty' => 'decimal:2',
-        'unit_cost' => 'decimal:2',
-        'total_cost' => 'decimal:2',
-        'max_cost' => 'decimal:2',
+        'quantity'   => 'decimal:2',
+        'unit_cost'  => 'integer',
+        'total_cost' => 'integer',
+        'category_id'=> 'integer',
+        'pak_id'     => 'integer',
+        'created_by' => 'integer',
     ];
 
     /**

@@ -12,25 +12,28 @@ class KategoriSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('kategoris')->insert([
+        DB::table('categories')->updateOrInsert([
             [
-                'kode'      => 'A',
-                'nama'      => 'Honorarium',
-                'max_cost'  => 70,   // max 70% sesuai dari gambar
+                'code'      => 'A',
+                'name'      => 'Honorarium',
+                'max_percentage'  => 70,
+                'order' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'kode'      => 'B',
-                'nama'      => 'Operational',
-                'max_cost'  => 10, // max 10% dari gambar
+                'code'      => 'B',
+                'name'      => 'Operational',
+                'max_percentage'  => 10,
+                'order' => 2,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'kode'      => 'C',
-                'nama'      => 'Consumable',
-                'max_cost'  => 5,   // max 5% dari gambar
+                'code'      => 'C',
+                'name'      => 'Consumable',
+                'max_percentage'  => 5,
+                'order' => 3,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

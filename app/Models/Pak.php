@@ -11,14 +11,21 @@ class Pak extends Model
 
     protected $table = 'paks';
     protected $primaryKey = 'id';
-    
-    protected $fillable = [
-        'project_name',
-        'project_number',
-        'project_value',
-        'location_project',
+
+     protected $fillable = [
+        'pak_name',
+        'pak_number',
+        'pak_value',
+        'location',
         'date',
-        'employee',
+        'po_amount',
+        'pph_23',
+        'ppn',
+        'total_pak_cost',
+        'estimated_profit',
+        'total_cost_percentage',
+        'created_by',
+        // tambahkan kolom lain yang ingin diisi lewat create/update
     ];
 
     protected $casts = [
@@ -37,9 +44,10 @@ class Pak extends Model
     /**
      * Get employees as array
      */
-    public function getEmployeesAttribute()
+     public function karyawans()
     {
-        return json_decode($this->employee, true) ?? [];
+        return $this->belongsToMany(KaryawanData::class, 'karyawan_pak', 'pak_id', 'karyawan_id')
+                    ->withTimestamps();
     }
 
     /**
@@ -48,7 +56,7 @@ class Pak extends Model
     public function getEmployeeNamesAttribute()
     {
         $employeeIds = json_decode($this->employee, true);
-        
+
         if (!$employeeIds || !is_array($employeeIds)) {
             return [];
         }

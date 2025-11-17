@@ -45,4 +45,10 @@ class KaryawanData extends Model
     {
         return $this->belongsTo(Jabatan::class, 'jabatan_id');
     }
+
+      public function paks()
+    {
+        return $this->belongsToMany(Pak::class, 'karyawan_pak', 'karyawan_id', 'pak_id')
+                    ->withTimestamps();
+    }
 }
