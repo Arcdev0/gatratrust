@@ -70,4 +70,9 @@ class ProjectTbl extends Model
         return $this->total_invoice >= $this->total_biaya_project;
     }
 
+    public function pics()
+    {
+        return $this->belongsToMany(User::class, 'project_user', 'project_id', 'user_id');
+    }
+
 }

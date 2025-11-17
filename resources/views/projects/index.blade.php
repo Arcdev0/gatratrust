@@ -26,12 +26,12 @@
                         <thead>
                             <tr>
                                 <th>No. Project</th>
-                                <th>PIC</th>
-                                <th>Company</th>
-                                <th>Jenis Kerjaan</th>
+                                <th>Nama Project</th>
+                                <th>Client (Company)</th>
                                 <th>Periode</th>
 
                                 @if (Auth::user()->role_id == 1)
+                                    <th>PIC</th>
                                     <th>Nilai Project</th>
                                     <th>Sisa Pembayaran</th>
                                 @endif
@@ -107,6 +107,16 @@
                             <label>Selesai</label>
                             <input type="date" name="end" class="form-control" id="end" required>
                         </div>
+
+                        <div class="form-group">
+                            <label>PIC</label>
+                            <select name="pic_id[]" class="form-control select2" id="picSelect" multiple="multiple"
+                                required>
+                                @foreach ($listUser as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -171,11 +181,21 @@
                         </div>
                         <div class="form-group">
                             <label>Mulai</label>
-                            <input type="date" name="start" class="form-control" id="edit_start">
+                            <input type="date" name="start_project" class="form-control" id="edit_start">
                         </div>
                         <div class="form-group">
                             <label>Selesai</label>
-                            <input type="date" name="end" class="form-control" id="edit_end">
+                            <input type="date" name="end_project" class="form-control" id="edit_end">
+                        </div>
+
+                        <div class="form-group">
+                            <label>PIC</label>
+                            <select name="pics[]" id="edit_pics" class="form-control select2" multiple="multiple"
+                                required>
+                                @foreach ($listUser as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -191,6 +211,11 @@
 @section('script')
 
     <script>
+        $('.select2').select2({
+            placeholder: "Silahkan Pilih Opsi",
+            width: '100%'
+        });
+
         $('#exampleModalCenter').on('show.bs.modal', function(e) {
             $.ajax({
                 url: '/projects/generate-no',
@@ -296,16 +321,14 @@
                     name: 'no_project'
                 },
                 {
+                    data: 'project_name',
+                    name: 'project_name'
+                },
+                {
                     data: 'client',
-                    name: 'client.name'
-                },
-                {
-                    data: 'company',
-                    name: 'client.company'
-                },
-                {
-                    data: 'kerjaan',
-                    name: 'kerjaan.nama_kerjaan'
+                    name: 'client.name',
+                    orderable: false,
+                    searchable: false
                 },
                 {
                     data: 'periode',
@@ -315,6 +338,16 @@
                 },
                 @if (Auth::user()->role_id == 1)
                     {
+                        data: 'pic',
+                        name: 'pics.name',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            if (!data) return '-';
+                            // ubah tanda ";" jadi <br> agar lebih rapi di tampilan
+                            return data.split(';').join(', ');
+                        }
+                    }, {
                         data: 'total_biaya_project',
                         name: 'total_biaya_project',
                         orderable: false,
@@ -406,7 +439,8 @@
             var deskripsi = $(this).data('deskripsi');
             var start = $(this).data('start');
             var end = $(this).data('end');
-            var biaya = $(this).data('biaya'); // pastikan tombol punya data-biaya
+            var biaya = $(this).data('biaya');
+            const pics = $(this).data('pics');
 
             // Isi form dalam modal dengan data
             $('#edit_no_project').val(no);
@@ -420,6 +454,13 @@
             // isi biaya (tampilkan dalam format Rp di input, dan angka asli di hidden)
             $('#edit_biaya_display').val(formatRupiah(biaya.toString()));
             $('#edit_biaya').val(biaya);
+
+            if (pics) {
+                const selectedPics = pics.split(';').map(Number);
+                $('#edit_pics').val(selectedPics).trigger('change');
+            } else {
+                $('#edit_pics').val([]).trigger('change');
+            }
 
             // Simpan projectId di form (untuk action / AJAX update)
             $('#formEditProject').data('project-id', projectId);

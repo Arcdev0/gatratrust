@@ -14,8 +14,10 @@
 
         /* Atur margin halaman sesuai tinggi header & footer */
         @page {
-            margin-top: 100px;   /* tinggi header */
-            margin-bottom: 80px; /* tinggi footer */
+            margin-top: 300px;
+            /* tinggi header */
+            margin-bottom: 80px;
+            /* tinggi footer */
             margin-left: 20px;
             margin-right: 20px;
         }
@@ -23,17 +25,18 @@
         /* Header tetap di semua halaman */
         .header-page {
             position: fixed;
-            top: -100px;
+            top: -300px;
             left: 0;
             right: 0;
-            height: 100px; /* harus sama dengan @page margin-top */
+            height: 100px;
+            /* harus sama dengan @page margin-top */
             background: white;
             z-index: 100;
         }
 
         .header {
             width: 100%;
-            border-bottom: 2px solid #008000;
+            border-bottom: 2px solid #080808;
             padding-bottom: 5px;
         }
 
@@ -74,7 +77,8 @@
             bottom: -100px;
             left: 0;
             right: 0;
-            height: 80px; /* harus sama dengan @page margin-bottom */
+            height: 80px;
+            /* harus sama dengan @page margin-bottom */
             text-align: center;
             font-size: 10px;
             color: #555;
@@ -215,62 +219,71 @@
                     </td>
                 </tr>
             </table>
+
+            <!-- ===== Tambahkan bagian QUOTATION di bawah garis header ===== -->
+            <hr style="border: 1px solid #0C6401; margin: 4px 0 6px 0;">
+
+            <h2 class="text-center" style="margin: 2px 0;">QUOTATION</h2>
+
+            <table class="info-table no-border" style="font-size:10px;">
+                <tr>
+                    <td style="width:50%; vertical-align:top;">
+                        <table style="width:100%;">
+                            <tr>
+                                <td style="width:35%; font-weight:bold;">Customer</td>
+                                <td style="width:65%;">: {{ $quotation->customer_name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Address</td>
+                                <td>: {{ $quotation->customer_address }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Attn</td>
+                                <td>: {{ $quotation->attention }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Your Reference</td>
+                                <td>: {{ $quotation->your_reference ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Terms</td>
+                                <td>: {{ $quotation->terms ?? '-' }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td style="width:50%; vertical-align:top;">
+                        <table style="width:100%;">
+                            <tr>
+                                <td style="width:35%; font-weight:bold;">Quo No</td>
+                                <td style="width:65%;">: {{ $quotation->quo_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Date</td>
+                                <td>: {{ \Carbon\Carbon::parse($quotation->date)->format('d M Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Rev</td>
+                                <td>: {{ $quotation->rev }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Job No</td>
+                                <td>: {{ $quotation->job_no ?? '-' }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">
+        PT. GATRA PERDANA TRUSTRUE | www.gatraperdanatrustrue.com | Page <span class="pagenum"></span>
     </div>
 
     <!-- Konten -->
     <div class="content">
-        <h2 class="text-center">QUOTATION</h2>
-
-        <table class="info-table no-border">
-            <tr>
-                <td style="width:50%; vertical-align:top;">
-                    <table style="width:100%;">
-                        <tr>
-                            <td style="width:35%; font-weight:bold;">Customer</td>
-                            <td style="width:65%;">: {{ $quotation->customer_name }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Address</td>
-                            <td>: {{ $quotation->customer_address }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Attn</td>
-                            <td>: {{ $quotation->attention }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Your Reference</td>
-                            <td>: {{ $quotation->your_reference ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Terms</td>
-                            <td>: {{ $quotation->terms ?? '-' }}</td>
-                        </tr>
-                    </table>
-                </td>
-                <td style="width:50%; vertical-align:top;">
-                    <table style="width:100%;">
-                        <tr>
-                            <td style="width:35%; font-weight:bold;">Quo No</td>
-                            <td style="width:65%;">: {{ $quotation->quo_no }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Date</td>
-                            <td>: {{ \Carbon\Carbon::parse($quotation->date)->format('d M Y') }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Rev</td>
-                            <td>: {{ $quotation->rev }}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold;">Job No</td>
-                            <td>: {{ $quotation->job_no ?? '-' }}</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-
         <table class="info-table2" style="margin-bottom:20px;">
             <thead>
                 <tr>
@@ -283,13 +296,13 @@
             </thead>
             <tbody>
                 @foreach ($quotation->items as $i => $item)
-                <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ $item->description }}</td>
-                    <td>{{ $item->qty }}</td>
-                    <td class="text-right">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                    <td class="text-right">{{ number_format($item->total_price, 0, ',', '.') }}</td>
-                </tr>
+                    <tr>
+                        <td>{{ $i + 1 }}</td>
+                        <td>{{ $item->description }}</td>
+                        <td>{{ $item->qty }}</td>
+                        <td class="text-right">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->total_price, 0, ',', '.') }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -321,12 +334,12 @@
             </thead>
             <tbody>
                 @foreach ($quotation->scopes as $i => $scope)
-                <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ $scope->description }}</td>
-                    <td class="text-center">{!! $scope->responsible_pt_gpt ? '&#10004;' : '' !!}</td>
-                    <td class="text-center">{!! $scope->responsible_client ? '&#10004;' : '' !!}</td>
-                </tr>
+                    <tr>
+                        <td>{{ $i + 1 }}</td>
+                        <td>{{ $scope->description }}</td>
+                        <td class="text-center">{!! $scope->responsible_pt_gpt ? '&#10004;' : '' !!}</td>
+                        <td class="text-center">{!! $scope->responsible_client ? '&#10004;' : '' !!}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -336,13 +349,13 @@
         @endphp
         <p><b>Terms and Conditions:</b></p>
         @if ($termsList && $termsList->count() > 0)
-        <ol style="padding-left:20px; margin:0 0 20px 0;">
-            @foreach ($termsList as $index => $term)
-            <li>{{ $term->description }}</li>
-            @endforeach
-        </ol>
+            <ol style="padding-left:20px; margin:0 0 20px 0;">
+                @foreach ($termsList as $index => $term)
+                    <li>{{ $term->description }}</li>
+                @endforeach
+            </ol>
         @else
-        <p style="margin-bottom:20px;">-</p>
+            <p style="margin-bottom:20px;">-</p>
         @endif
 
         <!-- Approval Block -->
@@ -353,13 +366,14 @@
                         <p><b>Approval, by</b></p>
                         <br><br>
                         @if (isset($qrCodeBase64) && $qrCodeBase64)
-                        <div style="width:100px; height:100px;">
-                            <img src="{{ $qrCodeBase64 }}" style="width:100%; height:auto;" alt="Approval QR Code">
-                        </div>
+                            <div style="width:100px; height:100px;">
+                                <img src="{{ $qrCodeBase64 }}" style="width:100%; height:auto;" alt="Approval QR Code">
+                            </div>
                         @else
-                        <div style="width:100px; height:100px; border:1px dashed #ccc; display:flex; align-items:center; justify-content:center;">
-                            No QR Code
-                        </div>
+                            <div
+                                style="width:100px; height:100px; border:1px dashed #ccc; display:flex; align-items:center; justify-content:center;">
+                                No QR Code
+                            </div>
                         @endif
                         <br>
                         <p><b>{{ $quotation->approval_name ?? '__________________' }}</b></p>
@@ -373,10 +387,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-        <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">
-        PT. GATRA PERDANA TRUSTRUE | www.gatraperdanatrustrue.com | Page <span class="pagenum"></span>
-    </div>
 </body>
+
 </html>
