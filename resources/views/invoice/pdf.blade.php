@@ -76,23 +76,41 @@
         .text-center {
             text-align: center;
         }
+
+        .watermark {
+            position: fixed;
+            top: 5%;
+            left: 15%;
+            width: 70%;
+            opacity: 0.08;
+            z-index: -1;
+            text-align: center;
+            /* transform: rotate(-30deg); */
+            font-size: 120px;
+            color: #000;
+        }
     </style>
 </head>
 
 <body>
+    @php
+        $path = public_path('template/img/LOGO_Gatra1.png');
+        $type = pathinfo($path, PATHINFO_EXTENSION);
+        $base64 = file_exists($path)
+            ? 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($path))
+            : '';
+    @endphp
+
+    <div class="watermark">
+        <img src="{{ $base64 }}">
+    </div>
 
     {{-- HEADER --}}
     <div class="header-page">
         <table style="width:100%;">
             <tr>
                 <td style="width:120px;">
-                    @php
-                        $path = public_path('template/img/LOGO_Gatra1.png');
-                        $type = pathinfo($path, PATHINFO_EXTENSION);
-                        $base64 = file_exists($path)
-                            ? 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($path))
-                            : '';
-                    @endphp
+
                     <img src="{{ $base64 }}" style="width:80px;">
                 </td>
                 <td>
@@ -173,6 +191,65 @@
                 </td>
             </tr>
         </table>
+
+
+        <br><br><br><br>
+        <table width="100%" class="no-border" style="font-size: 13px;">
+            <tr>
+                <!-- KIRI: Payment Info + Thank You -->
+                <td width="60%" valign="top">
+
+                    <!-- Payment Info -->
+                    <p style="font-weight: bold; margin-bottom: 3px;">Payment Info</p>
+                    <p style="margin:0;">Bank Name &nbsp;&nbsp;: MANDIRI</p>
+                    <p style="margin:0;">Account No &nbsp;: 109-00-6666010-1</p>
+                    <p style="margin:0;">Atas nama &nbsp;: Gatra Perdana Trastrue</p>
+
+                    <br>
+
+                    <!-- Thank You -->
+                    <p style="font-weight: bold; margin-bottom: 0;">Thank you for your trust in using our services.</p>
+                    <p style="margin-top: 0;">Hopefully this cooperation will continue to be well–established.</p>
+
+                </td>
+                <td width="40%"></td>
+            </tr>
+            <tr>
+                <td width="60%"></td>
+                <!-- KANAN: Tanda Tangan -->
+                <td width="40%" style="text-align: center;">
+
+                    <p style="margin-bottom: 60px;">
+                        Batam, {{ \Carbon\Carbon::now()->format('d F Y') }}
+                    </p>
+
+                    <!-- Area Tanda Tangan Dummy -->
+                    <div
+                        style="
+                width: 150px;
+                height: 80px;
+                border: 1px dashed #888;
+                margin: 0 auto 10px auto;
+                line-height: 80px;
+                color: #777;
+                font-size: 12px;
+            ">
+                        Tanda Tangan
+                    </div>
+
+                    <!-- Nama Pejabat Dummy -->
+                    <span style="font-weight: bold; text-decoration: underline;">
+                        Yogi Suranda
+                    </span>
+                    <br>
+                    <span>Finance Manager</span>
+
+                </td>
+            </tr>
+        </table>
+
+        <br><br>
+
 
     </div>
 
