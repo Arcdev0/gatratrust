@@ -16,13 +16,13 @@ class KategoriSeeder extends Seeder
             [
                 'code' => 'A',
                 'name' => 'Honorarium',
-                'max_percentage' => 70,
+                'max_percentage' => 58,
                 'order' => 1,
             ],
             [
                 'code' => 'B',
                 'name' => 'Operational',
-                'max_percentage' => 10,
+                'max_percentage' => 6,
                 'order' => 2,
             ],
             [
@@ -34,7 +34,13 @@ class KategoriSeeder extends Seeder
             [
                 'code' => 'D',
                 'name' => 'Building',
-                'max_percentage' => 5,
+                'max_percentage' => 7,
+                'order' => 4,
+            ],
+            [
+                'code' => 'E',
+                'name' => 'Karyawan',
+                'max_percentage' => 14,
                 'order' => 4,
             ],
         ];

@@ -70,7 +70,8 @@
                             <div class="form-group">
                                 <label for="project_number">Project Number <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('project_number') is-invalid @enderror"
-                                    id="project_number" name="project_number" value="{{ old('project_number') }}" required>
+                                    id="project_number" name="project_number" value="{{ $newPakNo }} " readonly
+                                    required>
                                 @error('project_number')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -95,7 +96,7 @@
                                 <select class="form-control @error('location_project') is-invalid @enderror"
                                     id="location_project" name="location_project" required>
 
-                                    <option value="">-- Pilih Lokasi --</option>
+                                    <option value="" selected disabled>-- Pilih Lokasi --</option>
 
                                     <option value="dalam_kota"
                                         {{ old('location_project') == 'dalam_kota' ? 'selected' : '' }}>
@@ -145,9 +146,24 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="">Jenis Pekerjaan</label>
+                                <select class="form-control" name="" id="jenis_pekerjaan">
+                                    <option value="0" selected disabled>Pilih Pekerjaan</option>
+                                    <option value="4">WPS</option>
+                                    <option value="4">WQT</option>
+                                    <option value="1">Material Test</option>
+                                    <option value="6">Approval</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered text-center align-middle table-sm" id="pak-table">
-                            <thead  style="background-color: #007A33; color: white;">
+                            <thead style="background-color: #007A33; color: white;">
                                 <tr style="font-weight:bold;">
                                     <th style="width:40px;">NO</th>
                                     <th style="width:180px;">Operational Needs</th>
@@ -634,10 +650,6 @@
             });
 
 
-
-            // ==================================================
-            // remove row handler
-            // ==================================================
             $(document).on('click', '.btn-remove-row', function() {
                 let $row = $(this).closest('tr.item-row');
                 let sectionCode = $row.data('section') + '';
@@ -655,9 +667,7 @@
                 recalcAll();
             });
 
-            // ==================================================
-            // listeners for input changes
-            // ==================================================
+
             $(document).on('input', '.unit_qty, .unit_cost_display', function() {
                 let $r = $(this).closest('tr.item-row');
                 recalcRow($r);
@@ -692,7 +702,350 @@
                 recalcAll();
             });
 
+            function addDefaultItem(categoryId, sectionCode, preset) {
 
+                let $firstRow = $('tr.item-row[data-category="' + categoryId + '"][data-index="0"]');
+
+                let isFirstEmpty = (
+                    $firstRow.find('[name*="[operational_needs]"]').val().trim() === "" &&
+                    $firstRow.find('[name*="[description]"]').val().trim() === "" &&
+                    parseInt($firstRow.find('[name*="[qty]"]').val()) === 0 &&
+                    parseInt($firstRow.find('.unit_cost').val()) === 0
+                );
+
+                let $row;
+
+                if (isFirstEmpty) {
+                    $row = $firstRow;
+
+                    // FIX: row pertama harus diberi data-section-code
+                    $row.attr("data-section-code", sectionCode);
+
+                } else {
+                    let $btn = $('.btn-add-row[data-category="' + categoryId + '"]');
+                    $btn.click();
+                    $row = $('tr.item-row[data-category="' + categoryId + '"]').last();
+
+                    // Row baru sudah benar diberi section code
+                    $row.attr("data-section-code", sectionCode);
+                }
+
+                if (preset.operational_needs !== undefined) {
+                    $row.find('[name*="[operational_needs]"]').val(preset.operational_needs);
+                }
+                if (preset.description !== undefined) {
+                    $row.find('[name*="[description]"]').val(preset.description);
+                }
+                if (preset.qty !== undefined) {
+                    $row.find('[name*="[qty]"]').val(preset.qty);
+                }
+                if (preset.unit_cost !== undefined) {
+                    $row.find('.unit_cost').val(preset.unit_cost);
+                    $row.find('.unit_cost_display').val(formatRupiah(preset.unit_cost));
+                }
+
+                recalcAll();
+            }
+
+            const categories = @json($categories);
+
+            /* ============================================================
+               1. RUMUS B – OPERATIONAL (dibagi rata)
+            ============================================================ */
+
+
+            function calculateOperationalCosts(factor) {
+                const baseCost = 100000; // harga default
+                const items = ["BBM", "Sewa Mobil", "Makan"];
+
+                const result = {};
+                items.forEach(i => {
+                    result[i] = baseCost * factor;
+                });
+
+                return result;
+            }
+
+            function updateOperationalDefaultCosts(costs) {
+                $('tr.item-row[data-section-code="B"]').each(function() {
+                    const need = $(this).find('[name*="[operational_needs]"]').val();
+                    if (costs[need] !== undefined) {
+                        $(this).find('.unit_cost').val(costs[need]);
+                        $(this).find('.unit_cost_display').val(formatRupiah(costs[need]));
+                    }
+                });
+            }
+
+            $(document).ready(function() {
+                const factor = parseInt($("#jenis_pekerjaan").val());
+                const costs = calculateOperationalCosts(factor);
+                updateOperationalDefaultCosts(costs);
+            });
+
+            $("#jenis_pekerjaan").on("change", function() {
+                const factor = parseInt($(this).val());
+                const costs = calculateOperationalCosts(factor);
+                updateOperationalDefaultCosts(costs);
+                recalcAll();
+            });
+
+            /* ============================================================
+               2. RUMUS C – CONSUMABLE (dibagi rata)
+            ============================================================ */
+            // function calculateConsumableCosts(projectValue) {
+            //     const cat = categories.find(c => c.code === "C");
+            //     if (!cat) return {};
+
+            //     const total = projectValue * (cat.max_percentage / 100);
+
+            //     const items = ["Kertas", "Pena", "Spidol", "Materai"];
+            //     const perItem = Math.round(total / items.length);
+
+            //     const result = {};
+            //     items.forEach(i => result[i] = perItem);
+            //     return result;
+            // }
+
+            // function updateConsumableDefaultCosts(costs) {
+            //     $('tr.item-row[data-section-code="C"]').each(function() {
+            //         const need = $(this).find('[name*="[operational_needs]"]').val();
+            //         if (costs[need] !== undefined) {
+            //             $(this).find('.unit_cost').val(costs[need]);
+            //             $(this).find('.unit_cost_display').val(formatRupiah(costs[need]));
+            //         }
+            //     });
+            // }
+
+            /* ============================================================
+               3. RUMUS D – BUILDING
+            ============================================================ */
+            function calculateBuildingUnitCosts(projectValue) {
+                const buildingBudget = projectValue * 0.07;
+
+                const percentages = {
+                    gedung: 41,
+                    listrik: 35,
+                    internet: 7,
+                    air: 3,
+                    server: 3,
+                    keamanan: 7,
+                    software: 3
+                };
+
+                const results = {};
+                Object.keys(percentages).forEach(key => {
+                    results[key] = Math.round(buildingBudget * (percentages[key] / 100));
+                });
+
+                return results;
+            }
+
+            function updateBuildingDefaultCosts(costs) {
+                const mapping = {
+                    "Gedung": "gedung",
+                    "Listrik": "listrik",
+                    "Internet": "internet",
+                    "Air": "air",
+                    "Server": "server",
+                    "Keamanan": "keamanan",
+                    "Software": "software"
+                };
+
+                $('tr.item-row[data-section-code="D"]').each(function() {
+                    const need = $(this).find('[name*="[operational_needs]"]').val();
+                    const key = mapping[need];
+
+                    if (key && costs[key] !== undefined) {
+                        $(this).find('.unit_cost').val(costs[key]);
+                        $(this).find('.unit_cost_display').val(formatRupiah(costs[key]));
+                    }
+                });
+            }
+
+            /* ============================================================
+               4. RUMUS E – KARYAWAN
+            ============================================================ */
+            function calculateEmployeeCosts(projectValue) {
+                const total = projectValue * 0.14;
+
+                const percentages = {
+                    "Gaji": 71,
+                    "BPJS TK": 12,
+                    "BPJS KHST": 1,
+                    "PPH23": 4,
+                    "Konsumsi": 12
+                };
+
+                const result = {};
+                Object.keys(percentages).forEach(key =>
+                    result[key] = Math.round(total * (percentages[key] / 100))
+                );
+
+                return result;
+            }
+
+            function updateEmployeeDefaultCosts(costs) {
+                $('tr.item-row[data-section-code="E"]').each(function() {
+                    const need = $(this).find('[name*="[operational_needs]"]').val();
+                    if (costs[need] !== undefined) {
+                        $(this).find('.unit_cost').val(costs[need]);
+                        $(this).find('.unit_cost_display').val(formatRupiah(costs[need]));
+                    }
+                });
+            }
+
+            /* ============================================================
+               5. DEFAULT ITEMS (unit_cost = 0 karena dihitung otomatis)
+            ============================================================ */
+            const defaultItemsByCategory = {
+                B: [{
+                        operational_needs: "BBM",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Sewa Mobil",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Makan",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    // {
+                    //     operational_needs: "PDS",
+                    //     description: "-",
+                    //     qty: 1,
+                    //     unit_cost: 0
+                    // }
+                ],
+                C: [{
+                    operational_needs: "Kertas",
+                    description: "-",
+                    qty: 1,
+                    unit_cost: 70000
+                }, {
+                    operational_needs: "Pena",
+                    description: "-",
+                    qty: 1,
+                    unit_cost: 20000
+                }, {
+                    operational_needs: "Spidol",
+                    description: "-",
+                    qty: 1,
+                    unit_cost: 50000
+                }, {
+                    operational_needs: "Materai",
+                    description: "-",
+                    qty: 4,
+                    unit_cost: 13000
+                }],
+                D: [{
+                        operational_needs: "Gedung",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Listrik",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Internet",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Air",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Server",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Keamanan",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Software",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    }
+                ],
+                E: [{
+                        operational_needs: "Gaji",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "BPJS TK",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "BPJS KHST",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "PPH23",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    },
+                    {
+                        operational_needs: "Konsumsi",
+                        description: "-",
+                        qty: 1,
+                        unit_cost: 0
+                    }
+                ]
+            };
+
+            /* ============================================================
+               6. GENERATE DEFAULT ROWS
+            ============================================================ */
+            categories.forEach(cat => {
+                const defaults = defaultItemsByCategory[cat.code];
+                if (defaults) {
+                    defaults.forEach(item => addDefaultItem(cat.id, cat.code, item));
+                }
+            });
+
+            /* ============================================================
+               7. APPLY COSTS SAAT PROJECT VALUE BERUBAH
+            ============================================================ */
+            $("#project_value_display").on("keyup", function() {
+                const raw = parseRupiah($(this).val());
+                $("#project_value").val(raw);
+
+                // updateOperationalDefaultCosts(calculateOperationalCosts(raw));
+                // updateConsumableDefaultCosts(calculateConsumableCosts(raw));
+                updateBuildingDefaultCosts(calculateBuildingUnitCosts(raw));
+                updateEmployeeDefaultCosts(calculateEmployeeCosts(raw));
+
+                recalcAll();
+            });
+
+            recalcAll();
 
             // Auto format Rupiah display + update hidden value
             $(".rupiah-display").on("keyup change", function() {

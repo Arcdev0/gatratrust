@@ -81,9 +81,9 @@ class PakController extends Controller
                     ';
                 })
 
-                    // <a href="' . route('pak.edit', $row->id) . '" class="btn btn-sm btn-secondary">
-                    //         <i class="fas fa-edit"></i>
-                    //     </a>
+                // <a href="' . route('pak.edit', $row->id) . '" class="btn btn-sm btn-secondary">
+                //         <i class="fas fa-edit"></i>
+                //     </a>
 
                 ->rawColumns(['action'])
                 ->make(true);
@@ -93,15 +93,23 @@ class PakController extends Controller
     {
         $employees = KaryawanData::orderBy('nama_lengkap', 'asc')->get();
 
-        // Generate PAK number (opsional, sesuaikan dengan format Anda)
+        // Ambil data terakhir
         $lastPak = Pak::orderBy('id', 'desc')->first();
-        $newNumber = $lastPak ? $lastPak->id + 1 : 1;
-        $newPakNo = 'PAK-' . date('Y') . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+        // Running number 3 digit
+        $runningNumber = $lastPak ? str_pad($lastPak->id + 1, 3, '0', STR_PAD_LEFT) : '001';
+
+        // Format bulan dan tahun
+        $monthYear = date('m-Y'); // contoh: 09-2025
+
+        // Gabungkan format baru
+        $newPakNo = "{$runningNumber}/GPT-PAK/{$monthYear}";
 
         // Get existing PAKs for copy feature
         $paks = Pak::orderBy('created_at', 'desc')->get();
-
         $categories = DB::table('categories')->get();
+
+        // dd($newPakNo);
 
         return view('pak.create', compact('employees', 'newPakNo', 'paks', 'categories'));
     }
@@ -146,7 +154,7 @@ class PakController extends Controller
                 'project_cost' => 'nullable|numeric|min:0',
             ]);
 
-            $parseNumber = function($v) {
+            $parseNumber = function ($v) {
                 if ($v === null) return 0;
                 if (is_numeric($v)) return $v + 0;
                 // remove all non-digit
@@ -213,7 +221,6 @@ class PakController extends Controller
                 'status' => 201,
                 'message' => 'PAK berhasil ditambahkan!'
             ], 201);
-
         } catch (\Illuminate\Validation\ValidationException $ve) {
             DB::rollBack();
             return response()->json([
@@ -222,7 +229,6 @@ class PakController extends Controller
                 'message' => 'Validation Error',
                 'errors' => $ve->errors()
             ], 422);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -276,13 +282,11 @@ class PakController extends Controller
                     'categories' =>  $categories
                 ],
             ], 200);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'PAK tidak ditemukan.',
             ], 404);
-
         } catch (\Exception $e) {
             // Log error jika perlu: \Log::error($e);
             return response()->json([
@@ -366,7 +370,6 @@ class PakController extends Controller
                 'success' => true,
                 'message' => 'PAK berhasil diupdate!'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -387,7 +390,6 @@ class PakController extends Controller
                 'success' => true,
                 'message' => 'PAK berhasil dihapus!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
