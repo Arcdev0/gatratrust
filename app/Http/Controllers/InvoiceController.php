@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use App\Traits\LogsActivity;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
@@ -47,7 +48,7 @@ class InvoiceController extends Controller
             ->addColumn('remaining', function ($inv) {
                 return number_format($inv->remaining ?? 0, 0, ',', '.');
             })
-           ->addColumn('aksi', function ($inv) {
+            ->addColumn('aksi', function ($inv) {
                 return '
                     <button data-id="' . $inv->id . '" class="btn btn-sm btn-info btn-view me-1">
                         <i class="fas fa-eye"></i>
@@ -62,6 +63,10 @@ class InvoiceController extends Controller
                     class="btn btn-sm btn-success me-1">
                         <i class="fas fa-print"></i>
                     </a>
+                    <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank"
+                        class="btn btn-sm btn-warning me-1">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
                 ';
             })
             ->rawColumns(['aksi'])
@@ -73,7 +78,7 @@ class InvoiceController extends Controller
         $invoice = Invoice::findOrFail($id);
 
         // Format angka rupiah helper
-        $formatRupiah = function($angka) {
+        $formatRupiah = function ($angka) {
             return 'Rp ' . number_format($angka ?? 0, 0, ',', '.');
         };
 
@@ -92,12 +97,12 @@ class InvoiceController extends Controller
 
     public function create(Request $request)
     {
-       $projects = ProjectTbl::with('invoices', 'client')
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->filter(function ($p) {
-            return $p->total_invoice < $p->total_biaya_project;
-        });
+        $projects = ProjectTbl::with('invoices', 'client')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function ($p) {
+                return $p->total_invoice < $p->total_biaya_project;
+            });
 
 
         $quotation = null;
@@ -129,11 +134,11 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::findOrFail($id);
         $projects = ProjectTbl::with('invoices', 'client')
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->filter(function ($p) {
-            return $p->total_invoice < $p->total_biaya_project;
-        });
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function ($p) {
+                return $p->total_invoice < $p->total_biaya_project;
+            });
 
         return view('invoice.edit', compact('invoice', 'projects'));
     }
@@ -212,62 +217,62 @@ class InvoiceController extends Controller
     }
 
     public function store(Request $request)
-        {
-            $validated = $request->validate([
-                'invoice_no'       => 'required|string|unique:invoices,invoice_no',
-                'date'             => 'required|date',
-                'customer_name'    => 'required|string|max:255',
-                'project_id'       => 'required|integer|exists:projects,id',
-                'customer_address' => 'required|string',
-                'inputDesc'        => 'required|string',
-                'gross_total'      => 'required|numeric',
-                'discount'         => 'nullable|numeric',
-                'down_payment'     => 'nullable|numeric',
-                'tax'              => 'nullable|numeric',
-                'net_total'        => 'required|numeric',
+    {
+        $validated = $request->validate([
+            'invoice_no'       => 'required|string|unique:invoices,invoice_no',
+            'date'             => 'required|date',
+            'customer_name'    => 'required|string|max:255',
+            'project_id'       => 'required|integer|exists:projects,id',
+            'customer_address' => 'required|string',
+            'inputDesc'        => 'required|string',
+            'gross_total'      => 'required|numeric',
+            'discount'         => 'nullable|numeric',
+            'down_payment'     => 'nullable|numeric',
+            'tax'              => 'nullable|numeric',
+            'net_total'        => 'required|numeric',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Simpan invoice
+            $invoice = Invoice::create([
+                'invoice_no'       => $validated['invoice_no'],
+                'date'             => $validated['date'],
+                'project_id'       => $validated['project_id'],
+                'customer_name'    => $validated['customer_name'],
+                'customer_address' => $validated['customer_address'],
+                'description'      => $validated['inputDesc'],
+                'gross_total'      => $validated['gross_total'],
+                'discount'         => $validated['discount'] ?? 0,
+                'down_payment'     => $validated['down_payment'] ?? 0,
+                'tax'              => $validated['tax'] ?? 0,
+                'net_total'        => $validated['net_total'],
+                'status'           => 'open',
             ]);
 
-            DB::beginTransaction();
-            try {
-                // Simpan invoice
-                $invoice = Invoice::create([
-                    'invoice_no'       => $validated['invoice_no'],
-                    'date'             => $validated['date'],
-                    'project_id'       => $validated['project_id'],
-                    'customer_name'    => $validated['customer_name'],
-                    'customer_address' => $validated['customer_address'],
-                    'description'      => $validated['inputDesc'],
-                    'gross_total'      => $validated['gross_total'],
-                    'discount'         => $validated['discount'] ?? 0,
-                    'down_payment'     => $validated['down_payment'] ?? 0,
-                    'tax'              => $validated['tax'] ?? 0,
-                    'net_total'        => $validated['net_total'],
-                    'status'           => 'open',
-                ]);
+            $this->logActivity(
+                "Membuat Invoice {$invoice->invoice_no}",
+                $invoice->invoice_no,
+                null,
+                $invoice->toArray()
+            );
 
-               $this->logActivity(
-                    "Membuat Invoice {$invoice->invoice_no}",
-                    $invoice->invoice_no,
-                    null,
-                    $invoice->toArray()
-                );
+            DB::commit();
 
-                DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil dibuat',
+                'data'    => $invoice
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Invoice berhasil dibuat',
-                    'data'    => $invoice
-                ], 201);
-            } catch (\Exception $e) {
-                DB::rollBack();
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ], 500);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
         }
+    }
 
     private function generateNoRef()
     {
@@ -294,7 +299,7 @@ class InvoiceController extends Controller
         return response()->json($dpInvoices);
     }
 
-   public function destroy($id)
+    public function destroy($id)
     {
         DB::beginTransaction();
         try {
@@ -337,5 +342,19 @@ class InvoiceController extends Controller
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function printInvoicePDF($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+
+        $pdf = PDF::loadView('invoice.pdf', compact('invoice'))
+            ->setPaper('a4', 'portrait');
+
+        // sanitize filename: ganti slash/backslash dengan dash
+        $safeNo = preg_replace('/[\/\\\\]+/', '-', $invoice->invoice_no);
+        $filename = 'Invoice-' . $safeNo . '.pdf';
+
+        return $pdf->stream($filename);
     }
 }
