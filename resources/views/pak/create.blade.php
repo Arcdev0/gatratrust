@@ -318,7 +318,7 @@
 
                                         <!-- Input tampilan -->
                                         <input type="text" class="form-control rupiah-display" id="pph23_display"
-                                            value="{{ old('pph23') ? 'Rp ' . number_format(old('pph23')) : '' }}">
+                                            value="{{ old('pph23') ? 'Rp ' . number_format(old('pph23')) : '0' }}">
 
                                         <!-- Hidden value -->
                                         <input type="hidden" name="pph23" id="pph23"
@@ -332,7 +332,7 @@
                                         <label>PPN 11% (Optional)</label>
 
                                         <input type="text" class="form-control rupiah-display" id="ppn11_display"
-                                            value="{{ old('ppn11') ? 'Rp ' . number_format(old('ppn11')) : '' }}">
+                                            value="{{ old('ppn11') ? 'Rp ' . number_format(old('ppn11')) : '0' }}">
 
                                         <input type="hidden" name="ppn11" id="ppn11"
                                             value="{{ old('ppn11') }}">
@@ -344,7 +344,7 @@
                             <hr>
 
                             <!-- PROJECT COST -->
-                            <div class="row mt-2">
+                            {{-- <div class="row mt-2">
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>PROJECT COST</label>
@@ -357,7 +357,7 @@
                                             value="{{ old('project_cost') }}">
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
 
                             <!-- SUMMARY TABLE -->
                             <div class="mt-3">
@@ -430,9 +430,9 @@
                 }).format(angka);
             }
 
-            function parseRupiah(v) {
-                if (v === null || v === undefined) return 0;
-                return parseInt(String(v).replace(/[^\d]/g, '')) || 0;
+            function parseRupiah(value) {
+                if (!value) return 0;
+                return Number(String(value).replace(/[^0-9]/g, '')) || 0;
             }
 
             // ==================================================
@@ -488,18 +488,24 @@
             // ==================================================
             function recalcRow($row) {
                 let qty = Number($row.find('.unit_qty').val()) || 0;
-                // beberapa template pakai unit_cost_display, beberapa pakai unit_cost_display (kamu pakai unit_cost_display)
-                let unitCostDisplay = $row.find('.unit_cost_display').length ? $row.find('.unit_cost_display')
-                    .val() : $row.find('.unit-cost').val();
-                let unitCost = parseRupiah(unitCostDisplay);
-                // simpan ke hidden .unit_cost jika ada
-                if ($row.find('.unit_cost').length) $row.find('.unit_cost').val(unitCost);
+
+                // ambil angka unit cost, dari hidden (bukan display)
+                let unitCost = parseRupiah($row.find('.unit_cost').val() || 0);
+
+                // kalau user sedang mengetik di display, update hidden biar sinkron
+                let unitCostDisplay = $row.find('.unit_cost_display').val();
+                if (unitCostDisplay) {
+                    unitCost = parseRupiah(unitCostDisplay);
+                    $row.find('.unit_cost').val(unitCost); // sync hidden
+                }
 
                 let total = qty * unitCost;
-                if ($row.find('.total_cost').length) $row.find('.total_cost').val(total);
-                if ($row.find('.total_cost_display').length) $row.find('.total_cost_display').val(formatRupiah(
-                    total));
+
+                // update hidden & display
+                $row.find('.total_cost').val(total);
+                $row.find('.total_cost_display').val(formatRupiah(total));
             }
+
 
             // ==================================================
             // Recalc semua section dan grand total
@@ -553,6 +559,13 @@
                 // juga update overall financial summary jika ada elemen tersebut
                 if ($('#display_total_cost').length) $('#display_total_cost').text(formatRupiah(grandTotal));
 
+                // update cost percentage
+                if ($('#cost_percentage').length) {
+                    let pv = projectValue;
+                    let costPercent = pv > 0 ? (grandTotal / pv * 100) : 0;
+                    $('#cost_percentage').text(costPercent.toFixed(1) + '%');
+                }
+
                 // profit check (min 15%)
                 let pv = projectValue;
                 if (pv > 0 && $('#estimated_profit').length) {
@@ -561,7 +574,7 @@
                     $('#estimated_profit').text(formatRupiah(profitNow));
                     $('#profit_percentage').text(isFinite(profitPercent) ? profitPercent.toFixed(1) + '%' : '0%');
 
-                    if (profitPercent < 15) {
+                    if (profitPercent < 10) {
                         $('#profit_cell, #profit_percentage_cell').css({
                             background: 'red',
                             color: 'white'
@@ -749,6 +762,37 @@
 
             const categories = @json($categories);
 
+
+            function getSectionTotal(sectionCode) {
+                let raw = $('tr.section-total-row[data-section="' + sectionCode + '"]')
+                    .find('.section-total-display')
+                    .text()
+                    .replace(/[^0-9]/g, "");
+
+                return parseInt(raw || 0);
+            }
+
+
+            function calculateNewBudgets(projectValue) {
+                // Ambil total Section A, B, C (pakai data-section)
+                const honorium = getSectionTotal('A');
+                const operational = getSectionTotal('B');
+                const consumable = getSectionTotal('C');
+
+                const sumABC = honorium + operational + consumable;
+
+                const base = (projectValue * 0.9) - sumABC;
+
+
+                const buildingBudget = Math.round(base * (0.34));
+                const employeeBudget = Math.round(base * (0.66));
+
+                return {
+                    buildingBudget,
+                    employeeBudget
+                };
+            }
+
             /* ============================================================
                1. RUMUS B – OPERATIONAL (dibagi rata)
             ============================================================ */
@@ -820,7 +864,9 @@
                3. RUMUS D – BUILDING
             ============================================================ */
             function calculateBuildingUnitCosts(projectValue) {
-                const buildingBudget = projectValue * 0.07;
+                const {
+                    buildingBudget
+                } = calculateNewBudgets(projectValue);
 
                 const percentages = {
                     gedung: 41,
@@ -828,7 +874,7 @@
                     internet: 7,
                     air: 3,
                     server: 3,
-                    keamanan: 7,
+                    keamanan: 8,
                     software: 3
                 };
 
@@ -842,17 +888,17 @@
 
             function updateBuildingDefaultCosts(costs) {
                 const mapping = {
-                    "Gedung": "gedung",
-                    "Listrik": "listrik",
-                    "Internet": "internet",
-                    "Air": "air",
-                    "Server": "server",
-                    "Keamanan": "keamanan",
-                    "Software": "software"
+                    "gedung": "gedung",
+                    "listrik": "listrik",
+                    "internet": "internet",
+                    "air": "air",
+                    "server": "server",
+                    "keamanan": "keamanan",
+                    "software": "software"
                 };
 
                 $('tr.item-row[data-section-code="D"]').each(function() {
-                    const need = $(this).find('[name*="[operational_needs]"]').val();
+                    const need = $(this).find('[name*="[operational_needs]"]').val().toLowerCase();
                     const key = mapping[need];
 
                     if (key && costs[key] !== undefined) {
@@ -866,7 +912,9 @@
                4. RUMUS E – KARYAWAN
             ============================================================ */
             function calculateEmployeeCosts(projectValue) {
-                const total = projectValue * 0.14;
+                const {
+                    employeeBudget
+                } = calculateNewBudgets(projectValue);
 
                 const percentages = {
                     "Gaji": 71,
@@ -878,7 +926,7 @@
 
                 const result = {};
                 Object.keys(percentages).forEach(key =>
-                    result[key] = Math.round(total * (percentages[key] / 100))
+                    result[key] = Math.round(employeeBudget * (percentages[key] / 100))
                 );
 
                 return result;
@@ -1047,6 +1095,7 @@
 
             recalcAll();
 
+
             // Auto format Rupiah display + update hidden value
             $(".rupiah-display").on("keyup change", function() {
                 let inputDisplay = $(this);
@@ -1071,11 +1120,14 @@
 
                 let pph23 = parseRupiah($("#pph23").val());
                 let ppn11 = parseRupiah($("#ppn11").val());
-                let projectCost = parseRupiah($("#project_cost").val());
+
+                // ambil grand total dari tampilan
+                let grandTotal = parseRupiah($("#grand-total-display").text());
+
                 let projectValue = parseRupiah($("#project_value").val() || 0);
 
                 // TOTAL COST = pph23 + ppn11 + project_cost
-                let totalCost = pph23 + ppn11 + projectCost;
+                let totalCost = pph23 + ppn11 + grandTotal;
 
                 // COST PERCENT
                 let costPercent = projectValue > 0 ?
@@ -1116,6 +1168,27 @@
 
             // Initial load
             hitungSummary();
+
+
+            function handleBudgetRecalculation() {
+                const projectValue = getProjectValue();
+
+                updateBuildingDefaultCosts(calculateBuildingUnitCosts(projectValue));
+                updateEmployeeDefaultCosts(calculateEmployeeCosts(projectValue));
+                hitungSummary();
+
+                recalcAll();
+            }
+
+            $(document).on("keyup change",
+                'tr.item-row[data-section="A"] .unit_qty, tr.item-row[data-section="A"] .unit_cost_display,' +
+                'tr.item-row[data-section="B"] .unit_qty, tr.item-row[data-section="B"] .unit_cost_display,' +
+                'tr.item-row[data-section="C"] .unit_qty, tr.item-row[data-section="C"] .unit_cost_display',
+                function() {
+                    handleBudgetRecalculation();
+                }
+            );
+
 
 
 

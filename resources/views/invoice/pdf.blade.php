@@ -79,15 +79,21 @@
 
         .watermark {
             position: fixed;
-            top: 5%;
+            top: -15%;
             left: 15%;
-            width: 70%;
+            width: 80%;
             opacity: 0.08;
             z-index: -1;
             text-align: center;
             /* transform: rotate(-30deg); */
             font-size: 120px;
             color: #000;
+        }
+
+
+        .watermark img {
+            width: 140%;
+            /* 100% = asli, >100% = diperbesar */
         }
     </style>
 </head>
@@ -99,10 +105,23 @@
         $base64 = file_exists($path)
             ? 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($path))
             : '';
+
+        $wmPath = public_path('template/img/Logo_gatra.png');
+        $wmType = pathinfo($wmPath, PATHINFO_EXTENSION);
+        $wmBase64 = '';
+
+        if (file_exists($wmPath)) {
+            $wmBase64 = 'data:image/' . $wmType . ';base64,' . base64_encode(file_get_contents($wmPath));
+        }
     @endphp
 
+    {{-- DEBUG --}}
+    @if ($wmBase64 == '')
+        <p style="color:red;">⚠ Watermark image NOT FOUND</p>
+    @endif
+
     <div class="watermark">
-        <img src="{{ $base64 }}">
+        <img src="{{ $wmBase64 }}">
     </div>
 
     {{-- HEADER --}}
@@ -201,10 +220,21 @@
 
                     <!-- Payment Info -->
                     <p style="font-weight: bold; margin-bottom: 3px;">Payment Info</p>
-                    <p style="margin:0;">Bank Name &nbsp;&nbsp;: MANDIRI</p>
-                    <p style="margin:0;">Account No &nbsp;: 109-00-6666010-1</p>
-                    <p style="margin:0;">Atas nama &nbsp;: Gatra Perdana Trastrue</p>
 
+                    <table class="no-border" style="font-size:12px; border-collapse: collapse; margin:0;">
+                        <tr>
+                            <td style="padding:2px 4px; white-space: nowrap;">Bank Name</td>
+                            <td style="padding:2px 4px;">: MANDIRI</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 4px; white-space: nowrap;">Account No</td>
+                            <td style="padding:2px 4px;">: 109-00-6666010-1</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 4px; white-space: nowrap;">Account Name</td>
+                            <td style="padding:2px 4px;">: Gatra Perdana Trastrue</td>
+                        </tr>
+                    </table>
                     <br>
 
                     <!-- Thank You -->
