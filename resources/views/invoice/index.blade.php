@@ -3,6 +3,55 @@
 @section('title', 'Invoice List')
 
 @section('content')
+    <style>
+        .dropdown-action {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-action .dropbtn {
+            background-color: #4A85F5;
+            color: white;
+            padding: 5px 12px;
+            font-size: 13px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .dropdown-action:hover .dropbtn {
+            background-color: #346cd4;
+        }
+
+        .dropdown-action .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 170px;
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-action .dropdown-content a {
+            color: #333;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            font-size: 13px;
+        }
+
+        .dropdown-action .dropdown-content a:hover {
+            background-color: #f2f2f2;
+        }
+
+        .dropdown-action:hover .dropdown-content {
+            display: block;
+        }
+    </style>
+
+
     <div class="container-fluid">
 
         <!-- Modal -->

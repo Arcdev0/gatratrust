@@ -50,25 +50,42 @@ class InvoiceController extends Controller
             })
             ->addColumn('aksi', function ($inv) {
                 return '
-                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-info btn-view me-1">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-secondary btn-edit me-1">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button data-id="' . $inv->id . '" class="btn btn-sm btn-danger btn-delete me-1">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <a href="' . route('invoice.print', $inv->id) . '" target="_blank"
-                    class="btn btn-sm btn-success me-1">
-                        <i class="fas fa-print"></i>
-                    </a>
-                    <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank"
-                        class="btn btn-sm btn-warning me-1">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
+                <div class="dropdown-action">
+                    <button class="dropbtn">Aksi ⮟</button>
+                    <div class="dropdown-content">
+
+                        <a href="javascript:void(0)" class="btn-view" data-id="' . $inv->id . '">
+                            <i class="fas fa-eye"></i> Lihat
+                        </a>
+
+                        <a href="javascript:void(0)" class="btn-edit" data-id="' . $inv->id . '">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+
+                        <a href="javascript:void(0)" class="btn-delete" data-id="' . $inv->id . '">
+                            <i class="fas fa-trash"></i> Hapus
+                        </a>
+
+                        <a href="' . route('invoice.print', $inv->id) . '" target="_blank">
+                            <i class="fas fa-print"></i> Print
+                        </a>
+
+                        <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
+
+                        <a href="javascript:void(0)" class="btn-approve" data-id="' . $inv->id . '">
+                            <i class="fas fa-check"></i> Approve
+                        </a>
+
+                        <a href="javascript:void(0)" class="btn-reject" data-id="' . $inv->id . '">
+                            <i class="fas fa-times"></i> Reject
+                        </a>
+
+                    </div>
+                </div>
                 ';
-            })
+                        })
             ->rawColumns(['aksi'])
             ->make(true);
     }

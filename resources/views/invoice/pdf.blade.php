@@ -126,7 +126,7 @@
 
     {{-- HEADER --}}
     <div class="header-page">
-        <table style="width:100%;">
+        <table style="width:100%;" class="no-border"> 
             <tr>
                 <td style="width:120px;">
 
