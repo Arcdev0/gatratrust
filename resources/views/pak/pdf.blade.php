@@ -179,7 +179,7 @@
         }
 
         .row-grand td {
-            background: #d9ead3;
+            background: #dbdbdb;
             font-weight: bold;
         }
 
@@ -386,23 +386,71 @@
                     </tr>
                 @endforeach
 
-                {{-- GRAND TOTAL / PO AMOUNT --}}
+                {{-- GRAND TOTAL + PAJAK --}}
                 @php
+                    // total project dari tabel paks
+                    $totalProject = $projectValue; // atau $pak->pak_value;
+
+                    // total cost semua kategori
                     $grandPercent = $projectValue > 0 ? ($grandTotal / $projectValue) * 100 : 0;
+
+                    // persentase pajak dari tabel paks
+                    $pphPercent = $pak->pph_23 ?? 0;
+                    $ppnPercent = $pak->ppn ?? 0;
+
+                    // nilai pajak (dihitung dari total project)
+                    $pphAmount = $totalProject * ($pphPercent / 100);
+                    $ppnAmount = $totalProject * ($ppnPercent / 100);
+
+                    // total keseluruhan setelah pajak
+                    $grandWithTax = $totalProject + $pphAmount + $ppnAmount;
                 @endphp
 
+
+                {{-- TOTAL PROJECT --}}
                 <tr class="row-grand">
-                    <td colspan="5" class="text-right"><strong>PO AMOUNT (Rp)</strong></td>
+                    <td colspan="5" class="text-right"><strong>Total Project (Rp)</strong></td>
                     <td class="text-right">
-                        <strong>Rp {{ number_format($grandTotal, 0, ',', '.') }}</strong>
+                        <strong>Rp {{ number_format($totalProject, 0, ',', '.') }}</strong>
                     </td>
-
                     <td class="text-right"><strong>Total Cost (%)</strong></td>
-
                     <td colspan="2" class="text-center">
                         <strong>{{ number_format($grandPercent, 0) }}%</strong>
                     </td>
                 </tr>
+
+                {{-- PPh 23 --}}
+                <tr class="row-grand">
+                    <td colspan="5" class="text-right">
+                        <strong>PPh 23
+                            ({{ rtrim(rtrim(number_format($pphPercent, 2, ',', '.'), '0'), ',') }}%)</strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>Rp {{ number_format($pphAmount, 0, ',', '.') }}</strong>
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+
+                {{-- PPN --}}
+                <tr class="row-grand">
+                    <td colspan="5" class="text-right">
+                        <strong>PPN ({{ rtrim(rtrim(number_format($ppnPercent, 2, ',', '.'), '0'), ',') }}%)</strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>Rp {{ number_format($ppnAmount, 0, ',', '.') }}</strong>
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+
+                {{-- GRAND TOTAL SETELAH PAJAK --}}
+                <tr class="row-grand">
+                    <td colspan="5" class="text-right"><strong>GRAND TOTAL (Rp)</strong></td>
+                    <td class="text-right">
+                        <strong>Rp {{ number_format($grandWithTax, 0, ',', '.') }}</strong>
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+
 
             </tbody>
         </table>
