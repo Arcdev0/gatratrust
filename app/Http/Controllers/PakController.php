@@ -34,7 +34,8 @@ class PakController extends Controller
                     'total_pak_cost',
                     'estimated_profit',
                     'created_at'
-                );
+                )
+                ->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
