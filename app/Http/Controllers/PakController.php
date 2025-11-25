@@ -74,8 +74,8 @@ class PakController extends Controller
                             <i class="fas fa-eye"></i>
                         </button>
 
-                        <a href="' . route('pak.printPDF', $row->id) . '" target="_blank" class="btn btn-sm btn-primary">
-                            <i class="fas fa-print"></i>
+                        <a href="' . route('pak.printPDF', $row->id) . '" target="_blank" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-file-pdf"></i>
                         </a>
 
                         <button class="btn btn-sm btn-danger deleteBtn" data-id="' . $row->id . '">
