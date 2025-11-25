@@ -208,6 +208,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [PakController::class, 'create'])->name('create');
         Route::post('/store', [PakController::class, 'store'])->name('store');
         Route::get('/{id}', [PakController::class, 'show'])->name('show');
+        Route::get('/print-pdf/{id}', [PakController::class, 'printPDF'])->name('printPDF');
         Route::get('/{id}/copy', [PakController::class, 'copy'])->name('copy');
         Route::get('/{id}/edit', [PakController::class, 'edit'])->name('edit');
         Route::put('/{id}', [PakController::class, 'update'])->name('update');

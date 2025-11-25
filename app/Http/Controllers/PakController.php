@@ -8,6 +8,7 @@ use App\Models\Pak;
 use App\Models\PakItem;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PakController extends Controller
 {
@@ -73,7 +74,9 @@ class PakController extends Controller
                             <i class="fas fa-eye"></i>
                         </button>
 
-
+                        <a href="' . route('pak.printPDF', $row->id) . '" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="fas fa-print"></i>
+                        </a>
 
                         <button class="btn btn-sm btn-danger deleteBtn" data-id="' . $row->id . '">
                             <i class="fas fa-trash"></i>
@@ -414,5 +417,24 @@ class PakController extends Controller
         } else {
             return 'consumable';
         }
+    }
+
+    public function printPDF($id)
+    {
+        $pak = Pak::with('items')->findOrFail($id);
+
+        // Ambil categories manual tanpa model
+        $categories = DB::table('categories')->get()->keyBy('id');
+        $prefix = substr($pak->pak_number, 0, 3);
+        $time = now()->format('His');
+        $generatedNumber = $prefix . '-' . $time;
+
+        $pdf = PDF::loadView('pak.pdf', [
+            'pak' => $pak,
+            'categories' => $categories,
+            'generatedNumber' => $generatedNumber
+        ])->setPaper('A4', 'portrait');
+
+        return $pdf->stream("PAK-{$generatedNumber}.pdf");
     }
 }
