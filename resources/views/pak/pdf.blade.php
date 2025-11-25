@@ -256,10 +256,18 @@
                     <td style="width:40%;">
                         <strong>Date</strong> :
                         {{ \Carbon\Carbon::parse($pak->date)->format('d M Y') }}<br>
-                        <strong>Total PAK Cost</strong> :
-                        Rp {{ number_format($pak->total_pak_cost, 0, ',', '.') }}<br>
-                        <strong>Estimated Profit</strong> :
-                        Rp {{ number_format($pak->estimated_profit, 0, ',', '.') }}
+                        <strong>Employees</strong> :
+                        @if ($pak->karyawans->count() > 0)
+                            <ul style="margin: 3px 0 0 15px; padding: 0;">
+                                @foreach ($pak->karyawans as $karyawan)
+                                    <li style="font-size: 9px; margin: 0; padding: 0;">
+                                        {{ $karyawan->nama_lengkap }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            -
+                        @endif
                     </td>
                 </tr>
             </table>
