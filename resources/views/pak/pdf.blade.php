@@ -12,24 +12,26 @@
             padding: 0;
         }
 
-        /* Tinggi header kira-kira 190px, jadi margin-top disamakan */
         @page {
-            margin-top: 190px;
+            margin-top: 230px;
+            /* ✅ lebih BESAR dari tinggi header */
             margin-bottom: 80px;
             margin-left: 20px;
             margin-right: 20px;
         }
 
-        /* Header fixed, posisinya minus margin-top */
         .header-page {
             position: fixed;
-            top: -190px;
+            top: -230px;
+            /* ✅ sama dengan margin-top, tapi negatif */
             left: 0;
             right: 0;
-            height: 190px;
+            height: 200px;
+            /* ✅ tinggi header real (kurang dari 230)  */
             background: white;
             z-index: 100;
         }
+
 
         /* Biar konten mepet ke margin atas halaman (tanpa gap ekstra) */
         .content {
@@ -239,7 +241,7 @@
             </table>
 
             <div class="doc-title-bar">
-               Proposal Anggaran Kerja (PAK)
+                Proposal Anggaran Kerja (PAK)
             </div>
 
             {{-- Info PAK di header biar terlihat profesional --}}
