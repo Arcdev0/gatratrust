@@ -36,7 +36,7 @@
             <div class="row flex-row h-100 bg-white">
                 <div class="col-xl-8 col-lg-6 col-md-5 p-0 d-md-block d-lg-block d-sm-none d-none">
                     <div class="lavalite-bg"
-                        style="background-image: url('{{ asset('template/img/auth/login-bg.jpg') }}')">
+                        style="background-image: url('{{ asset('template/img/auth/login2-bg.png') }}')">
                         <div class="lavalite-overlay"
                             style="background: linear-gradient(135deg, rgba(46, 52, 81, 0.4) 0%, rgba(8, 97, 69, 0.8) 100%);">
                         </div>
