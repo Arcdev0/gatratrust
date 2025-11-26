@@ -1137,7 +1137,7 @@
                 // PROFIT SEKARANG
                 let profitNow = projectValue - totalCost;
 
-                // MINIMUM PROFIT 15%
+                // MINIMUM PROFIT 10%
                 let minProfit = projectValue * 0.10;
 
                 // PROFIT PERCENT

@@ -134,6 +134,7 @@
             <div class="modal-content">
                 <form id="formEditProject" method="POST">
                     @csrf
+                    <input type="text" id="edit_project_id">
                     <div class="modal-header">
                         <h5 class="modal-title" id="editModalLabel">Edit Project</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -440,7 +441,7 @@
             var start = $(this).data('start');
             var end = $(this).data('end');
             var biaya = $(this).data('biaya');
-            const pics = $(this).data('pics');
+            const picsRaw = $(this).attr('data-pics') || '';
 
             // Isi form dalam modal dengan data
             $('#edit_no_project').val(no);
@@ -450,20 +451,18 @@
             $('#edit_deskripsi').val(deskripsi);
             $('#edit_start').val(start);
             $('#edit_end').val(end);
+            $('#edit_project_id').val(projectId);
 
             // isi biaya (tampilkan dalam format Rp di input, dan angka asli di hidden)
             $('#edit_biaya_display').val(formatRupiah(biaya.toString()));
             $('#edit_biaya').val(biaya);
 
-            if (pics) {
-                const selectedPics = pics.split(';').map(Number);
+            if (picsRaw.trim() !== '') {
+                const selectedPics = picsRaw.split(';').map(Number);
                 $('#edit_pics').val(selectedPics).trigger('change');
             } else {
                 $('#edit_pics').val([]).trigger('change');
             }
-
-            // Simpan projectId di form (untuk action / AJAX update)
-            $('#formEditProject').data('project-id', projectId);
         });
 
         $(document).on('input', '.input-biaya', function() {
@@ -488,7 +487,7 @@
 
             const form = $(this);
             const btn = form.find('button[type="submit"]');
-            const projectId = form.data('project-id');
+            const projectId =$('#edit_project_id').val();
             const actionUrl = '/projects/update/' + projectId;
 
             const newKerjaan = $('#edit_kerjaan_id').val();
