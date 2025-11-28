@@ -394,32 +394,35 @@
                     </tr>
                 @endforeach
 
-                {{-- GRAND TOTAL + PAJAK --}}
+                {{-- GRAND TOTAL DAN PAJAK --}}
                 @php
-                    // total project dari tabel paks
-                    $totalProject = $projectValue; // atau $pak->pak_value;
+                    // nilai kontrak / project value dari tabel paks
+                    $projectValue = $pak->pak_value;
 
-                    // total cost semua kategori
-                    $grandPercent = $projectValue > 0 ? ($grandTotal / $projectValue) * 100 : 0;
+                    // total cost semua kategori (dari seluruh section)
+                    $totalCost = $grandTotal;
+
+                    // persen total cost terhadap nilai project
+                    $grandPercent = $projectValue > 0 ? ($totalCost / $projectValue) * 100 : 0;
 
                     // persentase pajak dari tabel paks
                     $pphPercent = $pak->pph_23 ?? 0;
                     $ppnPercent = $pak->ppn ?? 0;
 
-                    // nilai pajak (dihitung dari total project)
-                    $pphAmount = $totalProject * ($pphPercent / 100);
-                    $ppnAmount = $totalProject * ($ppnPercent / 100);
+                    // nilai pajak (dihitung dari nilai project / kontrak)
+                    $pphAmount = $projectValue * ($pphPercent / 100);
+                    $ppnAmount = $projectValue * ($ppnPercent / 100);
 
                     // total keseluruhan setelah pajak
-                    $grandWithTax = $totalProject + $pphAmount + $ppnAmount;
+                    $grandWithTax = $grandTotal + $pphAmount + $ppnAmount;
                 @endphp
 
 
                 {{-- TOTAL PROJECT --}}
                 <tr class="row-grand">
-                    <td colspan="5" class="text-right"><strong>Total Project (Rp)</strong></td>
+                    <td colspan="5" class="text-right"><strong>Total Project Cost (Rp)</strong></td>
                     <td class="text-right">
-                        <strong>Rp {{ number_format($totalProject, 0, ',', '.') }}</strong>
+                        <strong>Rp {{ number_format($totalCost, 0, ',', '.') }}</strong>
                     </td>
                     <td class="text-right"><strong>Total Cost (%)</strong></td>
                     <td colspan="2" class="text-center">
