@@ -27,4 +27,10 @@ class Daily extends Model
     {
         return $this->hasMany(DailyComment::class);
     }
+
+    public function items()
+    {
+        return $this->hasMany(DailyItem::class, 'daily_id');
+    }
+
 }

@@ -50,7 +50,7 @@ class ProjectTbl extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-        public function invoices()
+    public function invoices()
     {
         return $this->hasMany(Invoice::class, 'project_id');
     }
@@ -65,7 +65,7 @@ class ProjectTbl extends Model
         return $this->total_biaya_project - $this->total_invoice;
     }
 
-        public function getIsLunasAttribute()
+    public function getIsLunasAttribute()
     {
         return $this->total_invoice >= $this->total_biaya_project;
     }
@@ -75,4 +75,8 @@ class ProjectTbl extends Model
         return $this->belongsToMany(User::class, 'project_user', 'project_id', 'user_id');
     }
 
+    public function dailyItems()
+    {
+        return $this->hasMany(DailyItem::class, 'project_id');
+    }
 }

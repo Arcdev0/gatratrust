@@ -18,4 +18,9 @@ class Kerjaan extends Model
             ->withPivot('urutan', 'hari')
             ->orderBy('kerjaan_list_proses.urutan');
     }
+
+    public function dailyItems()
+    {
+        return $this->hasMany(DailyItem::class, 'kerjaan_id');
+    }
 }

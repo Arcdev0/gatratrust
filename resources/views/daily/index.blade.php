@@ -123,7 +123,7 @@
 
     <!-- Modal Tambah Pekerjaan -->
     <div class="modal fade" id="tambahDailyModal" tabindex="-1" aria-labelledby="tambahDailyModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 1140px;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="tambahDailyModalLabel">Tambah Daily Activity</h5>
@@ -140,19 +140,65 @@
                         </div>
                         <div class="form-group">
                             <label>Today’s Achievements</label>
-                            <div id="planTodayEditor" style="height: 150px;"></div>
-                            <input type="hidden" name="plan_today">
+
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-sm btn-success" id="addAchievementRow">
+                                    + Tambah Item
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm" id="achievementTable">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 40px;">No</th>
+                                            <th style="width: 180px;">Jenis</th>
+                                            <th style="width: 180px;">No Project</th>
+                                            <th style="width: 180px;">Pekerjaan</th>
+                                            <th>Keterangan</th>
+                                            <th style="width: 140px;">Status</th>
+                                            <th style="width: 60px;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Row akan di-generate via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                         <div class="form-group">
                             <label>Plan Tomorrow</label>
-                            <div id="planTomorrowEditor" style="height: 150px;"></div>
-                            <input type="hidden" name="plan_tomorrow">
+                            <small class="form-text text-muted">
+                                Daftar di bawah ini akan terisi otomatis dari Today’s Achievements yang statusnya
+                                <strong>Belum</strong>.
+                            </small>
+
+                            <div class="table-responsive mt-2">
+                                <table class="table table-bordered table-sm" id="tomorrowTable">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 40px;">No</th>
+                                            <th style="width: 180px;">Jenis</th>
+                                            <th style="width: 180px;">No Project</th>
+                                            <th style="width: 180px;">Pekerjaan</th>
+                                            <th>Keterangan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Auto-generate dari Today yang Belum -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- hidden inputs untuk dikirim ke server -->
+                            <div id="tomorrowHiddenInputs"></div>
                         </div>
-                        <div class="form-group">
+                        {{-- <div class="form-group">
                             <label>Problem</label>
                             <div id="problemEditor" style="height: 150px;"></div>
                             <input type="hidden" name="problem">
-                        </div>
+                        </div> --}}
                         <div class="form-group">
                             <label>Upload File</label>
                             <input type="file" name="upload_file" class="form-control-file">
@@ -510,15 +556,84 @@
             let today = new Date().toISOString().split('T')[0];
             $('#filterTanggal').val(today);
 
+            function parseJsonArrayIfPossible(value) {
+                if (!value) return null;
+
+                // Kalau sudah array (misal API nanti diubah) langsung pakai
+                if (Array.isArray(value)) return value;
+
+                if (typeof value !== 'string') return null;
+
+                const trimmed = value.trim();
+                if (!trimmed.startsWith('[')) return null; // kemungkinan besar bukan JSON array
+
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    return Array.isArray(parsed) ? parsed : null;
+                } catch (e) {
+                    return null; // kalau error parse, anggap data lama (teks biasa)
+                }
+            }
+
+            function renderPlanTable(rows) {
+                if (!rows || !rows.length) return '-';
+
+                let body = '';
+                rows.forEach((row, i) => {
+                    const jenisText = row.jenis === 'project' ? 'Project' : 'Umum';
+                    const projectCol = row.project_id ?? '-';
+                    const pekerjaanCol = row.proses_id ?? row.pekerjaan_umum ?? '-';
+                    const ketCol = row.keterangan ?? '';
+                    const statusRaw = row.status;
+
+                    const statusText =
+                        statusRaw === true || statusRaw === 1 || statusRaw === '1' || statusRaw === 'ok' ?
+                        'OK' :
+                        'Belum';
+
+                    body += `
+                        <tr>
+                            <td class="text-center align-middle">${i + 1}</td>
+                            <td class="align-middle">${jenisText}</td>
+                            <td class="align-middle">${projectCol}</td>
+                            <td class="align-middle">${pekerjaanCol}</td>
+                            <td class="align-middle">${ketCol}</td>
+                            <td class="align-middle text-center">${statusText}</td>
+                        </tr>
+                    `;
+                });
+
+                return `
+                    <div class="table-responsive mt-1">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 40px;">No</th>
+                                    <th style="width: 80px;">Jenis</th>
+                                    <th style="width: 120px;">Project</th>
+                                    <th>Pekerjaan / Proses</th>
+                                    <th>Keterangan</th>
+                                    <th style="width: 80px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${body}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+
             // Fetch and render Daily Activities by date
             function fetchDailyActivities(tanggal = today) {
                 $('#dailyCardList').html(`
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
-        </div>
-    `);
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                `);
 
                 $.ajax({
                     url: "{{ route('daily.getList') }}",
@@ -536,37 +651,69 @@
                                 let actionButtons = '';
                                 if (authUserId === item.user_id) {
                                     actionButtons = `
-                            <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}"><i class="fas fa-trash"></i></button>
-                        `;
+                                        <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    `;
+                                }
+
+                                // --- DETEKSI: plan_today / plan_tomorrow JSON baru atau teks lama ---
+                                const planTodayArray = parseJsonArrayIfPossible(item
+                                    .plan_today);
+                                const planTomorrowArray = parseJsonArrayIfPossible(item
+                                    .plan_tomorrow);
+
+                                let planTodayHtml;
+                                if (planTodayArray) {
+                                    // format tabel
+                                    planTodayHtml = renderPlanTable(planTodayArray);
+                                } else {
+                                    // data lama (teks biasa)
+                                    planTodayHtml = item.plan_today ? item.plan_today : '-';
+                                }
+
+                                let planTomorrowHtml;
+                                if (planTomorrowArray) {
+                                    planTomorrowHtml = renderPlanTable(planTomorrowArray);
+                                } else {
+                                    planTomorrowHtml = item.plan_tomorrow ? item.plan_tomorrow :
+                                        '-';
                                 }
 
                                 html += `
-                        <div class="card mb-3" data-id="${item.id}">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-0">${item.user.name}</h5>
-                                    <small class="text-muted">${new Date(item.tanggal).toLocaleString()}</small>
+                                <div class="card mb-3" data-id="${item.id}">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-0">${item.user.name}</h5>
+                                            <small class="text-muted">${new Date(item.tanggal).toLocaleString()}</small>
+                                        </div>
+                                        <div>
+                                            ${actionButtons}
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-1"><strong>Today’s Achievements:</strong></p>
+                                        ${planTodayHtml}
+
+                                        <p class="mt-3 mb-1"><strong>Plan Tomorrow:</strong></p>
+                                        ${planTomorrowHtml}
+
+                                        ${item.upload_file ? `
+                                                        <p class="mt-3 mb-0"><strong>File:</strong> 
+                                                            <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                                                        </p>
+                                                    ` : ''}
+                                    </div>
+                                    <div class="card-footer d-flex justify-content-start">
+                                        <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
+                                            💬 <span class="comment-count">${item.comments_count || 0}</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div>
-                                    ${actionButtons}
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Today’s Achievements:</strong> ${item.plan_today}</p>
-                                <p><strong>Plan Tomorrow:</strong> ${item.plan_tomorrow || '-'}</p>
-                                <p><strong>Problem:</strong> ${item.problem || '-'}</p>
-                                ${item.upload_file ? `
-                                                                                                                                                                                                                                                                <p><strong>File:</strong> <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
-                                                                                                                                                                                                                                                            ` : ''}
-                            </div>
-                            <div class="card-footer d-flex justify-content-start">
-                                <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
-                                    💬 <span class="comment-count">${item.comments_count || 0}</span>
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                            `;
                             });
                         } else {
                             html =
@@ -620,8 +767,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                                <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                            ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                    ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
@@ -723,136 +870,467 @@
             });
 
 
-            let quillPlanToday, quillPlanTomorrow, quillProblem;
+            // let quillPlanToday, quillPlanTomorrow, quillProblem;
+            // // let quillPlanTomorrow, quillProblem;
 
-            function initQuillEditors() {
-                quillPlanToday = new Quill('#planTodayEditor', {
-                    theme: 'snow',
-                    placeholder: 'Tulis Today’s Achievements...',
-                    modules: {
-                        toolbar: [
-                            ['bold', 'italic', 'underline'],
-                            [{
-                                'list': 'ordered'
-                            }, {
-                                'list': 'bullet'
-                            }],
-                            ['clean']
-                        ]
-                    }
-                });
+            // function initQuillEditors() {
+            //     quillPlanToday = new Quill('#planTodayEditor', {
+            //         theme: 'snow',
+            //         placeholder: 'Tulis Today’s Achievements Umum Di sini...',
+            //         modules: {
+            //             toolbar: [
+            //                 ['bold', 'italic', 'underline'],
+            //                 [{
+            //                     'list': 'ordered'
+            //                 }, {
+            //                     'list': 'bullet'
+            //                 }],
+            //                 ['clean']
+            //             ]
+            //         }
+            //     });
 
-                quillPlanTomorrow = new Quill('#planTomorrowEditor', {
-                    theme: 'snow',
-                    placeholder: 'Tulis Plan Tomorrow...',
-                    modules: {
-                        toolbar: [
-                            ['bold', 'italic', 'underline'],
-                            [{
-                                'list': 'ordered'
-                            }, {
-                                'list': 'bullet'
-                            }],
-                            ['clean']
-                        ]
-                    }
-                });
+            //     quillPlanTomorrow = new Quill('#planTomorrowEditor', {
+            //         theme: 'snow',
+            //         placeholder: 'Tulis Plan Tomorrow...',
+            //         modules: {
+            //             toolbar: [
+            //                 ['bold', 'italic', 'underline'],
+            //                 [{
+            //                     'list': 'ordered'
+            //                 }, {
+            //                     'list': 'bullet'
+            //                 }],
+            //                 ['clean']
+            //             ]
+            //         }
+            //     });
 
-                quillProblem = new Quill('#problemEditor', {
-                    theme: 'snow',
-                    placeholder: 'Tulis Problem...',
-                    modules: {
-                        toolbar: [
-                            ['bold', 'italic', 'underline'],
-                            [{
-                                'list': 'ordered'
-                            }, {
-                                'list': 'bullet'
-                            }],
-                            ['clean']
-                        ]
-                    }
-                });
-            }
+            //     quillProblem = new Quill('#problemEditor', {
+            //         theme: 'snow',
+            //         placeholder: 'Tulis Problem...',
+            //         modules: {
+            //             toolbar: [
+            //                 ['bold', 'italic', 'underline'],
+            //                 [{
+            //                     'list': 'ordered'
+            //                 }, {
+            //                     'list': 'bullet'
+            //                 }],
+            //                 ['clean']
+            //             ]
+            //         }
+            //     });
+            // }
 
 
-            // Init Quill for Add Modal
-            function initAddQuillEditors() {
-                if (!quillPlanToday) {
-                    quillPlanToday = new Quill('#planTodayEditor', {
-                        theme: 'snow'
-                    });
-                }
-                if (!quillPlanTomorrow) {
-                    quillPlanTomorrow = new Quill('#planTomorrowEditor', {
-                        theme: 'snow'
-                    });
-                }
-                if (!quillProblem) {
-                    quillProblem = new Quill('#problemEditor', {
-                        theme: 'snow'
-                    });
-                }
-            }
+            // // Init Quill for Add Modal
+            // function initAddQuillEditors() {
+            //     if (!quillPlanToday) {
+            //         quillPlanToday = new Quill('#planTodayEditor', {
+            //             theme: 'snow'
+            //         });
+            //     }
+            //     if (!quillPlanTomorrow) {
+            //         quillPlanTomorrow = new Quill('#planTomorrowEditor', {
+            //             theme: 'snow'
+            //         });
+            //     }
+            //     if (!quillProblem) {
+            //         quillProblem = new Quill('#problemEditor', {
+            //             theme: 'snow'
+            //         });
+            //     }
+            // }
 
-            let quillEditPlanToday, quillEditPlanTomorrow, quillEditProblem;
+            // let quillEditPlanToday, quillEditPlanTomorrow, quillEditProblem;
 
-            function initEditQuillEditors() {
-                if (!quillEditPlanToday) {
-                    quillEditPlanToday = new Quill('#editPlanTodayEditor', {
-                        theme: 'snow'
-                    });
-                }
-                if (!quillEditPlanTomorrow) {
-                    quillEditPlanTomorrow = new Quill('#editPlanTomorrowEditor', {
-                        theme: 'snow'
-                    });
-                }
-                if (!quillEditProblem) {
-                    quillEditProblem = new Quill('#editProblemEditor', {
-                        theme: 'snow'
-                    });
-                }
-            }
+            // function initEditQuillEditors() {
+            //     if (!quillEditPlanToday) {
+            //         quillEditPlanToday = new Quill('#editPlanTodayEditor', {
+            //             theme: 'snow'
+            //         });
+            //     }
+            //     if (!quillEditPlanTomorrow) {
+            //         quillEditPlanTomorrow = new Quill('#editPlanTomorrowEditor', {
+            //             theme: 'snow'
+            //         });
+            //     }
+            //     if (!quillEditProblem) {
+            //         quillEditProblem = new Quill('#editProblemEditor', {
+            //             theme: 'snow'
+            //         });
+            //     }
+            // }
+
+            // Map project_id => array of kerjaan
+
 
 
             // Open Add Modal
             $('#openModalBtn').on('click', function() {
                 $('#tambahDailyModal').modal('show');
-                setTimeout(() => {
-                    initAddQuillEditors();
-                }, 300);
-            });
+                // setTimeout(() => {
+                //     initAddQuillEditors();
+                // }, 300);
 
-            // Save New Daily
-            $('#savePekerjaanBtn').on('click', function() {
-                $('input[name="plan_today"]').val(quillPlanToday.root.innerHTML);
-                $('input[name="plan_tomorrow"]').val(quillPlanTomorrow.root.innerHTML);
-                $('input[name="problem"]').val(quillProblem.root.innerHTML);
+                const projectProcesses = @json($projectProcesses);
+                const carryOverItems = @json($carryOverItems);
+                let todayIndex = 0;
 
-                let form = $('#addDailyForm')[0];
-                let formData = new FormData(form);
-                formData.append('user_id', {{ auth()->id() }});
+                // ====== TODAY’S ACHIEVEMENTS (tetap seperti kemarin) ======
+                function addAchievementRow() {
+                    const index = todayIndex++;
 
-                $.ajax({
-                    url: "{{ route('daily.store') }}",
-                    method: "POST",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function() {
-                        Swal.fire('Berhasil', 'Daily berhasil ditambahkan.', 'success');
-                        $('#tambahDailyModal').modal('hide');
-                        fetchDailyActivities();
-                    },
-                    error: function(xhr) {
-                        let err = xhr.responseJSON.errors;
-                        let msg = '';
-                        for (const key in err) {
-                            msg += `${err[key]}<br>`;
-                        }
-                        Swal.fire('Gagal', msg, 'error');
+                    let newRow = `
+                        <tr>
+                            <td class="text-center align-middle row-number-today"></td>
+
+                            <!-- JENIS PEKERJAAN -->
+                            <td>
+                                <select name="achievements[${index}][jenis]" 
+                                        class="form-control form-control-sm jenis-select">
+                                    <option value="project" selected>Pekerjaan Project</option>
+                                    <option value="umum">Pekerjaan Umum</option>
+                                </select>
+                            </td>
+
+                            <!-- NO PROJECT (hanya dipakai kalau jenis = project) -->
+                            <td class="col-project">
+                                <select name="achievements[${index}][project_id]"
+                                        class="form-control form-control-sm project-select">
+                                    <option value="">-- Pilih Project --</option>
+                                    @foreach ($projects as $project)
+                                        <option value="{{ $project->id }}" data-no-project="{{ $project->no_project }}">
+                                            {{ $project->no_project }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+
+                            <!-- PEKERJAAN -->
+                           <td>
+                                <!-- Kalau jenis = project -->
+                                <div class="pekerjaan-project">
+                                    <select name="achievements[${index}][proses_id]" 
+                                            class="form-control form-control-sm pekerjaan-select">
+                                        <option value="">-- Pilih Proses --</option>
+                                        <!-- akan diisi dinamis berdasarkan project -->
+                                    </select>
+                                </div>
+
+                                <!-- Kalau jenis = umum -->
+                                <div class="pekerjaan-umum d-none">
+                                    <input type="text" 
+                                        name="achievements[${index}][pekerjaan_umum]" 
+                                        class="form-control form-control-sm pekerjaan-umum-input"
+                                        placeholder="Contoh: Menyapu lantai, Perbaiki kran WC">
+                                </div>
+                            </td>
+
+                            <!-- KETERANGAN -->
+                            <td>
+                                <textarea name="achievements[${index}][keterangan]"
+                                        class="form-control form-control-sm keterangan-textarea"
+                                        rows="2"
+                                        placeholder="Keterangan..."></textarea>
+                            </td>
+
+                            <!-- STATUS -->
+                            <td class="align-middle">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input status-radio"
+                                        type="radio"
+                                        name="achievements[${index}][status]"
+                                        value="ok"
+                                        checked>
+                                    <label class="form-check-label">OK</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input status-radio"
+                                        type="radio"
+                                        name="achievements[${index}][status]"
+                                        value="belum">
+                                    <label class="form-check-label">Belum</label>
+                                </div>
+                            </td>
+
+                            <!-- AKSI -->
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn btn-sm btn-danger btn-remove-today-row">
+                                    &times;
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+
+                    $('#achievementTable tbody').append(newRow);
+                    updateTodayRowNumbers();
+                    rebuildTomorrowFromToday();
+                }
+
+                function addAchievementRowWithPrefill(prefill) {
+                    // buat row kosong dulu
+                    addAchievementRow();
+
+                    const $row = $('#achievementTable tbody tr').last();
+                    if (!prefill) return;
+
+                    // JENIS
+                    const jenis = prefill.jenis || 'project';
+                    $row.find('.jenis-select').val(jenis).trigger('change');
+
+                    // PROJECT (kalau ada)
+                    if (prefill.project_id) {
+                        $row.find('.project-select').val(prefill.project_id).trigger('change');
                     }
+
+                    if (jenis === 'project') {
+                        // setelah project-select change, select proses
+                        if (prefill.proses_id) {
+                            // pastikan opsi sudah terisi dari projectProcesses
+                            $row.find('.pekerjaan-select').val(prefill.proses_id);
+                        }
+                    } else {
+                        // PEKERJAAN UMUM
+                        $row.find('.pekerjaan-umum-input').val(prefill.pekerjaan_umum || '');
+                    }
+
+                    // KETERANGAN
+                    $row.find('.keterangan-textarea').val(prefill.keterangan || '');
+
+                    // STATUS set ke "belum" (karena carry over)
+                    $row.find('.status-radio[value="belum"]').prop('checked', true);
+                }
+
+
+
+                function updateTodayRowNumbers() {
+                    $('#achievementTable tbody tr').each(function(i) {
+                        $(this).find('.row-number-today').text(i + 1);
+                    });
+                }
+
+                // ====== AUTO GENERATE PLAN TOMORROW DARI TODAY YANG "BELUM" ======
+                function rebuildTomorrowFromToday() {
+                    const tbody = $('#tomorrowTable tbody');
+                    const hidden = $('#tomorrowHiddenInputs');
+
+                    tbody.empty();
+                    hidden.empty();
+
+                    let rowNumber = 1;
+                    let idx = 0; // index untuk tomorrows[idx][...]
+
+                    $('#achievementTable tbody tr').each(function() {
+                        const row = $(this);
+
+                        const statusVal = row.find('.status-radio:checked').val();
+                        if (statusVal !== 'belum') {
+                            return; // hanya ambil yang BELUM
+                        }
+
+                        const jenis = row.find('.jenis-select').val(); // "project" / "umum"
+                        let jenisText = (jenis === 'project') ? 'Project' : 'Umum';
+
+                        let projectText = '-';
+                        let projectId = null;
+                        let pekerjaanText = '';
+                        let prosesId = null;
+                        let pekerjaanUmum = null;
+
+                        if (jenis === 'project') {
+                            const $projectSelect = row.find('.project-select option:selected');
+
+                            projectId = $projectSelect.val();
+                            projectText = $projectSelect.data('no-project') || $projectSelect
+                                .text();
+
+                            const $jobSelect = row.find('.pekerjaan-select option:selected');
+                            kerjaanId = $jobSelect.val();
+                            pekerjaanText = $jobSelect.text();
+                            prosesId = row.find('.pekerjaan-select').val();
+                        } else {
+                            // PEKERJAAN UMUMjenis === 'project'
+                            pekerjaanUmum = row.find('.pekerjaan-umum-input').val();
+                            pekerjaanText = pekerjaanUmum;
+                            projectText = '-';
+                            projectId = null;
+                            prosesId = null;
+                        }
+
+                        const keteranganText = row.find('.keterangan-textarea').val();
+
+                        let keteranganTomorrow = "";
+                        if (keteranganText && keteranganText.trim() !== "") {
+                            keteranganTomorrow = "Akan dilanjutkan: " + keteranganText;
+                        } else {
+                            keteranganTomorrow = "Akan dilanjutkan besok";
+                        }
+
+                        let displayRow = `
+                            <tr>
+                                <td class="text-center align-middle">${rowNumber++}</td>
+                                <td class="align-middle">${jenisText}</td>
+                                <td class="align-middle">${projectText || '-'}</td>
+                                <td class="align-middle">${pekerjaanText || '-'}</td>
+                                <td class="align-middle">${keteranganTomorrow}</td>
+                            </tr>
+                        `;
+                        tbody.append(displayRow);
+                        hidden.append(`
+                                <input type="hidden" name="tomorrows[${idx}][jenis]" value="${jenis}">
+                                <input type="hidden" name="tomorrows[${idx}][project_id]" value="${projectId ? projectId : ''}">
+                                <input type="hidden" name="tomorrows[${idx}][proses_id]" value="${prosesId ? prosesId : ''}">
+                                <input type="hidden" name="tomorrows[${idx}][pekerjaan_umum]" value="${pekerjaanUmum ? pekerjaanUmum.replace(/"/g, '&quot;') : ''}">
+                                <input type="hidden" name="tomorrows[${idx}][keterangan]" value="${keteranganTomorrow.replace(/"/g, '&quot;')}">
+                                <input type="hidden" name="tomorrows[${idx}][status]" value="0">
+                            `);
+
+                        idx++;
+                    });
+                }
+
+                // Ketika jenis pekerjaan diubah
+                $(document).on('change', '.jenis-select', function() {
+                    const row = $(this).closest('tr');
+                    const jenis = $(this).val();
+
+                    if (jenis === 'umum') {
+                        // Pekerjaan UMUM: nonaktifkan project & pekerjaan-select
+                        row.find('.col-project select').prop('disabled', true);
+                        row.find('.pekerjaan-project select').prop('disabled', true).closest(
+                            '.pekerjaan-project').addClass('d-none');
+
+                        // Aktifkan input text umum
+                        row.find('.pekerjaan-umum-input').prop('disabled', false);
+                        row.find('.pekerjaan-umum').removeClass('d-none');
+
+                    } else {
+                        // Pekerjaan PROJECT: aktifkan project & pekerjaan-select
+                        row.find('.col-project select').prop('disabled', false);
+                        row.find('.pekerjaan-project select').prop('disabled', false).closest(
+                            '.pekerjaan-project').removeClass('d-none');
+
+                        // Nonaktifkan input umum
+                        row.find('.pekerjaan-umum-input').prop('disabled', true);
+                        row.find('.pekerjaan-umum').addClass('d-none');
+                    }
+
+                    rebuildTomorrowFromToday();
+                });
+
+
+                // ====== EVENT BINDING ======
+                $(document).ready(function() {
+
+                    // Tambah row Today
+                    $(document).on('click', '#addAchievementRow', function() {
+                        addAchievementRow();
+                    });
+
+                    // Hapus row Today
+                    $(document).on('click', '.btn-remove-today-row', function() {
+                        $(this).closest('tr').remove();
+                        updateTodayRowNumbers();
+                        rebuildTomorrowFromToday();
+                    });
+
+                    // Kalau status OK / Belum berubah → update Plan Tomorrow
+                    $(document).on('change', '.status-radio', function() {
+                        rebuildTomorrowFromToday();
+                    });
+
+                    // Kalau project / pekerjaan / keterangan di Today diubah → update Plan Tomorrow
+                    $(document).on('change', '.project-select, .pekerjaan-select', function() {
+                        rebuildTomorrowFromToday();
+                    });
+
+                    $(document).on('keyup', '.keterangan-textarea', function() {
+                        rebuildTomorrowFromToday();
+                    });
+
+                    $('#tambahDailyModal').on('shown.bs.modal', function() {
+                        const tbody = $('#achievementTable tbody');
+
+                        if (tbody.find('tr').length === 0) {
+                            if (carryOverItems && carryOverItems.length > 0) {
+                                carryOverItems.forEach(function(item) {
+                                    addAchievementRowWithPrefill(item);
+                                });
+                            } else {
+                                addAchievementRow();
+                            }
+                        }
+
+                        rebuildTomorrowFromToday();
+                    });
+
+
+                    // ketika NO PROJECT berubah → isi ulang PROSES
+                    $(document).on('change', '.project-select', function() {
+                        const row = $(this).closest('tr');
+                        const projectId = $(this).val(); // value=ID project
+
+                        const prosesSelect = row.find('.pekerjaan-select');
+                        prosesSelect.empty();
+                        prosesSelect.append('<option value="">-- Pilih Proses --</option>');
+
+                        if (!projectId || !projectProcesses[projectId]) {
+                            rebuildTomorrowFromToday();
+                            return;
+                        }
+
+                        projectProcesses[projectId].forEach(p => {
+                            prosesSelect.append(
+                                `<option value="${p.id}">${p.urutan}. ${p.nama}</option>`
+                            );
+                        });
+
+                        rebuildTomorrowFromToday();
+                    });
+
+
+
+                    // Save New Daily
+                    $('#savePekerjaanBtn').on('click', function() {
+                        // $('input[name="plan_today"]').val(quillPlanToday.root.innerHTML);
+                        // $('input[name="plan_tomorrow"]').val(quillPlanTomorrow.root.innerHTML);
+                        // $('input[name="problem"]').val(quillProblem.root.innerHTML);
+
+                        let form = $('#addDailyForm')[0];
+                        let formData = new FormData(form);
+                        formData.append('user_id', {{ auth()->id() }});
+
+                        $.ajax({
+                            url: "{{ route('daily.store') }}",
+                            method: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function() {
+                                Swal.fire('Berhasil',
+                                    'Daily berhasil ditambahkan.', 'success'
+                                );
+                                $('#tambahDailyModal').modal('hide');
+                                fetchDailyActivities();
+                            },
+                            error: function(xhr) {
+                                let err = xhr.responseJSON.errors;
+                                let msg = '';
+                                for (const key in err) {
+                                    msg += `${err[key]}<br>`;
+                                }
+                                Swal.fire('Gagal', msg, 'error');
+                            }
+                        });
+                    });
+
+                    // Tombol Tutup
+                    $('#closeModalFooterBtn').on('click', function() {
+                        $('#tambahDailyModal').modal('hide');
+                    });
+
                 });
             });
 
