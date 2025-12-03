@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Daily;
 use App\Models\DailyComment;
 use App\Models\DailyItem;
+use App\Models\ListProses;
 use App\Models\ProjectTbl;
 use App\Models\TimelineTahunan;
 use Illuminate\Http\Request;
@@ -19,13 +20,16 @@ class DailyController extends Controller
     {
         $userId = auth()->user()->id;
 
+        // ======================================
+        // 1) Ambil semua project user + prosesnya
+        // ======================================
         $projects = ProjectTbl::with(['kerjaan.prosesList'])
             ->join('project_user', 'projects.id', '=', 'project_user.project_id')
             ->where('project_user.user_id', $userId)
             ->select('projects.*')
             ->get();
 
-        // Map: project_id => list proses (dari kerjaan yang terkait)
+        // projectProcesses: project_id => list proses
         $projectProcesses = $projects->mapWithKeys(function ($p) {
             if (!$p->kerjaan) {
                 return [$p->id => []];
@@ -43,10 +47,70 @@ class DailyController extends Controller
             return [$p->id => $list->values()];
         });
 
-        // ====== ambil daily terakhir user + item yang statusnya BELUM ======
-        $lastDaily = Daily::with(['items' => function ($q) {
-            $q->where('status', false); // status = 0 / belum
-        }])
+        // ======================================
+        // 2) Cari proses ongoing & proses selesai
+        // ======================================
+
+        // proses yang masih BELUM selesai
+        $ongoing = DailyItem::where('status', false)
+            ->whereNotNull('project_id')
+            ->whereNotNull('proses_id')
+            ->get()
+            ->groupBy('project_id');
+
+        // semua proses yang pernah dikerjakan
+        $allWorked = DailyItem::whereNotNull('project_id')
+            ->whereNotNull('proses_id')
+            ->get()
+            ->groupBy('project_id');
+
+        $doneProcessesByProject = [];
+        $completedProjects      = [];
+
+        foreach ($allWorked as $projectId => $items) {
+
+            $allProsesIds = $items->pluck('proses_id')->unique()->values()->all();
+
+            $ongoingForProject = $ongoing->get($projectId) ?? collect();
+            $ongoingIds = $ongoingForProject->pluck('proses_id')->unique()->values()->all();
+
+            // proses selesai = pernah dikerjakan - yg masih ongoing
+            $doneIds = array_values(array_diff($allProsesIds, $ongoingIds));
+
+            if (!empty($doneIds)) {
+                $doneProcessesByProject[$projectId] = $doneIds;
+            }
+        }
+
+        // Cek project yang SEMUA prosesnya selesai
+        foreach ($projects as $p) {
+
+            $prosesList = $projectProcesses[$p->id] ?? collect();
+            $allProsesIds = collect($prosesList)->pluck('id')->all();
+
+            if (empty($allProsesIds)) continue;
+
+            $doneIdsForProject = $doneProcessesByProject[$p->id] ?? [];
+
+            if (!array_diff($allProsesIds, $doneIdsForProject)) {
+                $completedProjects[] = $p->id;
+            }
+        }
+
+        // MAP sederhana untuk JS
+        $projectMap = $projects->pluck('no_project', 'id');
+
+        $allProcesses = ListProses::select('id', 'nama_proses')->get();
+        $prosesMap    = $allProcesses->pluck('nama_proses', 'id');
+
+        // ======================================
+        // 3) Ambil DAILY TERAKHIR (carry over)
+        // ======================================
+        $lastDaily = Daily::with([
+            'items' => function ($q) {
+                $q->where('status', false);
+            }
+        ])
             ->where('user_id', $userId)
             ->orderBy('tanggal', 'desc')
             ->first();
@@ -61,14 +125,22 @@ class DailyController extends Controller
                     'proses_id'      => $item->proses_id,
                     'pekerjaan_umum' => $item->pekerjaan_umum,
                     'keterangan'     => $item->keterangan,
+                    'status'         => $item->status ? 'ok' : 'belum',
                 ];
             })->values()->toArray();
         }
 
+        // ======================================
+        // 4) Kirim data ke Blade
+        // ======================================
         return view('daily.index', [
-            'projects'         => $projects,
-            'projectProcesses' => $projectProcesses,
-            'carryOverItems'   => $carryOverItems,
+            'projects'                => $projects,
+            'projectProcesses'        => $projectProcesses,
+            'projectMap'              => $projectMap,
+            'prosesMap'               => $prosesMap,
+            'doneProcessesByProject'  => $doneProcessesByProject,
+            'completedProjects'       => $completedProjects,
+            'carryOverItems'          => $carryOverItems,
         ]);
     }
 
