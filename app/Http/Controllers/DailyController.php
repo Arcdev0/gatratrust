@@ -291,28 +291,82 @@ class DailyController extends Controller
         $daily = Daily::findOrFail($id);
 
         $request->validate([
-            'tanggal' => 'required|date',
-            'plan_today' => 'required',
-            'plan_tomorrow' => 'nullable',
-            'problem' => 'nullable',
-            'upload_file' => 'nullable|file|max:2048',
+            'tanggal'        => 'required|date',
+
+            // SAMA seperti di store()
+            'achievements'   => 'required|array|min:1',
+            'achievements.*.jenis'          => 'required|in:project,umum',
+            'achievements.*.project_id'     => 'nullable|exists:projects,id',
+            'achievements.*.proses_id'      => 'nullable|exists:list_proses,id',
+            'achievements.*.pekerjaan_umum' => 'nullable|string',
+            'achievements.*.status'         => 'required|in:ok,belum',
+
+            'tomorrows'      => 'nullable|array',
+            'tomorrows.*.jenis'      => 'required_with:tomorrows|in:project,umum',
+            'tomorrows.*.project_id' => 'nullable|exists:projects,id',
+            'tomorrows.*.proses_id'  => 'nullable|exists:list_proses,id',
+
+            'upload_file'    => 'nullable|file|max:2048',
         ]);
 
-        $data = $request->only(['tanggal', 'plan_today', 'plan_tomorrow', 'problem']);
+        // ----- 1. Update header Daily (master) -----
+        $data = [
+            'tanggal'       => $request->tanggal,
+            // simpan JSON supaya kompatibel dengan format lama
+            'plan_today'    => json_encode($request->input('achievements', [])),
+            'plan_tomorrow' => json_encode($request->input('tomorrows', [])),
+            'problem'       => null, // sekarang memang tidak dipakai lagi
+        ];
 
+        // handle file
         if ($request->hasFile('upload_file')) {
-            // Delete old file
+            // hapus file lama kalau ada
             if ($daily->upload_file && Storage::disk('public')->exists($daily->upload_file)) {
                 Storage::disk('public')->delete($daily->upload_file);
             }
+
             $data['upload_file'] = $request->file('upload_file')->store('uploads/daily', 'public');
         }
 
         $daily->update($data);
 
+        // ----- 2. Reset & simpan ulang detail (daily_items) -----
+        // untuk simpel: hapus semua item lama, lalu insert ulang dari achievements baru
+        $daily->items()->delete();
+
+        $achievements = $request->input('achievements', []);
+
+        foreach ($achievements as $item) {
+            $projectId  = $item['project_id'] ?? null;
+            $prosesId   = $item['proses_id'] ?? null;
+            $jenis      = $item['jenis'];
+            $statusText = $item['status'] ?? 'ok';
+
+            // Ambil kerjaan_id dari ProjectTbl (kalau ada project)
+            $kerjaanId = null;
+            if ($projectId) {
+                $project   = ProjectTbl::find($projectId);
+                $kerjaanId = $project ? $project->kerjaan_id : null;
+            }
+
+            DailyItem::create([
+                'daily_id'       => $daily->id,
+                'jenis'          => $jenis,                       // 'project' / 'umum'
+                'project_id'     => $projectId,
+                'kerjaan_id'     => $kerjaanId,                   // diambil dari ProjectTbl
+                'proses_id'      => $prosesId,                    // dari ListProses
+                'pekerjaan_umum' => $item['pekerjaan_umum'] ?? null,
+                'keterangan'     => $item['keterangan'] ?? null,
+                'status'         => $statusText === 'ok',         // boolean: true=ok, false=belum
+            ]);
+        }
+
+        // (opsional) kalau nanti Tuan mau juga simpan "tomorrows" ke tabel lain,
+        // bisa ditambah loop di bawah ini.
+
         return response()->json([
             'message' => 'Daily updated successfully',
-            'data' => $daily
+            'data'    => $daily,
         ]);
     }
 
@@ -321,12 +375,14 @@ class DailyController extends Controller
      */
     public function destroy($id)
     {
-        $daily = Daily::findOrFail($id);
+        $daily = Daily::with('items')->findOrFail($id);
 
-        // Delete file if exists
+        
         if ($daily->upload_file && Storage::disk('public')->exists($daily->upload_file)) {
             Storage::disk('public')->delete($daily->upload_file);
         }
+
+        $daily->items()->delete();
 
         $daily->delete();
 

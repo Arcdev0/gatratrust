@@ -169,7 +169,7 @@
                                             <th style="width: 180px;">Pekerjaan</th>
                                             <th>Keterangan</th>
                                             <th style="width: 140px;">Status</th>
-                                            <th style="width: 60px;">Aksi</th>
+                                            {{-- <th style="width: 60px;">Aksi</th> --}}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -258,7 +258,7 @@
     <!-- Modal Edit Pekerjaan -->
     <div class="modal fade" id="editDailyModal" tabindex="-1" aria-labelledby="editDailyModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 1140px;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editDailyModalLabel">Edit Daily Activity</h5>
@@ -271,25 +271,70 @@
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="daily_id">
+
                         <div class="form-group">
                             <label>Tanggal</label>
                             <input type="datetime-local" name="tanggal" class="form-control" required>
                         </div>
+
+                        {{-- TODAY’S ACHIEVEMENTS (EDIT) --}}
                         <div class="form-group">
                             <label>Today’s Achievements</label>
-                            <div id="editPlanTodayEditor" style="height: 150px;"></div>
-                            <input type="hidden" name="plan_today">
+
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-sm btn-success" id="editAddAchievementRow">
+                                    + Tambah Item
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm" id="editAchievementTable">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 40px;">No</th>
+                                            <th style="width: 180px;">Jenis</th>
+                                            <th style="width: 180px;">No Project</th>
+                                            <th style="width: 180px;">Pekerjaan</th>
+                                            <th>Keterangan</th>
+                                            <th style="width: 140px;">Status</th>
+                                            <th style="width: 60px;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{-- diisi via JS --}}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+
+                        {{-- PLAN TOMORROW (EDIT, AUTO DARI TODAY=BELUM) --}}
                         <div class="form-group">
                             <label>Plan Tomorrow</label>
-                            <div id="editPlanTomorrowEditor" style="height: 150px;"></div>
-                            <input type="hidden" name="plan_tomorrow">
+                            <small class="form-text text-muted">
+                                Daftar di bawah ini akan terisi otomatis dari Today’s Achievements yang statusnya
+                                <strong>Belum</strong>.
+                            </small>
+
+                            <div class="table-responsive mt-2">
+                                <table class="table table-bordered table-sm" id="editTomorrowTable">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 40px;">No</th>
+                                            <th style="width: 180px;">Jenis</th>
+                                            <th style="width: 180px;">No Project</th>
+                                            <th style="width: 180px;">Pekerjaan</th>
+                                            <th>Keterangan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{-- auto generate --}}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div id="editTomorrowHiddenInputs"></div>
                         </div>
-                        <div class="form-group">
-                            <label>Problem</label>
-                            <div id="editProblemEditor" style="height: 150px;"></div>
-                            <input type="hidden" name="problem">
-                        </div>
+
                         <div class="form-group">
                             <label>Upload File (kosongkan jika tidak diubah)</label>
                             <input type="file" name="upload_file" class="form-control-file">
@@ -304,6 +349,7 @@
             </div>
         </div>
     </div>
+
 
     <div class="modal fade" id="komentarModal" tabindex="-1" aria-labelledby="komentarModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
@@ -765,10 +811,10 @@
                                         ${planTomorrowHtml}
 
                                         ${item.upload_file ? `
-                                                                                                                                                                        <p class="mt-3 mb-0"><strong>File:</strong> 
-                                                                                                                                                                            <a href="/storage/${item.upload_file}" target="_blank">Download</a>
-                                                                                                                                                                        </p>
-                                                                                                                                                                    ` : ''}
+                                                                                                                                                                                    <p class="mt-3 mb-0"><strong>File:</strong> 
+                                                                                                                                                                                        <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                                                                                                                                                                                    </p>
+                                                                                                                                                                                ` : ''}
                                     </div>
                                     <div class="card-footer d-flex justify-content-start">
                                         <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -830,8 +876,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
@@ -1373,25 +1419,228 @@
 
             });
 
-            // Open Edit Modal
+
+
+
+            let editIndex = 0;
+
+            function addEditAchievementRow(prefill = null) {
+                const index = editIndex++;
+
+                let newRow = `
+        <tr>
+            <td class="text-center align-middle edit-row-number"></td>
+
+            <!-- JENIS PEKERJAAN -->
+            <td>
+                <select name="achievements[${index}][jenis]" 
+                        class="form-control form-control-sm jenis-select">
+                    <option value="project" ${prefill && prefill.jenis === 'umum' ? '' : 'selected'}>Pekerjaan Project</option>
+                    <option value="umum" ${prefill && prefill.jenis === 'umum' ? 'selected' : ''}>Pekerjaan Umum</option>
+                </select>
+            </td>
+
+            <!-- NO PROJECT -->
+            <td class="col-project">
+                <select name="achievements[${index}][project_id]"
+                        class="form-control form-control-sm project-select">
+                    <option value="">-- Pilih Project --</option>
+                    @foreach ($projects as $project)
+                        @php
+                            $isCompleted = in_array($project->id, $completedProjects ?? []);
+                        @endphp
+                        @unless ($isCompleted)
+                            <option value="{{ $project->id }}" data-no-project="{{ $project->no_project }}">
+                                {{ $project->no_project }}
+                            </option>
+                        @endunless
+                    @endforeach
+                </select>
+            </td>
+
+            <!-- PEKERJAAN -->
+            <td>
+                <div class="pekerjaan-project">
+                    <select name="achievements[${index}][proses_id]" 
+                            class="form-control form-control-sm pekerjaan-select">
+                        <option value="">-- Pilih Proses --</option>
+                    </select>
+                </div>
+
+                <div class="pekerjaan-umum d-none">
+                    <input type="text" 
+                        name="achievements[${index}][pekerjaan_umum]" 
+                        class="form-control form-control-sm pekerjaan-umum-input"
+                        placeholder="Contoh: Menyapu lantai, Perbaiki kran WC">
+                </div>
+            </td>
+
+            <!-- KETERANGAN -->
+            <td>
+                <textarea name="achievements[${index}][keterangan]"
+                        class="form-control form-control-sm keterangan-textarea"
+                        rows="2"
+                        placeholder="Keterangan..."></textarea>
+            </td>
+
+            <!-- STATUS -->
+            <td class="align-middle">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input status-radio"
+                        type="radio"
+                        name="achievements[${index}][status]"
+                        value="ok"
+                        ${prefill && prefill.status === 'ok' ? 'checked' : (!prefill ? 'checked' : '')}>
+                    <label class="form-check-label">OK</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input status-radio"
+                        type="radio"
+                        name="achievements[${index}][status]"
+                        value="belum"
+                        ${prefill && (prefill.status === 'belum' || prefill.status === '0') ? 'checked' : ''}>
+                    <label class="form-check-label">Belum</label>
+                </div>
+            </td>
+
+            <!-- AKSI -->
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-sm btn-danger btn-remove-edit-row">
+                    &times;
+                </button>
+            </td>
+        </tr>
+    `;
+
+                const $tbody = $('#editAchievementTable tbody');
+                $tbody.append(newRow);
+
+                const $row = $tbody.find('tr').last();
+
+                // Prefill dari data lama
+                if (prefill) {
+                    // jenis
+                    $row.find('.jenis-select').val(prefill.jenis || 'project').trigger('change');
+
+                    // project
+                    if (prefill.project_id) {
+                        $row.find('.project-select').val(prefill.project_id).trigger('change');
+                    }
+
+                    // proses / pekerjaan umum
+                    if (prefill.jenis === 'project' && prefill.proses_id) {
+                        setTimeout(() => {
+                            $row.find('.pekerjaan-select').val(prefill.proses_id);
+                        }, 0);
+                    }
+
+                    if (prefill.jenis === 'umum') {
+                        $row.find('.pekerjaan-umum-input').val(prefill.pekerjaan_umum || '');
+                    }
+
+                    // keterangan
+                    if (prefill.keterangan) {
+                        $row.find('.keterangan-textarea').val(prefill.keterangan);
+                    }
+                }
+
+                // kalau Tuan pakai select2, bisa panggil initRowSelect2($row) di sini
+
+                updateEditRowNumbers();
+                rebuildEditTomorrowFromToday();
+            }
+
+            function updateEditRowNumbers() {
+                $('#editAchievementTable tbody tr').each(function(i) {
+                    $(this).find('.edit-row-number').text(i + 1);
+                });
+            }
+
+            function rebuildEditTomorrowFromToday() {
+                const tbody = $('#editTomorrowTable tbody');
+                const hidden = $('#editTomorrowHiddenInputs');
+
+                tbody.empty();
+                hidden.empty();
+
+                let rowNumber = 1;
+                let idx = 0;
+
+                $('#editAchievementTable tbody tr').each(function() {
+                    const row = $(this);
+                    const statusVal = row.find('.status-radio:checked').val();
+
+                    if (statusVal !== 'belum') {
+                        return;
+                    }
+
+                    const jenis = row.find('.jenis-select').val();
+                    const jenisText = (jenis === 'project') ? 'Project' : 'Umum';
+
+                    let projectId = null;
+                    let projectText = '-';
+                    let prosesId = null;
+                    let pekerjaanText = '';
+                    let pekerjaanUmum = null;
+
+                    if (jenis === 'project') {
+                        const $projectOpt = row.find('.project-select option:selected');
+                        projectId = row.find('.project-select').val();
+                        projectText = $projectOpt.data('no-project') || $projectOpt.text();
+
+                        const $prosesOpt = row.find('.pekerjaan-select option:selected');
+                        prosesId = row.find('.pekerjaan-select').val();
+                        pekerjaanText = $prosesOpt.text();
+                    } else {
+                        pekerjaanUmum = row.find('.pekerjaan-umum-input').val();
+                        pekerjaanText = pekerjaanUmum || '';
+                    }
+
+                    const ket = row.find('.keterangan-textarea').val() || '';
+                    const ketTomorrow = ket.trim() !== '' ?
+                        'Akan dilanjutkan: ' + ket :
+                        'Akan dilanjutkan besok';
+
+                    // tampil di tabel Plan Tomorrow
+                    tbody.append(`
+            <tr>
+                <td class="text-center align-middle">${rowNumber++}</td>
+                <td class="align-middle">${jenisText}</td>
+                <td class="align-middle">${projectText || '-'}</td>
+                <td class="align-middle">${pekerjaanText || '-'}</td>
+                <td class="align-middle">${ketTomorrow}</td>
+            </tr>
+        `);
+
+                    // hidden input untuk kirim ke backend
+                    hidden.append(`
+            <input type="hidden" name="tomorrows[${idx}][jenis]" value="${jenis}">
+            <input type="hidden" name="tomorrows[${idx}][project_id]" value="${projectId || ''}">
+            <input type="hidden" name="tomorrows[${idx}][proses_id]" value="${prosesId || ''}">
+            <input type="hidden" name="tomorrows[${idx}][pekerjaan_umum]" value="${(pekerjaanUmum || '').replace(/"/g, '&quot;')}">
+            <input type="hidden" name="tomorrows[${idx}][keterangan]" value="${ketTomorrow.replace(/"/g, '&quot;')}">
+            <input type="hidden" name="tomorrows[${idx}][status]" value="0">
+        `);
+
+                    idx++;
+                });
+            }
+
+            // Buka Modal Edit
             $(document).on('click', '.editBtn', function() {
-                let id = $(this).data('id');
+                const id = $(this).data('id');
 
                 $.ajax({
                     url: `/daily/edit/${id}`,
-                    method: "GET",
+                    method: 'GET',
                     success: function(item) {
+                        // isi ID & tanggal
                         $('#editDailyForm input[name="daily_id"]').val(item.id);
-                        $('#editDailyForm input[name="tanggal"]').val(item.tanggal.replace(' ',
-                            'T'));
-                        setTimeout(() => {
-                            initEditQuillEditors();
-                            quillEditPlanToday.root.innerHTML = item.plan_today;
-                            quillEditPlanTomorrow.root.innerHTML = item.plan_tomorrow ||
-                                '';
-                            quillEditProblem.root.innerHTML = item.problem || '';
-                        }, 300);
+                        $('#editDailyForm input[name="tanggal"]').val(
+                            item.tanggal ? item.tanggal.replace(' ', 'T') : ''
+                        );
 
+                        // file saat ini
                         if (item.upload_file) {
                             $('#currentFile').html(`
                     <p>File saat ini: <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
@@ -1400,18 +1649,119 @@
                             $('#currentFile').html(`<p class="text-muted">Tidak ada file.</p>`);
                         }
 
+                        // siapkan tabel Today
+                        const $tbody = $('#editAchievementTable tbody');
+                        $tbody.empty();
+                        editIndex = 0;
+
+                        const todayArray = parseJsonArrayIfPossible(item.plan_today);
+
+                        if (todayArray && todayArray.length) {
+                            todayArray.forEach(row => {
+                                addEditAchievementRow(row);
+                            });
+                        } else {
+                            // fallback: 1 row umum, isi keterangan dengan teks lama (kalau ada)
+                            addEditAchievementRow({
+                                jenis: 'umum',
+                                project_id: null,
+                                proses_id: null,
+                                pekerjaan_umum: '',
+                                keterangan: item.plan_today || '',
+                                status: 'ok',
+                            });
+                        }
+
+                        rebuildEditTomorrowFromToday();
+
                         $('#editDailyModal').modal('show');
                     }
                 });
             });
 
+            // Tambah row baru di modal Edit
+            $(document).on('click', '#editAddAchievementRow', function() {
+                addEditAchievementRow();
+            });
+
+            // Hapus row di modal Edit
+            $(document).on('click', '.btn-remove-edit-row', function() {
+                $(this).closest('tr').remove();
+                updateEditRowNumbers();
+                rebuildEditTomorrowFromToday();
+            });
+
+            // Perubahan status / project / proses / keterangan di Edit
+            $(document).on('change',
+                '#editAchievementTable .status-radio, #editAchievementTable .project-select, #editAchievementTable .pekerjaan-select, #editAchievementTable .jenis-select',
+                function() {
+                    // kalau jenis ganti, atur tampilan project vs umum
+                    if ($(this).hasClass('jenis-select')) {
+                        const row = $(this).closest('tr');
+                        const jenis = $(this).val();
+
+                        if (jenis === 'umum') {
+                            row.find('.col-project select').prop('disabled', true);
+                            row.find('.pekerjaan-project select')
+                                .prop('disabled', true)
+                                .closest('.pekerjaan-project')
+                                .addClass('d-none');
+
+                            row.find('.pekerjaan-umum-input').prop('disabled', false);
+                            row.find('.pekerjaan-umum').removeClass('d-none');
+                        } else {
+                            row.find('.col-project select').prop('disabled', false);
+                            row.find('.pekerjaan-project select')
+                                .prop('disabled', false)
+                                .closest('.pekerjaan-project')
+                                .removeClass('d-none');
+
+                            row.find('.pekerjaan-umum-input').prop('disabled', true);
+                            row.find('.pekerjaan-umum').addClass('d-none');
+                        }
+                    }
+
+                    rebuildEditTomorrowFromToday();
+                });
+
+            $(document).on('keyup', '#editAchievementTable .keterangan-textarea', function() {
+                rebuildEditTomorrowFromToday();
+            });
+
+            // ketika NO PROJECT berubah di Edit → isi ulang PROSES
+            $(document).on('change', '#editAchievementTable .project-select', function() {
+                const row = $(this).closest('tr');
+                const projectId = $(this).val();
+
+                const pekerjaanSelect = row.find('.pekerjaan-select');
+                pekerjaanSelect.empty();
+                pekerjaanSelect.append('<option value="">-- Pilih Proses --</option>');
+
+                if (!projectId || !projectProcesses[projectId]) {
+                    rebuildEditTomorrowFromToday();
+                    return;
+                }
+
+                const doneForProject = doneProcessesByProject[projectId] || [];
+
+                projectProcesses[projectId].forEach(p => {
+                    const isDone = doneForProject.includes(p.id);
+                    const disabled = isDone ? 'disabled' : '';
+
+                    pekerjaanSelect.append(
+                        `<option value="${p.id}" ${disabled}>${p.urutan}. ${p.nama}</option>`
+                    );
+                });
+
+                rebuildEditTomorrowFromToday();
+            });
+
             // Save Edited Daily
             $('#saveEditPekerjaanBtn').on('click', function() {
-                let id = $('#editDailyForm input[name="daily_id"]').val();
+                const id = $('#editDailyForm input[name="daily_id"]').val();
 
-                $('input[name="plan_today"]').val(quillEditPlanToday.root.innerHTML);
-                $('input[name="plan_tomorrow"]').val(quillEditPlanTomorrow.root.innerHTML);
-                $('input[name="problem"]').val(quillEditProblem.root.innerHTML);
+                // pastikan Plan Tomorrow sudah rebuild → hidden input keisi
+                rebuildEditTomorrowFromToday();
 
                 let form = $('#editDailyForm')[0];
                 let formData = new FormData(form);
@@ -1428,15 +1778,21 @@
                         fetchDailyActivities();
                     },
                     error: function(xhr) {
-                        let err = xhr.responseJSON.errors;
+                        let err = xhr.responseJSON.errors || {};
                         let msg = '';
                         for (const key in err) {
                             msg += `${err[key]}<br>`;
                         }
-                        Swal.fire('Gagal', msg, 'error');
+                        Swal.fire('Gagal', msg || 'Terjadi kesalahan.', 'error');
                     }
                 });
             });
+
+            // Tombol Tutup modal Edit
+            $('#closeModalEditFooterBtn').on('click', function() {
+                $('#editDailyModal').modal('hide');
+            });
+
 
             // Delete Daily
             $(document).on('click', '.deleteBtn', function() {
