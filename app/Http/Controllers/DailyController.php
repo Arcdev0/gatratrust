@@ -140,19 +140,18 @@ class DailyController extends Controller
             $query->whereDate('tanggal', now());
         }
 
-        $data = $query->get();
-
-        // 🔹 tambahan: map semua project & proses (global, bukan per user)
-        $projectMap = ProjectTbl::pluck('no_project', 'id');   // [id => no_project]
-        $prosesMap  = ListProses::pluck('nama_proses', 'id'); // [id => nama_proses]
+        // 🔹 Map global (untuk tampilan list semua user)
+        $projectMap = ProjectTbl::pluck('no_project', 'id');        // [id => no_project]
+        $prosesMap  = ListProses::pluck('nama_proses', 'id');       // [id => nama_proses]
 
         return response()->json([
-            'data'          => $data,
-            'auth_user_id'  => auth()->id(),
-            'projectMap'    => $projectMap,
-            'prosesMap'     => $prosesMap,
+            'data'         => $query->get(),
+            'auth_user_id' => auth()->id(),
+            'project_map'  => $projectMap,
+            'proses_map'   => $prosesMap,
         ]);
     }
+
 
     public function dataDailyComments(Daily $daily)
     {

@@ -711,36 +711,36 @@
                         '<span class="badge badge-secondary">Belum</span>';
 
                     body += `
-            <tr>
-                <td class="text-center align-middle">${i + 1}</td>
-                <td class="align-middle">${jenisText}</td>
-                <td class="align-middle">${projectCol}</td>
-                <td class="align-middle">${pekerjaanCol}</td>
-                <td class="align-middle">${ketCol}</td>
-                <td class="align-middle text-center">${statusBadge}</td>
-            </tr>
-        `;
+                            <tr>
+                                <td class="text-center align-middle">${i + 1}</td>
+                                <td class="align-middle">${jenisText}</td>
+                                <td class="align-middle">${projectCol}</td>
+                                <td class="align-middle">${pekerjaanCol}</td>
+                                <td class="align-middle">${ketCol}</td>
+                                <td class="align-middle text-center">${statusBadge}</td>
+                            </tr>
+                        `;
                 });
 
                 return `
-        <div class="table-responsive mt-1">
-            <table class="table table-sm table-bordered mb-0">
-                <thead class="thead-light">
-                    <tr>
-                        <th style="width: 40px;">No</th>
-                        <th style="width: 80px;">Jenis</th>
-                        <th style="width: 120px;">Project</th>
-                        <th>Pekerjaan / Proses</th>
-                        <th>Keterangan</th>
-                        <th style="width: 80px;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${body}
-                </tbody>
-            </table>
-        </div>
-    `;
+                        <div class="table-responsive mt-1">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 40px;">No</th>
+                                        <th style="width: 80px;">Jenis</th>
+                                        <th style="width: 120px;">Project</th>
+                                        <th>Pekerjaan / Proses</th>
+                                        <th>Keterangan</th>
+                                        <th style="width: 80px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${body}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
             }
 
 
@@ -766,74 +766,65 @@
                         let authUserId = response.auth_user_id;
                         let data = response.data;
 
+                        // 🔹 UPDATE MAP DI SINI
+                        projectMap = response.project_map || {};
+                        prosesMap = response.proses_map || {};
+
                         if (data.length > 0) {
                             data.forEach(function(item) {
                                 let actionButtons = '';
                                 if (authUserId === item.user_id) {
                                     actionButtons = `
-                                        <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    `;
+                            <button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
                                 }
 
-                                // --- DETEKSI: plan_today / plan_tomorrow JSON baru atau teks lama ---
                                 const planTodayArray = parseJsonArrayIfPossible(item
-                                    .plan_today);
+                                .plan_today);
                                 const planTomorrowArray = parseJsonArrayIfPossible(item
                                     .plan_tomorrow);
 
-                                let planTodayHtml;
-                                if (planTodayArray) {
-                                    // format tabel
-                                    planTodayHtml = renderPlanTable(planTodayArray);
-                                } else {
-                                    // data lama (teks biasa)
-                                    planTodayHtml = item.plan_today ? item.plan_today : '-';
-                                }
+                                let planTodayHtml = planTodayArray ?
+                                    renderPlanTable(planTodayArray) :
+                                    (item.plan_today || '-');
 
-                                let planTomorrowHtml;
-                                if (planTomorrowArray) {
-                                    planTomorrowHtml = renderPlanTable(planTomorrowArray);
-                                } else {
-                                    planTomorrowHtml = item.plan_tomorrow ? item.plan_tomorrow :
-                                        '-';
-                                }
+                                let planTomorrowHtml = planTomorrowArray ?
+                                    renderPlanTable(planTomorrowArray) :
+                                    (item.plan_tomorrow || '-');
 
                                 html += `
-                                <div class="card mb-3" data-id="${item.id}">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h5 class="mb-0">${item.user.name}</h5>
-                                            <small class="text-muted">${new Date(item.tanggal).toLocaleString()}</small>
-                                        </div>
-                                        <div>
-                                            ${actionButtons}
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="mb-1"><strong>Today’s Achievements:</strong></p>
-                                        ${planTodayHtml}
-
-                                        <p class="mt-3 mb-1"><strong>Plan Tomorrow:</strong></p>
-                                        ${planTomorrowHtml}
-
-                                        ${item.upload_file ? `
-                                                                                                                                                                                                                                    <p class="mt-3 mb-0"><strong>File:</strong> 
-                                                                                                                                                                                                                                        <a href="/storage/${item.upload_file}" target="_blank">Download</a>
-                                                                                                                                                                                                                                    </p>
-                                                                                                                                                                                                                                ` : ''}
-                                    </div>
-                                    <div class="card-footer d-flex justify-content-start">
-                                        <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
-                                            💬 <span class="comment-count">${item.comments_count || 0}</span>
-                                        </button>
-                                    </div>
+                        <div class="card mb-3" data-id="${item.id}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">${item.user.name}</h5>
+                                    <small class="text-muted">${new Date(item.tanggal).toLocaleString()}</small>
                                 </div>
-                            `;
+                                <div>${actionButtons}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Today’s Achievements:</strong></p>
+                                ${planTodayHtml}
+
+                                <p class="mt-3 mb-1"><strong>Plan Tomorrow:</strong></p>
+                                ${planTomorrowHtml}
+
+                                ${item.upload_file ? `
+                                        <p class="mt-3 mb-0"><strong>File:</strong> 
+                                            <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                                        </p>` : ''}
+                            </div>
+                            <div class="card-footer d-flex justify-content-start">
+                                <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
+                                    💬 <span class="comment-count">${item.comments_count || 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
                             });
                         } else {
                             html =
@@ -844,7 +835,8 @@
                     },
                     error: function() {
                         $('#dailyCardList').html(
-                            '<p class="text-danger text-center">Gagal memuat data.</p>');
+                            '<p class="text-danger text-center">Gagal memuat data.</p>'
+                        );
                     }
                 });
             }
@@ -887,8 +879,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
