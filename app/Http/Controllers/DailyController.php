@@ -18,18 +18,22 @@ class DailyController extends Controller
      */
     public function index()
     {
-        $userId = auth()->user()->id;
+        return view('daily.index');
+    }
 
-        // ======================================
-        // 1) Ambil semua project user + prosesnya
-        // ======================================
+
+    public function getProjectData()
+    {
+        $userId = auth()->id();
+
+        // 1) Project user + prosesnya
         $projects = ProjectTbl::with(['kerjaan.prosesList'])
             ->join('project_user', 'projects.id', '=', 'project_user.project_id')
             ->where('project_user.user_id', $userId)
             ->select('projects.*')
             ->get();
 
-        // projectProcesses: project_id => list proses
+        // project_id => list proses
         $projectProcesses = $projects->mapWithKeys(function ($p) {
             if (!$p->kerjaan) {
                 return [$p->id => []];
@@ -47,18 +51,13 @@ class DailyController extends Controller
             return [$p->id => $list->values()];
         });
 
-        // ======================================
-        // 2) Cari proses ongoing & proses selesai
-        // ======================================
-
-        // proses yang masih BELUM selesai
+        // 2) Cari proses ongoing & selesai (untuk disable / hide di form)
         $ongoing = DailyItem::where('status', false)
             ->whereNotNull('project_id')
             ->whereNotNull('proses_id')
             ->get()
             ->groupBy('project_id');
 
-        // semua proses yang pernah dikerjakan
         $allWorked = DailyItem::whereNotNull('project_id')
             ->whereNotNull('proses_id')
             ->get()
@@ -68,23 +67,20 @@ class DailyController extends Controller
         $completedProjects      = [];
 
         foreach ($allWorked as $projectId => $items) {
-
             $allProsesIds = $items->pluck('proses_id')->unique()->values()->all();
 
             $ongoingForProject = $ongoing->get($projectId) ?? collect();
             $ongoingIds = $ongoingForProject->pluck('proses_id')->unique()->values()->all();
 
-            // proses selesai = pernah dikerjakan - yg masih ongoing
+            // proses selesai = pernah dikerjakan - yang masih ongoing
             $doneIds = array_values(array_diff($allProsesIds, $ongoingIds));
-
             if (!empty($doneIds)) {
                 $doneProcessesByProject[$projectId] = $doneIds;
             }
         }
 
-        // Cek project yang SEMUA prosesnya selesai
+        // project yang semua prosesnya selesai
         foreach ($projects as $p) {
-
             $prosesList = $projectProcesses[$p->id] ?? collect();
             $allProsesIds = collect($prosesList)->pluck('id')->all();
 
@@ -97,20 +93,10 @@ class DailyController extends Controller
             }
         }
 
-        // MAP sederhana untuk JS
-        $projectMap = $projects->pluck('no_project', 'id');
-
-        $allProcesses = ListProses::select('id', 'nama_proses')->get();
-        $prosesMap    = $allProcesses->pluck('nama_proses', 'id');
-
-        // ======================================
-        // 3) Ambil DAILY TERAKHIR (carry over)
-        // ======================================
-        $lastDaily = Daily::with([
-            'items' => function ($q) {
-                $q->where('status', false);
-            }
-        ])
+        // Carry over dari daily terakhir user ini
+        $lastDaily = Daily::with(['items' => function ($q) {
+            $q->where('status', false);
+        }])
             ->where('user_id', $userId)
             ->orderBy('tanggal', 'desc')
             ->first();
@@ -130,17 +116,12 @@ class DailyController extends Controller
             })->values()->toArray();
         }
 
-        // ======================================
-        // 4) Kirim data ke Blade
-        // ======================================
-        return view('daily.index', [
-            'projects'                => $projects,
-            'projectProcesses'        => $projectProcesses,
-            'projectMap'              => $projectMap,
-            'prosesMap'               => $prosesMap,
-            'doneProcessesByProject'  => $doneProcessesByProject,
-            'completedProjects'       => $completedProjects,
-            'carryOverItems'          => $carryOverItems,
+        return response()->json([
+            'projects'               => $projects,
+            'projectProcesses'       => $projectProcesses,
+            'doneProcessesByProject' => $doneProcessesByProject,
+            'completedProjects'      => $completedProjects,
+            'carryOverItems'         => $carryOverItems,
         ]);
     }
 
@@ -150,7 +131,7 @@ class DailyController extends Controller
         $tanggal = $request->get('tanggal');
 
         $query = Daily::with(['user'])
-            ->withCount('comments') // tambahkan ini
+            ->withCount('comments')
             ->orderBy('tanggal', 'desc');
 
         if ($tanggal) {
@@ -159,11 +140,20 @@ class DailyController extends Controller
             $query->whereDate('tanggal', now());
         }
 
+        $data = $query->get();
+
+        // 🔹 tambahan: map semua project & proses (global, bukan per user)
+        $projectMap = ProjectTbl::pluck('no_project', 'id');   // [id => no_project]
+        $prosesMap  = ListProses::pluck('nama_proses', 'id'); // [id => nama_proses]
+
         return response()->json([
-            'data' => $query->get(),
-            'auth_user_id' => auth()->id(),
+            'data'          => $data,
+            'auth_user_id'  => auth()->id(),
+            'projectMap'    => $projectMap,
+            'prosesMap'     => $prosesMap,
         ]);
     }
+
     public function dataDailyComments(Daily $daily)
     {
         return $daily->comments()->with('user')->latest()->get();
@@ -377,7 +367,7 @@ class DailyController extends Controller
     {
         $daily = Daily::with('items')->findOrFail($id);
 
-        
+
         if ($daily->upload_file && Storage::disk('public')->exists($daily->upload_file)) {
             Storage::disk('public')->delete($daily->upload_file);
         }

@@ -642,6 +642,14 @@
         $(document).ready(function() {
 
 
+            let projectProcesses = {};
+            let carryOverItems = [];
+            let doneProcessesByProject = {};
+            let completedProjects = [];
+            let dailyProjects = [];
+            let projectMap = {};
+            let prosesMap = {};
+            let projectDataLoaded = false;
 
 
             // Default tanggal hari ini
@@ -674,11 +682,13 @@
                 rows.forEach((row, i) => {
                     const jenisText = row.jenis === 'project' ? 'Project' : 'Umum';
 
+                    // project: pakai map [id => no_project]
                     let projectCol = '-';
                     if (row.project_id) {
                         projectCol = projectMap[row.project_id] || row.project_id;
                     }
 
+                    // proses / pekerjaan: pakai map [id => nama_proses], fallback ke pekerjaan_umum
                     let pekerjaanCol = '-';
                     if (row.proses_id) {
                         pekerjaanCol = prosesMap[row.proses_id] || row.proses_id;
@@ -689,49 +699,50 @@
                     const ketCol = row.keterangan ?? '';
                     const statusRaw = row.status;
 
-                    let statusText = '';
-                    const isOk = (statusRaw === true || statusRaw === 1 || statusRaw === '1' ||
-                        statusRaw === 'ok');
+                    const isOk = (
+                        statusRaw === true ||
+                        statusRaw === 1 ||
+                        statusRaw === '1' ||
+                        statusRaw === 'ok'
+                    );
 
-                    if (isOk) {
-                        statusText = `<span class="badge badge-success">OK</span>`;
-                    } else {
-                        statusText = `<span class="badge badge-secondary">Belum</span>`;
-                    }
-
+                    const statusBadge = isOk ?
+                        '<span class="badge badge-success">OK</span>' :
+                        '<span class="badge badge-secondary">Belum</span>';
 
                     body += `
-                        <tr>
-                            <td class="text-center align-middle">${i + 1}</td>
-                            <td class="align-middle">${jenisText}</td>
-                            <td class="align-middle">${projectCol}</td>
-                            <td class="align-middle">${pekerjaanCol}</td>
-                            <td class="align-middle">${ketCol}</td>
-                            <td class="align-middle text-center">${statusText}</td>
-                        </tr>
-                    `;
+            <tr>
+                <td class="text-center align-middle">${i + 1}</td>
+                <td class="align-middle">${jenisText}</td>
+                <td class="align-middle">${projectCol}</td>
+                <td class="align-middle">${pekerjaanCol}</td>
+                <td class="align-middle">${ketCol}</td>
+                <td class="align-middle text-center">${statusBadge}</td>
+            </tr>
+        `;
                 });
 
                 return `
-                    <div class="table-responsive mt-1">
-                        <table class="table table-sm table-bordered mb-0">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th style="width: 40px;">No</th>
-                                    <th style="width: 80px;">Jenis</th>
-                                    <th style="width: 120px;">Project</th>
-                                    <th>Pekerjaan / Proses</th>
-                                    <th>Keterangan</th>
-                                    <th style="width: 80px;">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${body}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+        <div class="table-responsive mt-1">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width: 40px;">No</th>
+                        <th style="width: 80px;">Jenis</th>
+                        <th style="width: 120px;">Project</th>
+                        <th>Pekerjaan / Proses</th>
+                        <th>Keterangan</th>
+                        <th style="width: 80px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${body}
+                </tbody>
+            </table>
+        </div>
+    `;
             }
+
 
 
             // Fetch and render Daily Activities by date
@@ -811,10 +822,10 @@
                                         ${planTomorrowHtml}
 
                                         ${item.upload_file ? `
-                                                                                                                                                                                    <p class="mt-3 mb-0"><strong>File:</strong> 
-                                                                                                                                                                                        <a href="/storage/${item.upload_file}" target="_blank">Download</a>
-                                                                                                                                                                                    </p>
-                                                                                                                                                                                ` : ''}
+                                                                                                                                                                                                                                    <p class="mt-3 mb-0"><strong>File:</strong> 
+                                                                                                                                                                                                                                        <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                                                                                                                                                                                                                                    </p>
+                                                                                                                                                                                                                                ` : ''}
                                     </div>
                                     <div class="card-footer d-flex justify-content-start">
                                         <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -876,8 +887,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
@@ -978,115 +989,109 @@
                 });
             });
 
-
-
-            const projectProcesses = @json($projectProcesses);
-            const carryOverItems = @json($carryOverItems);
-            const projectMap = @json($projectMap);
-            const prosesMap = @json($prosesMap);
-            const doneProcessesByProject = @json($doneProcessesByProject);
-            const completedProjects = @json($completedProjects);
             let todayIndex = 0;
 
-            function addAchievementRow(targetTbodySelector = '#achievementTable tbody', prefill =
-                null) {
+            // ========================
+            // 1. Tambah row (Today/Pending)
+            // ========================
+
+            function addAchievementRow(targetTbodySelector = '#achievementTable tbody', prefill = null) {
                 const index = todayIndex++;
+                const projectOptions = buildProjectOptions(); // 🔥 ambil options dari data AJAX
+
+                // normalisasi status
+                let status = 'ok';
+                if (prefill) {
+                    const s = prefill.status;
+                    if (s === 'belum' || s === '0' || s === 0 || s === false) {
+                        status = 'belum';
+                    }
+                }
+
+                let isUmum = prefill && prefill.jenis === 'umum';
 
                 let newRow = `
-                        <tr>
-                            <td class="text-center align-middle row-number">${index}</td>
+        <tr>
+            <td class="text-center align-middle row-number-today"></td>
 
-                            <!-- JENIS PEKERJAAN -->
-                            <td>
-                                <select name="achievements[${index}][jenis]" 
-                                        class="form-control form-control-sm jenis-select">
-                                    <option value="project" ${prefill && prefill.jenis === 'umum' ? '' : 'selected'}>Pekerjaan Project</option>
-                                    <option value="umum" ${prefill && prefill.jenis === 'umum' ? 'selected' : ''}>Pekerjaan Umum</option>
-                                </select>
-                            </td>
+            <!-- JENIS PEKERJAAN -->
+            <td>
+                <select name="achievements[${index}][jenis]" 
+                        class="form-control form-control-sm jenis-select">
+                    <option value="project" ${isUmum ? '' : 'selected'}>Pekerjaan Project</option>
+                    <option value="umum" ${isUmum ? 'selected' : ''}>Pekerjaan Umum</option>
+                </select>
+            </td>
 
-                            <!-- NO PROJECT (hanya dipakai kalau jenis = project) -->
-                           <td class="col-project">
-                                <select name="achievements[${index}][project_id]"
-                                        class="form-control form-control-sm project-select">
-                                    <option value="">-- Pilih Project --</option>
-                                    @foreach ($projects as $project)
-                                        @php
-                                            $isCompleted = in_array($project->id, $completedProjects ?? []);
-                                        @endphp
-                                        @unless ($isCompleted)
-                                            <option value="{{ $project->id }}" data-no-project="{{ $project->no_project }}">
-                                                {{ $project->no_project }}
-                                            </option>
-                                        @endunless
-                                    @endforeach
-                                </select>
-                            </td>
+            <!-- NO PROJECT (hanya dipakai kalau jenis = project) -->
+            <td class="col-project">
+                <select name="achievements[${index}][project_id]"
+                        class="form-control form-control-sm project-select">
+                    ${projectOptions}
+                </select>
+            </td>
 
-                            <!-- PEKERJAAN -->
-                            <td>
-                                <!-- Kalau jenis = project -->
-                                <div class="pekerjaan-project">
-                                    <select name="achievements[${index}][proses_id]" 
-                                            class="form-control form-control-sm pekerjaan-select">
-                                        <option value="">-- Pilih Proses --</option>
-                                    </select>
-                                </div>
+            <!-- PEKERJAAN -->
+            <td>
+                <div class="pekerjaan-project">
+                    <select name="achievements[${index}][proses_id]" 
+                            class="form-control form-control-sm pekerjaan-select">
+                        <option value="">-- Pilih Proses --</option>
+                    </select>
+                </div>
 
-                                <!-- Kalau jenis = umum -->
-                                <div class="pekerjaan-umum d-none">
-                                    <input type="text" 
-                                        name="achievements[${index}][pekerjaan_umum]" 
-                                        class="form-control form-control-sm pekerjaan-umum-input"
-                                        placeholder="Contoh: Menyapu lantai, Perbaiki kran WC">
-                                </div>
-                            </td>
+                <div class="pekerjaan-umum d-none">
+                    <input type="text" 
+                        name="achievements[${index}][pekerjaan_umum]" 
+                        class="form-control form-control-sm pekerjaan-umum-input"
+                        placeholder="Contoh: Menyapu lantai, Perbaiki kran WC">
+                </div>
+            </td>
 
-                            <!-- KETERANGAN -->
-                            <td>
-                                <textarea name="achievements[${index}][keterangan]"
-                                        class="form-control form-control-sm keterangan-textarea"
-                                        rows="2"
-                                        placeholder="Keterangan..."></textarea>
-                            </td>
+            <!-- KETERANGAN -->
+            <td>
+                <textarea name="achievements[${index}][keterangan]"
+                        class="form-control form-control-sm keterangan-textarea"
+                        rows="2"
+                        placeholder="Keterangan..."></textarea>
+            </td>
 
-                            <!-- STATUS -->
-                            <td class="align-middle">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input status-radio"
-                                        type="radio"
-                                        name="achievements[${index}][status]"
-                                        value="ok"
-                                        ${prefill && prefill.status === 'ok' ? 'checked' : (!prefill ? 'checked' : '')}>
-                                    <label class="form-check-label">OK</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input status-radio"
-                                        type="radio"
-                                        name="achievements[${index}][status]"
-                                        value="belum"
-                                        ${prefill && (prefill.status === 'belum' || prefail === '0') ? 'checked' : ''}>
-                                    <label class="form-check-label">Belum</label>
-                                </div>
-                            </td>
+            <!-- STATUS -->
+            <td class="align-middle">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input status-radio"
+                        type="radio"
+                        name="achievements[${index}][status]"
+                        value="ok"
+                        ${status === 'ok' ? 'checked' : ''}>
+                    <label class="form-check-label">OK</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input status-radio"
+                        type="radio"
+                        name="achievements[${index}][status]"
+                        value="belum"
+                        ${status === 'belum' ? 'checked' : ''}>
+                    <label class="form-check-label">Belum</label>
+                </div>
+            </td>
 
-                            <!-- AKSI -->
-                            <td class="text-center align-middle">
-                                <button type="button" class="btn btn-sm btn-danger btn-remove-today-row">
-                                    &times;
-                                </button>
-                            </td>
-                        </tr>
-                    `;
+            <!-- AKSI -->
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-sm btn-danger btn-remove-today-row">
+                    &times;
+                </button>
+            </td>
+        </tr>
+    `;
 
                 const $tbody = $(targetTbodySelector);
                 $tbody.append(newRow);
 
-                // Prefill isi dari carryOverItems
                 const $row = $tbody.find('tr').last();
 
+                // Prefill jika ada
                 if (prefill) {
-                    // set jenis (ini akan men-trigger show/hide umum/project)
                     $row.find('.jenis-select').val(prefill.jenis || 'project').trigger('change');
 
                     if (prefill.project_id) {
@@ -1094,7 +1099,6 @@
                     }
 
                     if (prefill.jenis === 'project' && prefill.proses_id) {
-                        // perlu delay sedikit supaya projectProcesses sempat isi options
                         setTimeout(() => {
                             $row.find('.pekerjaan-select').val(prefill.proses_id);
                         }, 0);
@@ -1105,7 +1109,8 @@
                     }
 
                     $row.find('.keterangan-textarea').val(prefill.keterangan || '');
-                    // status sudah di-set di radio di atas
+                } else {
+                    $row.find('.jenis-select').trigger('change');
                 }
 
                 updateTodayRowNumbers();
@@ -1113,63 +1118,54 @@
             }
 
 
-            function addAchievementRowToPending(prefill) {
-                addAchievementRow(); // buat row baru
 
+            // ========================
+            // 2. Tambah row ke Pending Section
+            // ========================
+            function addAchievementRowToPending(prefill) {
+                // buat row baru di TABLE TODAY dulu
+                addAchievementRow('#achievementTable tbody', prefill);
+
+                // ambil row terakhir
                 const $row = $('#achievementTable tbody tr').last();
 
-                // pindahkan ke pending
+                // pindahkan DOM row ke tabel pending
                 $row.appendTo('#pendingTable tbody');
 
-                if (!prefill) return;
-
-                const jenis = prefill.jenis || 'project';
-                $row.find('.jenis-select').val(jenis).trigger('change');
-
-                if (prefill.project_id) {
-                    $row.find('.project-select').val(prefill.project_id).trigger('change');
-                }
-
-                if (jenis === 'project' && prefill.proses_id) {
-                    setTimeout(() => {
-                        $row.find('.pekerjaan-select').val(prefill.proses_id);
-                    }, 0);
-                }
-
-                if (jenis === 'umum') {
-                    $row.find('.pekerjaan-umum-input').val(prefill.pekerjaan_umum || '');
-                }
-
-                $row.find('.keterangan-textarea').val(prefill.keterangan || '');
-
+                // pending = dipastikan status BELUM
                 $row.find('.status-radio[value="belum"]').prop('checked', true);
 
-                // ==== READONLY MODE (AMANKAN TANPA DISABLE) ====
+                // tandai sebagai readonly (jangan bisa di-edit user)
                 $row.addClass('readonly-row');
+
+                // hapus tombol aksi di pending
+                $row.find('.btn-remove-today-row').remove();
 
                 updateRowNumbers();
                 rebuildTomorrowFromToday();
             }
 
-
+            // ========================
+            // 3. Update nomor row
+            // ========================
             function updateRowNumbers() {
-                // nomor untuk pending
+                // nomor di pending
                 $('#pendingTable tbody tr').each(function(i) {
                     $(this).find('.row-number-today').text(i + 1);
                 });
 
-                // nomor untuk today
+                // nomor di today
                 $('#achievementTable tbody tr').each(function(i) {
                     $(this).find('.row-number-today').text(i + 1);
                 });
             }
-
 
             function updateTodayRowNumbers() {
                 $('#achievementTable tbody tr').each(function(i) {
                     $(this).find('.row-number-today').text(i + 1);
                 });
             }
+
 
 
             // ====== AUTO GENERATE PLAN TOMORROW DARI TODAY YANG "BELUM" ======
@@ -1253,15 +1249,50 @@
                 });
             }
 
+            function buildProjectOptions() {
+                let html = '<option value="">-- Pilih Project --</option>';
+
+                if (!dailyProjects || !dailyProjects.length) {
+                    return html;
+                }
+
+                dailyProjects.forEach(function(p) {
+                    // skip project yang sudah completed semua prosesnya
+                    if (completedProjects && completedProjects.includes(p.id)) {
+                        return;
+                    }
+
+                    html += `
+            <option value="${p.id}" data-no-project="${p.no_project}">
+                ${p.no_project}
+            </option>
+        `;
+                });
+
+                return html;
+            }
+
+
 
             // ====== EVENT BINDING ======
             $(document).ready(function() {
 
-
                 $('#openModalBtn').on('click', function() {
+                    if (!projectDataLoaded) {
+                        $.get("{{ route('daily.projectData') }}", function(res) {
 
-                    $('#tambahDailyModal').modal('show');
+                            dailyProjects = res.projects || [];
+                            projectProcesses = res.projectProcesses || {};
+                            doneProcessesByProject = res.doneProcessesByProject || {};
+                            completedProjects = res.completedProjects || [];
+                            carryOverItems = res.carryOverItems || [];
 
+                            projectDataLoaded = true;
+                            $('#tambahDailyModal').modal('show');
+                        });
+                    } else {
+                        $('#tambahDailyModal').modal('show');
+                    }
                 });
 
                 // saat modal ditampilkan
@@ -1427,6 +1458,18 @@
             function addEditAchievementRow(prefill = null) {
                 const index = editIndex++;
 
+                // normalisasi nilai jenis & status
+                const jenis = (prefill && prefill.jenis === 'umum') ? 'umum' : 'project';
+                let s = prefill ? prefill.status : 'ok';
+                const statusNorm =
+                    (s === true || s === 1 || s === '1' || s === 'ok') ?
+                    'ok' :
+                    'belum';
+
+                // build HTML option project berdasarkan data dari AJAX
+                const selectedProjectId = prefill ? (prefill.project_id ?? null) : null;
+                const projectOptionsHtml = buildProjectOptionsHtmlForEdit(selectedProjectId);
+
                 let newRow = `
         <tr>
             <td class="text-center align-middle edit-row-number"></td>
@@ -1435,8 +1478,8 @@
             <td>
                 <select name="achievements[${index}][jenis]" 
                         class="form-control form-control-sm jenis-select">
-                    <option value="project" ${prefill && prefill.jenis === 'umum' ? '' : 'selected'}>Pekerjaan Project</option>
-                    <option value="umum" ${prefill && prefill.jenis === 'umum' ? 'selected' : ''}>Pekerjaan Umum</option>
+                    <option value="project" ${jenis === 'project' ? 'selected' : ''}>Pekerjaan Project</option>
+                    <option value="umum" ${jenis === 'umum' ? 'selected' : ''}>Pekerjaan Umum</option>
                 </select>
             </td>
 
@@ -1444,17 +1487,7 @@
             <td class="col-project">
                 <select name="achievements[${index}][project_id]"
                         class="form-control form-control-sm project-select">
-                    <option value="">-- Pilih Project --</option>
-                    @foreach ($projects as $project)
-                        @php
-                            $isCompleted = in_array($project->id, $completedProjects ?? []);
-                        @endphp
-                        @unless ($isCompleted)
-                            <option value="{{ $project->id }}" data-no-project="{{ $project->no_project }}">
-                                {{ $project->no_project }}
-                            </option>
-                        @endunless
-                    @endforeach
+                    ${projectOptionsHtml}
                 </select>
             </td>
 
@@ -1490,7 +1523,7 @@
                         type="radio"
                         name="achievements[${index}][status]"
                         value="ok"
-                        ${prefill && prefill.status === 'ok' ? 'checked' : (!prefill ? 'checked' : '')}>
+                        ${statusNorm === 'ok' ? 'checked' : ''}>
                     <label class="form-check-label">OK</label>
                 </div>
                 <div class="form-check form-check-inline">
@@ -1498,7 +1531,7 @@
                         type="radio"
                         name="achievements[${index}][status]"
                         value="belum"
-                        ${prefill && (prefill.status === 'belum' || prefill.status === '0') ? 'checked' : ''}>
+                        ${statusNorm === 'belum' ? 'checked' : ''}>
                     <label class="form-check-label">Belum</label>
                 </div>
             </td>
@@ -1517,34 +1550,31 @@
 
                 const $row = $tbody.find('tr').last();
 
-                // Prefill dari data lama
-                if (prefill) {
-                    // jenis
-                    $row.find('.jenis-select').val(prefill.jenis || 'project').trigger('change');
+                // Trigger jenis (supaya show/hide kolom umum/project)
+                $row.find('.jenis-select').val(jenis).trigger('change');
 
-                    // project
-                    if (prefill.project_id) {
-                        $row.find('.project-select').val(prefill.project_id).trigger('change');
+                // Prefill detail project & proses
+                if (jenis === 'project') {
+                    if (selectedProjectId) {
+                        $row.find('.project-select').val(String(selectedProjectId)).trigger('change');
                     }
 
-                    // proses / pekerjaan umum
-                    if (prefill.jenis === 'project' && prefill.proses_id) {
+                    if (prefill && prefill.proses_id) {
+                        // tunggu handler .project-select mengisi daftar proses
                         setTimeout(() => {
-                            $row.find('.pekerjaan-select').val(prefill.proses_id);
+                            $row.find('.pekerjaan-select').val(String(prefill.proses_id));
                         }, 0);
                     }
-
-                    if (prefill.jenis === 'umum') {
-                        $row.find('.pekerjaan-umum-input').val(prefill.pekerjaan_umum || '');
-                    }
-
-                    // keterangan
-                    if (prefill.keterangan) {
-                        $row.find('.keterangan-textarea').val(prefill.keterangan);
-                    }
+                } else {
+                    // pekerjaan umum
+                    $row.find('.pekerjaan-umum-input').val(prefill && prefill.pekerjaan_umum ? prefill
+                        .pekerjaan_umum : '');
                 }
 
-                // kalau Tuan pakai select2, bisa panggil initRowSelect2($row) di sini
+                // keterangan
+                if (prefill && prefill.keterangan) {
+                    $row.find('.keterangan-textarea').val(prefill.keterangan);
+                }
 
                 updateEditRowNumbers();
                 rebuildEditTomorrowFromToday();
@@ -1586,11 +1616,11 @@
                     if (jenis === 'project') {
                         const $projectOpt = row.find('.project-select option:selected');
                         projectId = row.find('.project-select').val();
-                        projectText = $projectOpt.data('no-project') || $projectOpt.text();
+                        projectText = $projectOpt.data('no-project') || $projectOpt.text() || '-';
 
                         const $prosesOpt = row.find('.pekerjaan-select option:selected');
                         prosesId = row.find('.pekerjaan-select').val();
-                        pekerjaanText = $prosesOpt.text();
+                        pekerjaanText = $prosesOpt.text() || '';
                     } else {
                         pekerjaanUmum = row.find('.pekerjaan-umum-input').val();
                         pekerjaanText = pekerjaanUmum || '';
@@ -1626,10 +1656,7 @@
                 });
             }
 
-            // Buka Modal Edit
-            $(document).on('click', '.editBtn', function() {
-                const id = $(this).data('id');
-
+            function openEditModal(id) {
                 $.ajax({
                     url: `/daily/edit/${id}`,
                     method: 'GET',
@@ -1643,13 +1670,15 @@
                         // file saat ini
                         if (item.upload_file) {
                             $('#currentFile').html(`
-                    <p>File saat ini: <a href="/storage/${item.upload_file}" target="_blank">Download</a></p>
+                    <p>File saat ini: 
+                        <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                    </p>
                 `);
                         } else {
                             $('#currentFile').html(`<p class="text-muted">Tidak ada file.</p>`);
                         }
 
-                        // siapkan tabel Today
+                        // siapkan tabel Today (versi EDIT)
                         const $tbody = $('#editAchievementTable tbody');
                         $tbody.empty();
                         editIndex = 0;
@@ -1657,11 +1686,28 @@
                         const todayArray = parseJsonArrayIfPossible(item.plan_today);
 
                         if (todayArray && todayArray.length) {
-                            todayArray.forEach(row => {
+                            todayArray.forEach(rawRow => {
+                                // normalisasi status ke 'ok' / 'belum'
+                                let s = rawRow.status;
+                                let statusNorm =
+                                    (s === true || s === 1 || s === '1' || s === 'ok') ?
+                                    'ok' :
+                                    'belum';
+
+                                const row = {
+                                    jenis: rawRow.jenis || 'project',
+                                    project_id: rawRow.project_id ?? null,
+                                    proses_id: rawRow.proses_id ?? null,
+                                    pekerjaan_umum: rawRow.pekerjaan_umum ?? '',
+                                    keterangan: rawRow.keterangan ?? '',
+                                    status: statusNorm,
+                                };
+
+                                // fungsi ini harus mirip addAchievementRow tapi untuk modal edit
                                 addEditAchievementRow(row);
                             });
                         } else {
-                            // fallback: 1 row umum, isi keterangan dengan teks lama (kalau ada)
+                            // fallback: data lama (plain text) → jadikan 1 baris pekerjaan umum
                             addEditAchievementRow({
                                 jenis: 'umum',
                                 project_id: null,
@@ -1672,11 +1718,31 @@
                             });
                         }
 
+                        // generate Plan Tomorrow versi edit
                         rebuildEditTomorrowFromToday();
 
                         $('#editDailyModal').modal('show');
                     }
                 });
+            }
+
+            $(document).on('click', '.editBtn', function() {
+                const id = $(this).data('id');
+                if (!projectDataLoaded) {
+                    $.get("{{ route('daily.projectData') }}", function(res) {
+                        dailyProjects = res.projects || [];
+                        projectProcesses = res.projectProcesses || {};
+                        doneProcessesByProject = res.doneProcessesByProject || {};
+                        completedProjects = res.completedProjects || [];
+                        carryOverItems = res.carryOverItems || [];
+
+                        projectDataLoaded = true;
+                        openEditModal(id); // baru buka modal edit
+                    });
+                } else {
+                    // data project sudah ada → langsung buka modal edit
+                    openEditModal(id);
+                }
             });
 
             // Tambah row baru di modal Edit

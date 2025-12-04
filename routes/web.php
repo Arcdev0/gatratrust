@@ -95,6 +95,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/daily/{daily}/comments', [DailyController::class, 'dataDailyComments']);
     Route::post('/daily/{daily}/comments', [DailyController::class, 'storeDailyComments']);
     Route::delete('/daily/comments/{comment}', [DailyController::class, 'destroyDailyComments']);
+    Route::get('/daily/project-data', [DailyController::class, 'getProjectData'])
+        ->name('daily.projectData');
 
     Route::prefix('timeline')->group(function () {
         Route::get('/get', [DailyController::class, 'getDataTimeline'])->name('daily.timeline.get');
