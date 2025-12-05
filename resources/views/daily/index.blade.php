@@ -659,20 +659,39 @@
             function parseJsonArrayIfPossible(value) {
                 if (!value) return null;
 
-                // Kalau sudah array (misal API nanti diubah) langsung pakai
+                // Kalau sudah array langsung pakai
                 if (Array.isArray(value)) return value;
 
                 if (typeof value !== 'string') return null;
 
                 const trimmed = value.trim();
-                if (!trimmed.startsWith('[')) return null; // kemungkinan besar bukan JSON array
 
-                try {
-                    const parsed = JSON.parse(trimmed);
-                    return Array.isArray(parsed) ? parsed : null;
-                } catch (e) {
-                    return null; // kalau error parse, anggap data lama (teks biasa)
+                // --- CASE 1: JSON ARRAY "[ {...}, ... ]" ---
+                if (trimmed.startsWith('[')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        return Array.isArray(parsed) ? parsed : null;
+                    } catch (e) {
+                        return null;
+                    }
                 }
+
+                // --- CASE 2: JSON OBJECT "{ "0": {...}, ... }" ---
+                if (trimmed.startsWith('{')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        // kalau hasilnya object biasa → ambil values-nya jadi array
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            return Object.values(parsed);
+                        }
+                        return null;
+                    } catch (e) {
+                        return null;
+                    }
+                }
+
+                // Bukan JSON yang kita kenal → anggap data teks lama
+                return null;
             }
 
             function renderPlanTable(rows) {
@@ -785,7 +804,7 @@
                                 }
 
                                 const planTodayArray = parseJsonArrayIfPossible(item
-                                .plan_today);
+                                    .plan_today);
                                 const planTomorrowArray = parseJsonArrayIfPossible(item
                                     .plan_tomorrow);
 
@@ -814,9 +833,9 @@
                                 ${planTomorrowHtml}
 
                                 ${item.upload_file ? `
-                                        <p class="mt-3 mb-0"><strong>File:</strong> 
-                                            <a href="/storage/${item.upload_file}" target="_blank">Download</a>
-                                        </p>` : ''}
+                                            <p class="mt-3 mb-0"><strong>File:</strong> 
+                                                <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                                            </p>` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -879,8 +898,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
