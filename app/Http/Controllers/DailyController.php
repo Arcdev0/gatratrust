@@ -140,15 +140,62 @@ class DailyController extends Controller
             $query->whereDate('tanggal', now());
         }
 
-        // 🔹 Map global (untuk tampilan list semua user)
-        $projectMap = ProjectTbl::pluck('no_project', 'id');        // [id => no_project]
-        $prosesMap  = ListProses::pluck('nama_proses', 'id');       // [id => nama_proses]
+        $projectMap = ProjectTbl::pluck('no_project', 'id');
+        $prosesMap  = ListProses::pluck('nama_proses', 'id');
+
+        $pendingQuery = DailyItem::where('status', false)
+            ->with([
+                'daily',
+                'project.pics',
+            ]);
+
+        if ($tanggal) {
+            $pendingQuery->whereHas('daily', function ($q) use ($tanggal) {
+                $q->whereDate('tanggal', '<=', $tanggal);
+            });
+        }
+
+        $pendingRaw = $pendingQuery->get();
+
+        $pendingTasks = $pendingRaw->map(function ($item) use ($projectMap, $prosesMap) {
+            $projectNo = $item->project_id
+                ? ($projectMap[$item->project_id] ?? null)
+                : null;
+
+            $picNames = [];
+
+            if ($item->jenis === 'project') {
+
+                if ($item->project && $item->project->pics) {
+                    $picNames = $item->project->pics->pluck('name')->values()->all();
+                }
+            } else {
+                if ($item->daily && $item->daily->user) {
+                    $picNames = [$item->daily->user->name];
+                }
+            }
+
+            return [
+                'id'            => $item->id,
+                'tanggal'       => optional($item->daily)->tanggal,
+                'jenis'         => $item->jenis,
+                'project_id'    => $item->project_id,
+                'project_no'    => $projectNo,
+                'proses_id'     => $item->proses_id,
+                'proses'        => $item->proses_id ? ($prosesMap[$item->proses_id] ?? null) : null,
+                'pekerjaan_umum' => $item->pekerjaan_umum,
+                'keterangan'    => $item->keterangan,
+                'pic'           => $picNames,
+                'status'        => $item->status,
+            ];
+        })->values();
 
         return response()->json([
-            'data'         => $query->get(),
-            'auth_user_id' => auth()->id(),
-            'project_map'  => $projectMap,
-            'proses_map'   => $prosesMap,
+            'data'          => $query->get(),
+            'auth_user_id'  => auth()->id(),
+            'project_map'   => $projectMap,
+            'proses_map'    => $prosesMap,
+            'pending_tasks' => $pendingTasks,
         ]);
     }
 

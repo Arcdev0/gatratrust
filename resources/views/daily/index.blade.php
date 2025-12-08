@@ -101,6 +101,44 @@
                             Tambah Daily Activity
                         </button>
                     </div>
+
+                    <!-- CARD TASK PENDING -->
+                    <div class="card mb-3" id="pendingTaskCard">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0 font-weight-bold">Task Pending</h6>
+                                <small class="text-muted">
+                                    Daftar pekerjaan yang statusnya <strong>Belum</strong> dari Daily sebelumnya.
+                                </small>
+                            </div>
+                            <span class="badge badge-warning"><span id="pendingCountBadge">0</span> Pending</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <div class="container">
+                                    <table class="table table-sm table-bordered" id="pendingTaskTable">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th style="width: 40px;">No</th>
+                                                <th style="width: 120px;">Tanggal</th>
+                                                <th style="width: 120px;">Project</th>
+                                                <th style="width: 150px;">PIC</th>
+                                                <th>Jenis & Pekerjaan / Proses</th>
+                                                <th>Keterangan</th>
+                                                <th style="width: 80px;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- END CARD PENDING -->
+
                     <div class="card mb-3">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Filter Tanggal</h5>
@@ -765,14 +803,15 @@
 
 
             // Fetch and render Daily Activities by date
+            // Fetch and render Daily Activities by date
             function fetchDailyActivities(tanggal = today) {
                 $('#dailyCardList').html(`
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </div>
-                `);
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    `);
 
                 $.ajax({
                     url: "{{ route('daily.getList') }}",
@@ -785,9 +824,11 @@
                         let authUserId = response.auth_user_id;
                         let data = response.data;
 
-                        // 🔹 UPDATE MAP DI SINI
                         projectMap = response.project_map || {};
                         prosesMap = response.proses_map || {};
+
+                        renderPendingTasks(response.pending_tasks || []);
+                        
 
                         if (data.length > 0) {
                             data.forEach(function(item) {
@@ -804,7 +845,7 @@
                                 }
 
                                 const planTodayArray = parseJsonArrayIfPossible(item
-                                    .plan_today);
+                                .plan_today);
                                 const planTomorrowArray = parseJsonArrayIfPossible(item
                                     .plan_tomorrow);
 
@@ -833,9 +874,9 @@
                                 ${planTomorrowHtml}
 
                                 ${item.upload_file ? `
-                                            <p class="mt-3 mb-0"><strong>File:</strong> 
-                                                <a href="/storage/${item.upload_file}" target="_blank">Download</a>
-                                            </p>` : ''}
+                                        <p class="mt-3 mb-0"><strong>File:</strong> 
+                                            <a href="/storage/${item.upload_file}" target="_blank">Download</a>
+                                        </p>` : ''}
                             </div>
                             <div class="card-footer d-flex justify-content-start">
                                 <button class="btn btn-light btn-sm commentBtn" data-id="${item.id}">
@@ -866,6 +907,63 @@
                 let tanggalDipilih = $(this).val();
                 fetchDailyActivities(tanggalDipilih);
             });
+
+            const $badge = $('#pendingCountBadge');
+
+            function renderPendingTasks(tasks) {
+                const $tbody = $('#pendingTaskTable tbody');
+                $tbody.empty();
+
+                const count = tasks?.length || 0;
+                $badge.text(count);
+                $badge.toggle(count > 0);
+
+                if (!tasks || !tasks.length) {
+                    $tbody.append(`
+            <tr>
+                <td colspan="7" class="text-center text-muted">Tidak ada task pending.</td>
+            </tr>
+        `);
+                    return;
+                }
+
+                tasks.forEach((t, i) => {
+
+                    const tanggal = t.tanggal ?
+                        new Date(t.tanggal.replace(' ', 'T')).toLocaleString() :
+                        '-';
+
+                    // PIC: bullet style
+                    const picHtml = (Array.isArray(t.pic) ? t.pic : [])
+                        .map(name => `- ${name}`)
+                        .join('<br>');
+
+                    const jenisText = t.jenis === 'project' ? 'Project' : 'Umum';
+
+                    const prosesText = (t.jenis === 'project') ?
+                        (t.proses || '-') :
+                        (t.pekerjaan_umum || '-');
+
+                    const statusBadge = '<span class="badge badge-secondary">Belum</span>';
+
+                    $tbody.append(`
+                        <tr>
+                            <td class="text-center align-middle">${i + 1}</td>
+                            <td class="align-middle">${tanggal}</td>
+                            <td class="align-middle">${t.project_no ?? '-'}</td>
+                            <td class="align-middle">${picHtml || '-'}</td>
+
+                            <td class="align-middle">
+                                <div class="font-weight-bold">${prosesText}</div>
+                                <div><small class="text-muted">${jenisText}</small></div>
+                            </td>
+
+                            <td class="align-middle">${t.keterangan || '-'}</td>
+                            <td class="text-center align-middle">${statusBadge}</td>
+                        </tr>
+                    `);
+                });
+            }
 
             let currentDailyId = null;
 
@@ -898,8 +996,8 @@
                                         <div class="comment-meta">${new Date(k.created_at).toLocaleString()}</div>
                                     </div>
                                     ${isOwnComment ? `
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-danger btn-delete-komentar" data-id="${k.id}">&times;</button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ` : ''}
                                 </div>
                                 <p class="mt-2 mb-0">${k.comment}</p>
                             </div>
@@ -1261,7 +1359,7 @@
             }
 
             function buildProjectOptions() {
-                let html = '<option value="">-- Pilih Project --</option>';
+                let html = '<option value="" disabled>-- Pilih Project --</option>';
 
                 if (!dailyProjects || !dailyProjects.length) {
                     return html;
@@ -1479,7 +1577,7 @@
 
                 // build HTML option project berdasarkan data dari AJAX
                 const selectedProjectId = prefill ? (prefill.project_id ?? null) : null;
-                const projectOptionsHtml = buildProjectOptionsHtmlForEdit(selectedProjectId);
+                const projectOptionsHtml = buildProjectOptions(selectedProjectId);
 
                 let newRow = `
         <tr>
