@@ -31,6 +31,10 @@ Route::controller(LoginController::class)->group(function () {
     Route::get('/login', 'showLoginForm')->name('login');
 });
 
+Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
+Route::get('/invoice/approval/{token}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');
+
+
 // Authenticated Routes
 Route::middleware('auth')->group(function () {
     // Dashboard
@@ -226,6 +230,3 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
-
-Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
-Route::get('/invoice/approval/{token}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');

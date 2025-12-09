@@ -485,32 +485,44 @@ class InvoiceController extends Controller
 
     public function showApproval($token)
     {
-        // 1. Cari invoice berdasarkan signature_token
-        $invoice = Invoice::where('signature_token', $token)->firstOrFail();
+        // STEP 1: cek token yang diterima
+        // dd($token);
 
-        // 2. Pastikan payload enkripsi ada
-        if (!$invoice->approval_payload) {
-            abort(404, 'Approval data not found');
+        // STEP 2: cari invoice berdasarkan token
+        $invoice = Invoice::where('signature_token', $token)->first();
+
+        if (!$invoice) {
+            abort(404, 'Invoice dengan token ini tidak ditemukan');
+        }
+
+        // STEP 3: cek payload
+        if (empty($invoice->approval_payload)) {
+            abort(404, 'Approval payload kosong');
         }
 
         try {
-            // 3. Decrypt payload dari DATABASE, bukan dari URL
-            $approvalData = json_decode(
-                Crypt::decryptString($invoice->approval_payload),
-                true
-            );
+            // STEP 4: decrypt payload
+            $decrypted = Crypt::decryptString($invoice->approval_payload);
 
-            // 4. Validasi lagi: token di payload harus sama dengan di DB
-            if (($approvalData['signature_token'] ?? null) !== $invoice->signature_token) {
-                abort(403, 'Invalid approval token');
+            $approvalData = json_decode($decrypted, true);
+
+            if (!$approvalData) {
+                abort(404, 'Approval payload tidak bisa di-decode JSON');
             }
 
+            // STEP 5: validasi token di payload
+            if (($approvalData['signature_token'] ?? null) !== $invoice->signature_token) {
+                abort(403, 'Invalid approval token (mismatch dengan payload)');
+            }
+
+            // STEP 6: jika semua ok → tampilkan view
             return view('invoices.approval', [
                 'approval' => $approvalData,
                 'invoice'  => $invoice,
             ]);
         } catch (\Exception $e) {
-            abort(404, 'Approval data not found or expired');
+
+            abort(404, 'Gagal decrypt approval payload: ' . $e->getMessage());
         }
     }
 }
