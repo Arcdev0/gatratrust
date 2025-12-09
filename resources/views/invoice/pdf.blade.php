@@ -115,6 +115,19 @@
         }
     @endphp
 
+    @php
+        $qrBase64 = null;
+
+        if (!empty($invoice->approved_qr)) {
+            $qrPath = storage_path('app/public/' . $invoice->approved_qr);
+
+            if (file_exists($qrPath)) {
+                $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($qrPath));
+            }
+        }
+    @endphp
+
+
     {{-- DEBUG --}}
     @if ($wmBase64 == '')
         <p style="color:red;">⚠ Watermark image NOT FOUND</p>
