@@ -188,6 +188,10 @@
                 <td>: Invoice Approval</td>
             </tr>
             <tr>
+                <td><strong>Nominal</strong></td>
+                <td>: Rp {{ number_format($invoice->net_total, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
                 <td><strong>Pengirim</strong></td>
                 <td>: {{ $approval['approver_name'] ?? '-' }} | {{ $approval['approver_position'] ?? '-' }}</td>
             </tr>
