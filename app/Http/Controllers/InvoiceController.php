@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\InvoicePayment;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Invoice;
 use App\Models\ProjectTbl;
 use App\Models\Quotation;
@@ -12,6 +13,10 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Traits\LogsActivity;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class InvoiceController extends Controller
 {
@@ -24,6 +29,8 @@ class InvoiceController extends Controller
 
     public function getData(Request $request)
     {
+        $user = Auth::user();
+
         $query = Invoice::select([
             'id',
             'invoice_no',
@@ -33,6 +40,7 @@ class InvoiceController extends Controller
             'down_payment',
             'net_total',
             'status',
+            'approval_status',
         ]);
 
         return DataTables::of($query)
@@ -48,32 +56,49 @@ class InvoiceController extends Controller
             ->addColumn('remaining', function ($inv) {
                 return number_format($inv->remaining ?? 0, 0, ',', '.');
             })
-            ->addColumn('aksi', function ($inv) {
-                return '
-                <div class="dropdown-action">
-                    <button class="dropbtn">Aksi ⮟</button>
-                    <div class="dropdown-content">
 
-                        <a href="javascript:void(0)" class="btn-view" data-id="' . $inv->id . '">
-                            <i class="fas fa-eye"></i> Lihat
-                        </a>
+            // ✅ Kolom status approval (badge)
+            ->addColumn('approval_status_badge', function ($inv) {
+                switch ($inv->approval_status) {
+                    case 'approved':
+                        return '<span class="badge bg-success text-white">Approved</span>';
+                    case 'rejected':
+                        return '<span class="badge bg-danger text-white">Rejected</span>';
+                    default:
+                        return '<span class="badge bg-yellow text-white">Pending</span>';
+                }
+            })
 
-                        <a href="javascript:void(0)" class="btn-edit" data-id="' . $inv->id . '">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
+            ->addColumn('aksi', function ($inv) use ($user) {
+                $html = '
+            <div class="dropdown-action">
+                <button class="dropbtn">Aksi ⮟</button>
+                <div class="dropdown-content">
 
-                        <a href="javascript:void(0)" class="btn-delete" data-id="' . $inv->id . '">
-                            <i class="fas fa-trash"></i> Hapus
-                        </a>
+                    <a href="javascript:void(0)" class="btn-view" data-id="' . $inv->id . '">
+                        <i class="fas fa-eye"></i> Lihat
+                    </a>
 
-                        <a href="' . route('invoice.print', $inv->id) . '" target="_blank">
-                            <i class="fas fa-print"></i> Print
-                        </a>
+                    <a href="javascript:void(0)" class="btn-edit" data-id="' . $inv->id . '">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
 
-                        <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank">
-                            <i class="fas fa-file-pdf"></i> PDF
-                        </a>
+                    <a href="javascript:void(0)" class="btn-delete" data-id="' . $inv->id . '">
+                        <i class="fas fa-trash"></i> Hapus
+                    </a>
 
+                    <a href="' . route('invoice.print', $inv->id) . '" target="_blank">
+                        <i class="fas fa-print"></i> Print
+                    </a>
+
+                    <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </a>
+            ';
+
+                if ($user && $user->role_id == 4 && $inv->approval_status === 'pending') {
+
+                    $html .= '
                         <a href="javascript:void(0)" class="btn-approve" data-id="' . $inv->id . '">
                             <i class="fas fa-check"></i> Approve
                         </a>
@@ -81,12 +106,17 @@ class InvoiceController extends Controller
                         <a href="javascript:void(0)" class="btn-reject" data-id="' . $inv->id . '">
                             <i class="fas fa-times"></i> Reject
                         </a>
+                    ';
+                }
 
-                    </div>
+                $html .= '
                 </div>
-                ';
-                        })
-            ->rawColumns(['aksi'])
+            </div>
+            ';
+
+                return $html;
+            })
+            ->rawColumns(['aksi', 'approval_status_badge'])
             ->make(true);
     }
 
@@ -363,15 +393,111 @@ class InvoiceController extends Controller
 
     public function printInvoicePDF($id)
     {
-        $invoice = Invoice::findOrFail($id);
+        $invoice = Invoice::with('approver')->findOrFail($id); // pastikan relasi approver ke-load
 
-        $pdf = PDF::loadView('invoice.pdf', compact('invoice'))
+        $user = auth()->user(); // user yang sedang login
+
+        $pdf = PDF::loadView('invoice.pdf', compact('invoice', 'user'))
             ->setPaper('a4', 'portrait');
 
         // sanitize filename: ganti slash/backslash dengan dash
-        $safeNo = preg_replace('/[\/\\\\]+/', '-', $invoice->invoice_no);
+        $safeNo   = preg_replace('/[\/\\\\]+/', '-', $invoice->invoice_no);
         $filename = 'Invoice-' . $safeNo . '.pdf';
 
         return $pdf->stream($filename);
+    }
+
+
+    // InvoiceController.php
+    public function approve($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+
+        // Cegah double approval
+        if ($invoice->approval_status === 'approved') {
+            return response()->json([
+                'message' => 'Invoice already approved!'
+            ], 400);
+        }
+
+        $user = auth()->user();
+
+        // Data approval (mirip quotation)
+        $approvalData = [
+            'invoice_id'        => $invoice->id,
+            'approver_id'       => $user->id,
+            'approver_name'     => $user->name,
+            'approver_position' => $user->role->name ?? 'Finance', // sesuaikan
+            'invoice_no'        => $invoice->invoice_no,
+            'approval_date'     => now()->format('d-m-Y H:i'),
+            'signature_token'   => Str::random(32),
+        ];
+
+        // Enkripsi data
+        $encryptedData = Crypt::encryptString(json_encode($approvalData));
+
+        // URL yang akan dimasukkan ke QR
+        $qrUrl = route('invoice.approval', ['encryptedData' => $encryptedData]);
+
+        // Generate QR (SVG)
+        $qrSvg = QrCode::format('svg')->size(200)->generate($qrUrl);
+
+        // Simpan di storage
+        $fileName = 'qrcodes/invoice_' . $invoice->id . '_approved.svg';
+        Storage::disk('public')->put($fileName, $qrSvg);
+
+        // Update invoice (tidak harus simpan base64, cukup path + token)
+        $invoice->approval_status = 'approved';
+        $invoice->user_approve    = $user->id;
+        $invoice->approved_at     = now();
+        $invoice->approved_qr     = $fileName;
+        $invoice->signature_token = $approvalData['signature_token'];
+        $invoice->save();
+
+        return response()->json([
+            'message' => 'Invoice approved & QR generated!'
+        ]);
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $invoice = Invoice::findOrFail($id);
+
+        $invoice->update([
+            'approval_status' => 'rejected',
+            'reject_reason'   => $request->reason,
+            'rejected_at'     => now(),
+            'user_approve'    => auth()->id(),
+        ]);
+
+        return response()->json([
+            'message' => 'Invoice rejected with reason saved'
+        ]);
+    }
+
+    public function showApproval($encryptedData)
+    {
+        try {
+            $decrypted    = Crypt::decryptString($encryptedData);
+            $approvalData = json_decode($decrypted, true);
+
+            $invoice = Invoice::findOrFail($approvalData['invoice_id']);
+
+            // validasi token
+            if ($invoice->signature_token !== $approvalData['signature_token']) {
+                abort(403, 'Invalid approval token');
+            }
+
+            return view('invoices.approval', [
+                'approval' => $approvalData,
+                'invoice'  => $invoice,
+            ]);
+        } catch (\Exception $e) {
+            abort(404, 'Approval data not found or expired');
+        }
     }
 }

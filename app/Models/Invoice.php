@@ -23,7 +23,19 @@ class Invoice extends Model
         'down_payment',
         'tax',
         'net_total',
-        'status'
+        'status',
+        'approval_status',
+        'user_approve',
+        'approved_at',
+        'rejected_at',
+        'reject_reason',
+        'approved_qr',
+        'signature_token',
+    ];
+
+    protected $casts = [
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     // Relasi ke tabel pembayaran
@@ -42,6 +54,11 @@ class Invoice extends Model
         return $this->net_total - $this->total_paid;
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'project_id');
+    }
+
     public function getTotalInvoiceAttribute()
     {
         return $this->invoices()->sum('net_total');
@@ -52,9 +69,53 @@ class Invoice extends Model
         return $this->total_invoice >= $this->total_biaya_project;
     }
 
-    public function invoices()
+    // ---------- APPROVAL RELATION & ACCESSOR ----------
+
+    // user yang approve/reject
+    public function approver()
     {
-        return $this->hasMany(Invoice::class, 'project_id');
+        return $this->belongsTo(User::class, 'user_approve');
     }
 
+    // helper: apakah sudah approved?
+    public function getIsApprovedAttribute()
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    // helper: apakah ditolak?
+    public function getIsRejectedAttribute()
+    {
+        return $this->approval_status === 'rejected';
+    }
+
+    // helper: pending
+    public function getIsPendingAttribute()
+    {
+        return $this->approval_status === 'pending';
+    }
+
+    // optional: fungsi untuk approve lewat model
+    public function approve($userId)
+    {
+        $this->update([
+            'approval_status' => 'approved',
+            'user_approve'    => $userId,
+            'approved_at'     => now(),
+            'rejected_at'     => null,
+            'reject_reason'   => null,
+        ]);
+    }
+
+    // optional: fungsi untuk reject lewat model
+    public function reject($userId, $reason = null)
+    {
+        $this->update([
+            'approval_status' => 'rejected',
+            'user_approve'    => $userId,
+            'rejected_at'     => now(),
+            'reject_reason'   => $reason,
+            'approved_at'     => null,
+        ]);
+    }
 }

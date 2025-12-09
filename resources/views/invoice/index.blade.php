@@ -77,6 +77,32 @@
             </div>
         </div>
 
+        <!-- Modal Reject -->
+        <div class="modal fade" id="modalReject" tabindex="-1" aria-labelledby="modalRejectLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form id="formReject" class="modal-content">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalRejectLabel">Reject Invoice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="rejectInvoiceId" name="invoice_id">
+
+                        <div class="mb-3">
+                            <label for="rejectReason" class="form-label">Reason</label>
+                            <textarea name="reason" id="rejectReason" rows="3" class="form-control" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger">Submit Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="text-primary font-weight-bold">Invoice</h3>
             <a href="{{ route('invoice.create') }}" class="btn btn-primary btn-sm">
@@ -94,6 +120,7 @@
                             <th>Down Payment</th>
                             <th>Net Total</th>
                             {{-- <th>Remaining</th> --}}
+                            <th>Approval Status</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -146,6 +173,13 @@
                             return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
                                 .toLocaleString('id-ID') : 'Rp 0';
                         }
+                    },
+                    {
+                        data: 'approval_status_badge',
+                        name: 'approval_status',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
                     },
                     // {
                     //     data: 'remaining',
@@ -311,6 +345,122 @@
                     }
                 });
             });
+
+            $(document).on('click', '.btn-approve', function() {
+                let id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Approve Invoice?',
+                    text: "Anda yakin ingin menyetujui invoice ini?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, Approve',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        $.ajax({
+                            url: '/invoice/' + id + '/approve',
+                            type: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                            },
+                            success: function(res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Approved!',
+                                    text: res.message ||
+                                        'Invoice berhasil disetujui.',
+                                    timer: 1800,
+                                    showConfirmButton: false
+                                });
+
+                                table.ajax.reload(null, false);
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: 'Terjadi kesalahan saat approve invoice.',
+                                });
+                            }
+                        });
+
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-reject', function() {
+                let id = $(this).data('id');
+                $('#rejectInvoiceId').val(id);
+                $('#rejectReason').val('');
+
+                // Modal tetap dibuka seperti biasa
+                $('#modalReject').modal('show');
+            });
+
+            $('#formReject').on('submit', function(e) {
+                e.preventDefault();
+
+                let id = $('#rejectInvoiceId').val();
+                let reason = $('#rejectReason').val();
+
+                if (reason.trim() === '') {
+                    return Swal.fire({
+                        icon: 'warning',
+                        title: 'Alasan wajib diisi',
+                        text: 'Silakan masukkan alasan reject.',
+                    });
+                }
+
+                Swal.fire({
+                    title: 'Reject Invoice?',
+                    text: "Anda yakin ingin menolak invoice ini?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Reject',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        $.ajax({
+                            url: '/invoice/' + id + '/reject',
+                            type: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                reason: reason
+                            },
+                            success: function(res) {
+                                $('#modalReject').modal('hide');
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Rejected!',
+                                    text: res.message ||
+                                        'Invoice berhasil ditolak.',
+                                    timer: 1800,
+                                    showConfirmButton: false
+                                });
+
+                                table.ajax.reload(null, false);
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: 'Terjadi kesalahan saat reject invoice.',
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+
 
 
         });

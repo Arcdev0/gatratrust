@@ -126,7 +126,7 @@
 
     {{-- HEADER --}}
     <div class="header-page">
-        <table style="width:100%;" class="no-border"> 
+        <table style="width:100%;" class="no-border">
             <tr>
                 <td style="width:120px;">
 
@@ -211,8 +211,6 @@
             </tr>
         </table>
 
-
-        <br><br><br><br>
         <table width="100%" class="no-border" style="font-size: 13px;">
             <tr>
                 <!-- KIRI: Payment Info + Thank You -->
@@ -224,15 +222,15 @@
                     <table class="no-border" style="font-size:12px; border-collapse: collapse; margin:0;">
                         <tr>
                             <td style="padding:2px 4px; white-space: nowrap;">Bank Name</td>
-                            <td style="padding:2px 4px;">: MANDIRI</td>
+                            <td style="padding:2px 4px;">: BANK SYARIAH INDONESIA</td>
                         </tr>
                         <tr>
                             <td style="padding:2px 4px; white-space: nowrap;">Account No</td>
-                            <td style="padding:2px 4px;">: 109-00-6666010-1</td>
+                            <td style="padding:2px 4px;">: 7336210679</td>
                         </tr>
                         <tr>
                             <td style="padding:2px 4px; white-space: nowrap;">Account Name</td>
-                            <td style="padding:2px 4px;">: Gatra Perdana Trastrue</td>
+                            <td style="padding:2px 4px;">: PT Gatra Perdana Trastrue</td>
                         </tr>
                     </table>
                     <br>
@@ -247,40 +245,76 @@
             <tr>
                 <td width="60%"></td>
                 <!-- KANAN: Tanda Tangan -->
+                @php
+                    $signUser = $invoice->approver ?? ($user ?? null);
+                    $signDate = $invoice->approved_at ?? $invoice->created_at;
+                @endphp
+
                 <td width="40%" style="text-align: center;">
 
-                    <p style="margin-bottom: 60px;">
-                        Batam, {{ \Carbon\Carbon::now()->format('d F Y') }}
+                    {{-- Tanggal & Tempat --}}
+                    <p style="margin-bottom: 40px;">
+                        Batam, {{ $signDate->format('d F Y') }}
                     </p>
 
-                    <!-- Area Tanda Tangan Dummy -->
-                    <div
-                        style="
-                width: 150px;
-                height: 80px;
-                border: 1px dashed #888;
-                margin: 0 auto 10px auto;
-                line-height: 80px;
-                color: #777;
-                font-size: 12px;
-            ">
-                        Tanda Tangan
-                    </div>
+                    {{-- Status Approval --}}
+                    @if ($invoice->approval_status === 'approved')
+                        <p style="margin-bottom: 6px; font-weight:bold; font-size:12px;">
+                            APPROVED
+                        </p>
 
-                    <!-- Nama Pejabat Dummy -->
-                    <span style="font-weight: bold; text-decoration: underline;">
-                        Yogi Suranda
-                    </span>
-                    <br>
-                    <span>Finance Manager</span>
+                        {{-- Area Tanda Tangan / QR --}}
+                        @if ($qrBase64)
+                            {{-- ✅ Jika barcode/QR tersedia, tampilkan QR --}}
+                            <div style="margin: 0 auto 8px auto;">
+                                <img src="{{ $qrBase64 }}" alt="QR Approval" style="width: 90px; height:auto;">
+                            </div>
+                            <p style="font-size:9px; margin-top:0;">
+                                Scan QR untuk verifikasi tanda tangan elektronik
+                            </p>
+                        @else
+                            {{-- 🔁 Fallback: jika QR belum ada, tampilkan kotak tanda tangan --}}
+                            <div
+                                style="
+                    width: 150px;
+                    height: 80px;
+                    border: 1px dashed #888;
+                    margin: 0 auto 10px auto;
+                    line-height: 80px;
+                    color: #777;
+                    font-size: 12px;
+                ">
+                                Signature
+                            </div>
+                        @endif
 
+                        {{-- Nama Dinamis --}}
+                        <span style="font-weight: bold; text-decoration: underline;">
+                            {{ $invoice->approver->name ?? '______________________' }}
+                        </span>
+                        <br>
+
+                        {{-- Jabatan / Keterangan --}}
+                        <span>Finance Manager</span>
+                    @elseif ($invoice->approval_status === 'rejected')
+                        <p style="margin-bottom: 2px; font-weight:bold; font-size:12px;">
+                            REJECTED
+                        </p>
+                        @if ($invoice->reject_reason)
+                            <p style="margin-top:0; font-size:10px;">
+                                Reason: {{ $invoice->reject_reason }}
+                            </p>
+                        @endif
+                    @else
+                        <p style="margin-bottom: 2px; font-weight:bold; font-size:12px;">
+                            PENDING APPROVAL
+                        </p>
+                    @endif
                 </td>
+
+
             </tr>
         </table>
-
-        <br><br>
-
-
     </div>
 
 </body>

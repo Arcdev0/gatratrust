@@ -166,6 +166,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
     Route::get('/projects/{project}/dp-invoices', [InvoiceController::class, 'getDpInvoices']);
     Route::get('/invoice/pdf/{id}', [InvoiceController::class, 'printInvoicePDF'])->name('invoice.pdf');
+    Route::post('/invoice/{invoice}/approve', [InvoiceController::class, 'approve'])->name('invoice.approve');
+    Route::post('/invoice/{invoice}/reject', [InvoiceController::class, 'reject'])->name('invoice.reject');
+
 
 
     // Kwitansi
@@ -225,3 +228,4 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
+Route::get('/invoice/approval/{encryptedData}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');
