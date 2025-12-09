@@ -251,7 +251,10 @@
                         <strong>PAK Number</strong> : {{ $pak->pak_number }}<br>
                         <strong>Project Name</strong> : {{ $pak->pak_name }}<br>
                         <strong>Location</strong> :
-                        {{ $pak->location === 'dalam_kota' ? 'Batam (Dalam Kota)' : 'Luar Batam' }}
+                        {{ $pak->location === 'dalam_kota' ? 'Batam (Dalam Kota)' : 'Luar Batam' }}<br>
+                        <strong>Project Value</strong> :
+                        Rp {{ number_format($pak->pak_value, 0, ',', '.') }}
+
                     </td>
                     <td style="width:40%;">
                         <strong>Date</strong> :
