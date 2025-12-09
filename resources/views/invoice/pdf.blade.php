@@ -282,9 +282,9 @@
                             <div style="margin: 0 auto 8px auto;">
                                 <img src="{{ $qrBase64 }}" alt="QR Approval" style="width: 90px; height:auto;">
                             </div>
-                            <p style="font-size:9px; margin-top:0;">
+                            {{-- <p style="font-size:9px; margin-top:0;">
                                 Scan QR untuk verifikasi tanda tangan elektronik
-                            </p>
+                            </p> --}}
                         @else
                             {{-- 🔁 Fallback: jika QR belum ada, tampilkan kotak tanda tangan --}}
                             <div
