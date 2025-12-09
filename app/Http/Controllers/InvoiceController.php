@@ -516,7 +516,7 @@ class InvoiceController extends Controller
             }
 
             // STEP 6: jika semua ok → tampilkan view
-            return view('invoices.approval', [
+            return view('invoice.approval', [
                 'approval' => $approvalData,
                 'invoice'  => $invoice,
             ]);
