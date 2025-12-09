@@ -394,15 +394,15 @@
                     </tr>
                 @endforeach
 
-                {{-- GRAND TOTAL DAN PAJAK --}}
+                {{-- GRAND TOTAL, PAJAK, & PROFIT --}}
                 @php
                     // nilai kontrak / project value dari tabel paks
                     $projectValue = $pak->pak_value;
 
-                    // total cost semua kategori (dari seluruh section)
+                    // total pengeluaran semua kategori (dari seluruh section)
                     $totalCost = $grandTotal;
 
-                    // persen total cost terhadap nilai project
+                    // persen pengeluaran terhadap nilai project
                     $grandPercent = $projectValue > 0 ? ($totalCost / $projectValue) * 100 : 0;
 
                     // persentase pajak dari tabel paks
@@ -413,18 +413,35 @@
                     $pphAmount = $projectValue * ($pphPercent / 100);
                     $ppnAmount = $projectValue * ($ppnPercent / 100);
 
-                    // total keseluruhan setelah pajak
-                    $grandWithTax = $grandTotal + $pphAmount + $ppnAmount;
+                    // total beban biaya (pengeluaran + pajak)
+                    $grandWithTax = $totalCost + $pphAmount + $ppnAmount;
+
+                    // PROFIT = nilai project - semua pengeluaran - pajak
+                    $profit = $projectValue - $grandWithTax;
+                    $profitPercent = $projectValue > 0 ? ($profit / $projectValue) * 100 : 0;
+
+                    $profitLabel = $profit >= 0 ? 'OK' : 'OVER';
+                    $profitClass = $profit >= 0 ? 'badge-ok' : 'badge-over';
                 @endphp
 
 
-                {{-- TOTAL PROJECT --}}
+
+                {{-- NILAI PROJECT / KONTRAK --}}
                 <tr class="row-grand">
-                    <td colspan="5" class="text-right"><strong>Total Project Cost (Rp)</strong></td>
+                    <td colspan="5" class="text-right"><strong>PROJECT VALUE / NILAI KONTRAK (Rp)</strong></td>
+                    <td class="text-right">
+                        <strong>Rp {{ number_format($projectValue, 0, ',', '.') }}</strong>
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+
+                {{-- TOTAL PENGELUARAN (DARI ITEMS) --}}
+                <tr class="row-grand">
+                    <td colspan="5" class="text-right"><strong>Total Pengeluaran (Rp)</strong></td>
                     <td class="text-right">
                         <strong>Rp {{ number_format($totalCost, 0, ',', '.') }}</strong>
                     </td>
-                    <td class="text-right"><strong>Total Cost (%)</strong></td>
+                    <td class="text-right"><strong>Pengeluaran (%)</strong></td>
                     <td colspan="2" class="text-center">
                         <strong>{{ number_format($grandPercent, 0) }}%</strong>
                     </td>
@@ -453,14 +470,32 @@
                     <td colspan="3"></td>
                 </tr>
 
-                {{-- GRAND TOTAL SETELAH PAJAK --}}
+                {{-- GRAND TOTAL PENGELUARAN + PAJAK --}}
                 <tr class="row-grand">
-                    <td colspan="5" class="text-right"><strong>GRAND TOTAL (Rp)</strong></td>
+                    <td colspan="5" class="text-right"><strong>Grand Total Pengeluaran + Pajak (Rp)</strong></td>
                     <td class="text-right">
                         <strong>Rp {{ number_format($grandWithTax, 0, ',', '.') }}</strong>
                     </td>
                     <td colspan="3"></td>
                 </tr>
+
+                {{-- PROFIT / LOSS --}}
+                <tr class="row-grand">
+                    <td colspan="5" class="text-right"><strong>PROFIT (Rp)</strong></td>
+                    <td class="text-right">
+                        <strong>Rp {{ number_format($profit, 0, ',', '.') }}</strong>
+                    </td>
+                    <td class="text-right"><strong>Profit (%)</strong></td>
+                    <td class="text-center">
+                        <strong>{{ number_format($profitPercent, 0) }}%</strong>
+                    </td>
+                    <td class="text-center">
+                        <span class="{{ $profitClass }}">
+                            {{ $profitLabel }}
+                        </span>
+                    </td>
+                </tr>
+
 
 
             </tbody>
