@@ -422,36 +422,40 @@ class InvoiceController extends Controller
 
         $user = auth()->user();
 
+        // Generate token pendek (bisa pakai yang lama kalau mau)
+        $signatureToken = Str::random(32);
+
         // Data approval (mirip quotation)
         $approvalData = [
             'invoice_id'        => $invoice->id,
             'approver_id'       => $user->id,
             'approver_name'     => $user->name,
-            'approver_position' => $user->role->name ?? 'Finance', // sesuaikan
+            'approver_position' => $user->role->name ?? 'Finance',
             'invoice_no'        => $invoice->invoice_no,
             'approval_date'     => now()->format('d-m-Y H:i'),
-            'signature_token'   => Str::random(32),
+            'signature_token'   => $signatureToken,
         ];
 
-        // Enkripsi data
+        // Enkripsi data → DISIMPAN DI DB, BUKAN DI URL
         $encryptedData = Crypt::encryptString(json_encode($approvalData));
 
-        // URL yang akan dimasukkan ke QR
-        $qrUrl = route('invoice.approval', ['encryptedData' => $encryptedData]);
+        // URL QR sekarang cuma pakai token (pendek)
+        $qrUrl = route('invoice.approval', ['token' => $signatureToken]);
 
         // Generate QR (SVG)
         $qrSvg = QrCode::format('svg')->size(200)->generate($qrUrl);
 
-        // Simpan di storage
+        // Simpan QR di storage
         $fileName = 'qrcodes/invoice_' . $invoice->id . '_approved.svg';
         Storage::disk('public')->put($fileName, $qrSvg);
 
-        // Update invoice (tidak harus simpan base64, cukup path + token)
-        $invoice->approval_status = 'approved';
-        $invoice->user_approve    = $user->id;
-        $invoice->approved_at     = now();
-        $invoice->approved_qr     = $fileName;
-        $invoice->signature_token = $approvalData['signature_token'];
+        // Update invoice
+        $invoice->approval_status  = 'approved';
+        $invoice->user_approve     = $user->id;
+        $invoice->approved_at      = now();
+        $invoice->approved_qr      = $fileName;
+        $invoice->signature_token  = $signatureToken;   // token pendek
+        $invoice->approval_payload = $encryptedData;    // payload enkripsi
         $invoice->save();
 
         return response()->json([
@@ -479,16 +483,25 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function showApproval($encryptedData)
+    public function showApproval($token)
     {
+        // Cari invoice berdasarkan signature_token
+        $invoice = Invoice::where('signature_token', $token)->firstOrFail();
+
+        // Pastikan ada payload enkripsi
+        if (!$invoice->approval_payload) {
+            abort(404, 'Approval data not found');
+        }
+
         try {
-            $decrypted    = Crypt::decryptString($encryptedData);
-            $approvalData = json_decode($decrypted, true);
+            // decrypt payload dari database
+            $approvalData = json_decode(
+                Crypt::decryptString($invoice->approval_payload),
+                true
+            );
 
-            $invoice = Invoice::findOrFail($approvalData['invoice_id']);
-
-            // validasi token
-            if ($invoice->signature_token !== $approvalData['signature_token']) {
+            // validasi: token di payload harus sama
+            if (($approvalData['signature_token'] ?? null) !== $invoice->signature_token) {
                 abort(403, 'Invalid approval token');
             }
 

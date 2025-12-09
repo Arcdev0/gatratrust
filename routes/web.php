@@ -228,4 +228,4 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
-Route::get('/invoice/approval/{encryptedData}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');
+Route::get('/invoice/approval/{token}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');
