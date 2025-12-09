@@ -485,22 +485,22 @@ class InvoiceController extends Controller
 
     public function showApproval($token)
     {
-        // Cari invoice berdasarkan signature_token
+        // 1. Cari invoice berdasarkan signature_token
         $invoice = Invoice::where('signature_token', $token)->firstOrFail();
 
-        // Pastikan ada payload enkripsi
+        // 2. Pastikan payload enkripsi ada
         if (!$invoice->approval_payload) {
             abort(404, 'Approval data not found');
         }
 
         try {
-            // decrypt payload dari database
+            // 3. Decrypt payload dari DATABASE, bukan dari URL
             $approvalData = json_decode(
                 Crypt::decryptString($invoice->approval_payload),
                 true
             );
 
-            // validasi: token di payload harus sama
+            // 4. Validasi lagi: token di payload harus sama dengan di DB
             if (($approvalData['signature_token'] ?? null) !== $invoice->signature_token) {
                 abort(403, 'Invalid approval token');
             }
