@@ -32,6 +32,7 @@
 
                                 @if (Auth::user()->role_id == 1)
                                     <th>PIC</th>
+                                    <th>PAK</th>
                                     <th>Nilai Project</th>
                                     <th>Sisa Pembayaran</th>
                                 @endif
@@ -349,6 +350,9 @@
                             return data.split(';').join(', ');
                         }
                     }, {
+                        data: 'pak_number',
+                        name: 'pak.pak_number',
+                    }, {
                         data: 'total_biaya_project',
                         name: 'total_biaya_project',
                         orderable: false,
@@ -487,7 +491,7 @@
 
             const form = $(this);
             const btn = form.find('button[type="submit"]');
-            const projectId =$('#edit_project_id').val();
+            const projectId = $('#edit_project_id').val();
             const actionUrl = '/projects/update/' + projectId;
 
             const newKerjaan = $('#edit_kerjaan_id').val();

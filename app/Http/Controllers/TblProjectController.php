@@ -33,7 +33,7 @@ class TblProjectController extends Controller
     public function getListProject(Request $request)
     {
         if ($request->ajax()) {
-            $query = ProjectTbl::with(['client', 'kerjaan', 'pics'])->select('projects.*')
+            $query = ProjectTbl::with(['client', 'kerjaan', 'pics', 'pak'])->select('projects.*')
                 ->orderBy('id', 'desc');
 
             // Jika user adalah client, filter hanya project miliknya
@@ -85,7 +85,7 @@ class TblProjectController extends Controller
                             foreach ($listProses as $proses) {
                                 $query->orWhere(function ($q) use ($proses) {
                                     $q->where('kerjaan_list_proses_id', $proses->list_proses_id)
-                                    ->where('urutan_id', $proses->urutan);
+                                        ->where('urutan_id', $proses->urutan);
                                 });
                             }
                         })
@@ -141,6 +141,9 @@ class TblProjectController extends Controller
 
                     return $viewBtn;
                 })
+                ->addColumn('pak_number', function ($project) {
+                    return $project->pak->pak_number ?? '-';
+                })
                 ->addColumn('pic', function ($project) {
                     if (!$project->pics || $project->pics->isEmpty()) {
                         return '-';
@@ -151,8 +154,6 @@ class TblProjectController extends Controller
                 })
                 ->rawColumns(['periode', 'aksi', 'selesai', 'status', 'pic'])
                 ->make(true);
-
-
         }
     }
 
@@ -344,7 +345,7 @@ class TblProjectController extends Controller
     public function update(Request $request, ProjectTbl $project)
     {
         // dd($request->all());
-      $validated = $request->validate([
+        $validated = $request->validate([
             'nama_project' => 'required|string|max:100',
             'no_project' => 'required|string|unique:projects,no_project,' . $project->id,
             'client_id' => 'required|exists:users,id',
@@ -412,12 +413,12 @@ class TblProjectController extends Controller
             }
         }
 
-            $this->logActivity(
-                 "Memperbaharui Project {$project->no_project} - {$project->nama_project}",
-                $project->no_project,
-                $oldData,
-                $project->toArray()
-            );
+        $this->logActivity(
+            "Memperbaharui Project {$project->no_project} - {$project->nama_project}",
+            $project->no_project,
+            $oldData,
+            $project->toArray()
+        );
 
 
         if ($request->ajax()) {
@@ -429,7 +430,7 @@ class TblProjectController extends Controller
     }
 
 
-  public function destroy(ProjectTbl $project, Request $request)
+    public function destroy(ProjectTbl $project, Request $request)
     {
         DB::beginTransaction();
         try {

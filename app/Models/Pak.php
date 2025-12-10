@@ -12,7 +12,7 @@ class Pak extends Model
     protected $table = 'paks';
     protected $primaryKey = 'id';
 
-     protected $fillable = [
+    protected $fillable = [
         'pak_name',
         'pak_number',
         'pak_value',
@@ -44,10 +44,10 @@ class Pak extends Model
     /**
      * Get employees as array
      */
-     public function karyawans()
+    public function karyawans()
     {
         return $this->belongsToMany(KaryawanData::class, 'karyawan_pak', 'pak_id', 'karyawan_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -64,5 +64,10 @@ class Pak extends Model
         return KaryawanData::whereIn('id', $employeeIds)
             ->pluck('nama_lengkap')
             ->toArray();
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(ProjectTbl::class, 'pak_id');
     }
 }

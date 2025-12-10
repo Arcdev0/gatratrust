@@ -9,12 +9,13 @@ class ProjectTbl extends Model
 {
     use HasFactory;
 
-    protected $table = 'projects'; // Explicitly define table name
+    protected $table = 'projects';
 
     protected $fillable = [
         'nama_project',
         'no_project',
         'client_id',
+        'pak_id',
         'kerjaan_id',
         'deskripsi',
         'total_biaya_project',
@@ -30,6 +31,10 @@ class ProjectTbl extends Model
         'updated_at'
     ];
 
+    public function pak()
+    {
+        return $this->belongsTo(Pak::class, 'pak_id');
+    }
 
     public function client()
     {
