@@ -91,6 +91,18 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="form-group">
+                            <label>PAK (Optional)</label>
+                            <select name="pak_id" class="form-control select2" id="pakSelect">
+                                <option value="">Tidak ada PAK</option>
+                                @foreach ($listPak as $pak)
+                                    <option value="{{ $pak->id }}">
+                                        {{ $pak->pak_number }} - {{ $pak->pak_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label>Deskripsi (Optional)</label>
                             <textarea name="deskripsi" placeholder="Masukkan deskripsi" class="form-control"></textarea>
@@ -135,7 +147,7 @@
             <div class="modal-content">
                 <form id="formEditProject" method="POST">
                     @csrf
-                    <input type="text" id="edit_project_id">
+                    <input type="hidden" id="edit_project_id">
                     <div class="modal-header">
                         <h5 class="modal-title" id="editModalLabel">Edit Project</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -172,6 +184,19 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="form-group">
+                            <label>PAK (Optional)</label>
+                            <select name="pak_id" class="form-control select2" id="edit_pak_id">
+                                <option value="">Tidak ada PAK</option>
+                                @foreach ($listPak as $pak)
+                                    <option value="{{ $pak->id }}">
+                                        {{ $pak->pak_number }} - {{ $pak->pak_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Deskripsi (Optional)</label>
                             <textarea name="deskripsi" class="form-control" id="edit_deskripsi"></textarea>
@@ -446,6 +471,7 @@
             var end = $(this).data('end');
             var biaya = $(this).data('biaya');
             const picsRaw = $(this).attr('data-pics') || '';
+            const pakId = $(this).data('pak') || '';
 
             // Isi form dalam modal dengan data
             $('#edit_no_project').val(no);
@@ -460,6 +486,7 @@
             // isi biaya (tampilkan dalam format Rp di input, dan angka asli di hidden)
             $('#edit_biaya_display').val(formatRupiah(biaya.toString()));
             $('#edit_biaya').val(biaya);
+            $('#edit_pak_id').val(pakId ? String(pakId) : '').trigger('change');
 
             if (picsRaw.trim() !== '') {
                 const selectedPics = picsRaw.split(';').map(Number);

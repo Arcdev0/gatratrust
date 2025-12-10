@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProjectTbl;
 use App\Models\User;
 use App\Models\Kerjaan;
+use App\Models\Pak;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,15 @@ class TblProjectController extends Controller
         $listclient = User::where('role_id', 2)->get();
         $listkerjaan = Kerjaan::select('id', 'nama_kerjaan')->get();
         $listUser = User::where('role_id', 1)->get();
-        return view('projects.index', compact('projects', 'listclient', 'listkerjaan', 'listUser'));
+        $listPak = Pak::orderBy('date', 'desc')->get();
+
+        return view('projects.index', compact(
+            'projects',
+            'listclient',
+            'listkerjaan',
+            'listUser',
+            'listPak'
+        ));
     }
 
     public function getListProject(Request $request)
@@ -126,6 +135,7 @@ class TblProjectController extends Controller
                                 data-start="' . optional($project->start)->format('Y-m-d') . '"
                                 data-end="' . optional($project->end)->format('Y-m-d') . '"
                                 data-pics="' . $project->pics->pluck('id')->implode(';') . '"
+                                data-pak="' . ($project->pak_id ?? '') . '"
                                 >
                                 <i class="fas fa-edit"></i>
                             </button>';
@@ -192,6 +202,7 @@ class TblProjectController extends Controller
                 'no_project' => 'required|string|unique:projects',
                 'client_id' => 'required|exists:users,id',
                 'kerjaan_id' => 'required|exists:kerjaans,id',
+                'pak_id' => 'nullable|exists:paks,id',
                 'deskripsi' => 'nullable|string',
                 'total_biaya_project' => 'nullable|numeric',
                 'start' => 'required|date',
@@ -199,7 +210,7 @@ class TblProjectController extends Controller
                 'pic_id' => 'required|array|min:1',
                 'pic_id.*' => 'exists:users,id'
             ]);
-
+        
             $validated['created_by'] = Auth::id();
 
             $project = ProjectTbl::create($validated);
@@ -350,6 +361,7 @@ class TblProjectController extends Controller
             'no_project' => 'required|string|unique:projects,no_project,' . $project->id,
             'client_id' => 'required|exists:users,id',
             'kerjaan_id' => 'required|exists:kerjaans,id',
+            'pak_id' => 'nullable|exists:paks,id',
             'deskripsi' => 'nullable|string',
             'total_biaya_project' => 'nullable|numeric',
             'start_project' => 'nullable|date',
