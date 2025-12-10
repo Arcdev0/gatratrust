@@ -9,104 +9,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DashboardController extends Controller
 {
-    // public function index()
-    // {
-    //     // Summary counts
-    //     $totalProjects = DB::table('projects')->count();
-    //     $activeProjects = DB::table('projects')->where('end', '>=', now())->count();
-
-    //     $totalnominalproject = DB::table('projects')->sum('total_biaya_project');
-
-    //     $invoiceStatus = DB::table('invoices')
-    //         ->select('status', DB::raw('COUNT(*) as total'))
-    //         ->groupBy('status')
-    //         ->pluck('total', 'status')
-    //         ->toArray();
-
-    //     $totalPayments = (float) DB::table('invoice_payments')->sum('amount_paid');
-    //     $totalInvoiceAmount = (float) DB::table('invoices')->sum('net_total');
-    //     $outstanding = $totalInvoiceAmount - $totalPayments;
-
-    //     // Revenue per month (current year) for line chart
-    //     $revenueByMonth = DB::table('invoices')
-    //         ->selectRaw('MONTH(date) as bulan, SUM(net_total) as total')
-    //         ->whereYear('date', now()->year)
-    //         ->where('status', 'close')
-    //         ->groupBy('bulan')
-    //         ->pluck('total', 'bulan');
-
-    //     // Projects list (active)
-    //     // NOTE: asumsi tabel clients ada, kalau beda sesuaikan joinnya
-    //     $projects = DB::table('projects')
-    //         ->join('users', 'projects.client_id', '=', 'users.id')
-    //         ->select('projects.*', 'users.name as client_name')
-    //         ->where('projects.end', '>=', now())
-    //         ->get();
-
-    //     // Invoice counts grouped by YEAR(date) and status -> untuk dropdown tahun
-    //     $invoiceYearStatus = DB::table('invoices')
-    //         ->selectRaw('YEAR(date) as year, status, COUNT(*) as total')
-    //         ->groupBy('year', 'status')
-    //         ->orderBy('year')
-    //         ->get();
-
-    //     $invoiceDataByYear = [];
-    //     foreach ($invoiceYearStatus as $row) {
-    //         $y = (int)$row->year;
-    //         if (!isset($invoiceDataByYear[$y])) {
-    //             $invoiceDataByYear[$y] = ['open' => 0, 'close' => 0];
-    //         }
-    //         $invoiceDataByYear[$y][$row->status] = (int)$row->total;
-    //     }
-
-    //     // Pastikan tahun sekarang ada di data (fallback 0 jika tidak ada invoice tahun ini)
-    //     $currentYear = now()->year;
-    //     if (!isset($invoiceDataByYear[$currentYear])) {
-    //         $invoiceDataByYear[$currentYear] = [
-    //             'open'  => $invoiceStatus['open'] ?? 0,
-    //             'close' => $invoiceStatus['close'] ?? 0,
-    //         ];
-    //     }
-
-    //     $currentMonth = now()->month;
-    //     $lastMonth = $currentMonth == 1 ? 12 : $currentMonth - 1;
-    //     $lastMonthYear = $currentMonth == 1 ? $currentYear - 1 : $currentYear;
-
-    //     // Total pendapatan bulan lalu
-    //     $lastMonthRevenue = DB::table('invoice_payments')
-    //         ->whereMonth('payment_date', $lastMonth)
-    //         ->whereYear('payment_date', $lastMonthYear)
-    //         ->sum('amount_paid');
-
-    //     // Total pendapatan bulan ini
-    //     $currentMonthRevenue = DB::table('invoice_payments')
-    //         ->whereMonth('payment_date', $currentMonth)
-    //         ->whereYear('payment_date', $currentYear)
-    //         ->sum('amount_paid');
-
-    //     // Hitung pertumbuhan (growth)
-    //     if ($lastMonthRevenue > 0) {
-    //         $growthPercentage = round((($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 2);
-    //     } else {
-    //         $growthPercentage = null; // belum ada data untuk dibandingkan
-    //     }
-
-    //     return view('dashboard.index', compact(
-    //         'totalProjects',
-    //         'activeProjects',
-    //         'totalnominalproject',
-    //         'invoiceStatus',
-    //         'totalPayments',
-    //         'totalInvoiceAmount',
-    //         'outstanding',
-    //         'revenueByMonth',
-    //         'projects',
-    //         'invoiceDataByYear',
-    //         'growthPercentage'
-    //     ));
-    // }
-
-
     public function index()
     {
         $currentYear = Carbon::now()->year;
@@ -135,7 +37,7 @@ class DashboardController extends Controller
             sort($availableYears);
         }
 
-         // Projects list (active)
+        // Projects list (active)
         // NOTE: asumsi tabel clients ada, kalau beda sesuaikan joinnya
         $projects = DB::table('projects')
             ->join('users', 'projects.client_id', '=', 'users.id')
@@ -151,11 +53,197 @@ class DashboardController extends Controller
         ]);
     }
 
+    // public function getData(Request $request)
+    // {
+    //     $year = (int) $request->query('year', Carbon::now()->year);
+    //     $prevYear = $year - 1;
+    //     $today = Carbon::now();
+
+    //     // ----------------- PROJECTS (berdasarkan start) -----------------
+    //     $totalProjects = (int) DB::table('projects')
+    //         ->whereNotNull('start')
+    //         ->whereYear('start', $year)
+    //         ->count();
+
+    //     // activeProjects: start di year & (end null OR end >= today)
+    //     $activeProjects = (int) DB::table('projects')
+    //         ->whereNotNull('start')
+    //         ->whereYear('start', $year)
+    //         ->where(function ($q) use ($today) {
+    //             $q->whereNull('end')->orWhere('end', '>=', $today);
+    //         })
+    //         ->count();
+
+    //     $totalNominalProject = (float) DB::table('projects')
+    //         ->whereNotNull('start')
+    //         ->whereYear('start', $year)
+    //         ->sum('total_biaya_project');
+
+    //     $totalNominalProjectPrev = (float) DB::table('projects')
+    //         ->whereNotNull('start')
+    //         ->whereYear('start', $prevYear)
+    //         ->sum('total_biaya_project');
+
+    //     $totalNominalChangePct = null;
+    //     if ($totalNominalProjectPrev > 0) {
+    //         $totalNominalChangePct = round((($totalNominalProject - $totalNominalProjectPrev) / $totalNominalProjectPrev) * 100, 2);
+    //     }
+
+    //     // ----------------- PAYMENTS / INVOICES -----------------
+    //     $totalPayments = (float) DB::table('invoice_payments')
+    //         ->whereYear('payment_date', $year)
+    //         ->sum('amount_paid');
+
+    //     $totalPaymentsPrev = (float) DB::table('invoice_payments')
+    //         ->whereYear('payment_date', $prevYear)
+    //         ->sum('amount_paid');
+
+    //     $totalPaymentsChangePct = null;
+    //     if ($totalPaymentsPrev > 0) {
+    //         $totalPaymentsChangePct = round((($totalPayments - $totalPaymentsPrev) / $totalPaymentsPrev) * 100, 2);
+    //     }
+
+    //     // Total invoice amount di tahun (dipakai untuk outstanding) berdasarkan invoices.date
+    //     $totalInvoiceAmount = (float) DB::table('invoices')
+    //         ->whereYear('date', $year)
+    //         ->sum('net_total');
+
+    //     $outstanding = $totalInvoiceAmount - $totalPayments;
+
+    //     // ---------- BAR CHART: paid vs unpaid per month ----------
+    //     $invoicedRows = DB::table('invoices')
+    //         ->selectRaw('MONTH(date) as month, COALESCE(SUM(net_total),0) as total')
+    //         ->whereYear('date', $year)
+    //         ->groupBy('month')
+    //         ->pluck('total', 'month')
+    //         ->toArray();
+
+    //     $paidRows = DB::table('invoice_payments')
+    //         ->selectRaw('MONTH(payment_date) as month, COALESCE(SUM(amount_paid),0) as total')
+    //         ->whereYear('payment_date', $year)
+    //         ->groupBy('month')
+    //         ->pluck('total', 'month')
+    //         ->toArray();
+
+    //     $projectNominalRows = DB::table('projects')
+    //         ->selectRaw('MONTH(start) as month, COALESCE(SUM(total_biaya_project),0) as total')
+    //         ->whereNotNull('start')
+    //         ->whereYear('start', $year)
+    //         ->groupBy('month')
+    //         ->pluck('total', 'month')
+    //         ->toArray();
+
+    //     $invoicedByMonth = $paidByMonth = $unpaidByMonth = $projectNominalByMonth = [];
+    //     for ($m = 1; $m <= 12; $m++) {
+    //         $inv = isset($invoicedRows[$m]) ? (float)$invoicedRows[$m] : 0.0;
+    //         $paid = isset($paidRows[$m]) ? (float)$paidRows[$m] : 0.0;
+    //         $projNom = isset($projectNominalRows[$m]) ? (float)$projectNominalRows[$m] : 0.0;
+
+    //         $paidCapped = ($paid > $inv) ? $inv : $paid;
+    //         $unpaid = $inv - $paidCapped;
+    //         if ($unpaid < 0) $unpaid = 0.0;
+
+    //         $invoicedByMonth[] = $inv;
+    //         $paidByMonth[] = $paidCapped;
+    //         $unpaidByMonth[] = $unpaid;
+    //         $projectNominalByMonth[] = $projNom;
+    //     }
+
+    //     // ---------- DONUT CHART: PROJECT PROGRESS (aggregate for all projects in year) ----------
+    //     $projects = DB::table('projects')
+    //         ->select('id', 'kerjaan_id')
+    //         ->whereNotNull('start')
+    //         ->whereYear('start', $year)
+    //         ->get();
+
+    //     $projectsTotal = $projects->count();
+    //     $projectsFinished = 0;
+    //     $projectsInProgress = 0;
+    //     $sumPercentAll = 0;
+
+    //     foreach ($projects as $project) {
+    //         $listProses = DB::table('kerjaan_list_proses')
+    //             ->where('kerjaan_id', $project->kerjaan_id)
+    //             ->select('list_proses_id', 'urutan')
+    //             ->get();
+
+    //         $totalProses = $listProses->count();
+    //         if ($totalProses === 0) {
+    //             $persen = 0;
+    //         } else {
+    //             $prosesSelesaiQuery = DB::table('project_details')
+    //                 ->where('project_id', $project->id)
+    //                 ->where('status', 'done')
+    //                 ->where(function ($q) use ($listProses) {
+    //                     foreach ($listProses as $proses) {
+    //                         $q->orWhere(function ($sub) use ($proses) {
+    //                             $sub->where('kerjaan_list_proses_id', $proses->list_proses_id)
+    //                                 ->where('urutan_id', $proses->urutan);
+    //                         });
+    //                     }
+    //                 });
+
+    //             $prosesSelesai = (int) $prosesSelesaiQuery->count();
+    //             $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
+    //         }
+
+    //         $sumPercentAll += $persen;
+    //         if ($persen >= 100) $projectsFinished++;
+    //         else $projectsInProgress++;
+    //     }
+
+    //     $avgProgressPercent = $projectsTotal > 0 ? round($sumPercentAll / $projectsTotal, 2) : 0;
+
+    //     // ---------- Years available dari projects berdasarkan start ----------
+    //     $yearsRaw = DB::table('projects')
+    //         ->selectRaw('YEAR(start) as year')
+    //         ->whereNotNull('start')
+    //         ->groupBy('year')
+    //         ->orderBy('year', 'asc')
+    //         ->pluck('year')
+    //         ->toArray();
+
+    //     if (!in_array($year, $yearsRaw)) {
+    //         $yearsRaw[] = $year;
+    //         sort($yearsRaw);
+    //     }
+
+    //     // ---------- Return JSON ----------
+    //     return response()->json([
+    //         'year' => $year,
+    //         'availableYears' => $yearsRaw,
+    //         'summary' => [
+    //             'totalProjects' => $totalProjects,
+    //             'activeProjects' => $activeProjects,
+    //             'totalNominalProject' => $totalNominalProject,
+    //             'totalNominalProjectPrev' => $totalNominalProjectPrev,
+    //             'totalNominalChangePct' => $totalNominalChangePct,
+    //             'totalPayments' => $totalPayments,
+    //             'totalPaymentsPrev' => $totalPaymentsPrev,
+    //             'totalPaymentsChangePct' => $totalPaymentsChangePct,
+    //             'totalInvoiceAmount' => $totalInvoiceAmount,
+    //             'outstanding' => $outstanding,
+    //         ],
+    //         'charts' => [
+    //             'invoicedByMonth' => $invoicedByMonth,
+    //             'paidByMonth' => $paidByMonth,
+    //             'unpaidByMonth' => $unpaidByMonth,
+    //             'projectProgress' => [
+    //                 'total' => $projectsTotal,
+    //                 'finished' => $projectsFinished,
+    //                 'in_progress' => $projectsInProgress,
+    //                 'avg_percent' => $avgProgressPercent,
+    //             ],
+    //             'projectNominalByMonth' => $projectNominalByMonth,
+    //         ],
+    //     ]);
+    // }
+
     public function getData(Request $request)
     {
-        $year = (int) $request->query('year', Carbon::now()->year);
+        $year     = (int) $request->query('year', Carbon::now()->year);
         $prevYear = $year - 1;
-        $today = Carbon::now();
+        $today    = Carbon::now();
 
         // ----------------- PROJECTS (berdasarkan start) -----------------
         $totalProjects = (int) DB::table('projects')
@@ -163,52 +251,132 @@ class DashboardController extends Controller
             ->whereYear('start', $year)
             ->count();
 
-        // activeProjects: start di year & (end null OR end >= today)
+        // Project aktif: start di tahun ini & (end null OR end >= today)
         $activeProjects = (int) DB::table('projects')
             ->whereNotNull('start')
             ->whereYear('start', $year)
-            ->where(function($q) use ($today) {
-                $q->whereNull('end')->orWhere('end', '>=', $today);
+            ->where(function ($q) use ($today) {
+                $q->whereNull('end')
+                    ->orWhere('end', '>=', $today);
             })
             ->count();
 
-        $totalNominalProject = (float) DB::table('projects')
+        // ----------------- TOTAL NILAI PROJECT -----------------
+        // Tahun ini
+        $totalProjectValue = (float) DB::table('projects')
             ->whereNotNull('start')
             ->whereYear('start', $year)
             ->sum('total_biaya_project');
 
-        $totalNominalProjectPrev = (float) DB::table('projects')
+        // Tahun sebelumnya
+        $totalProjectValuePrev = (float) DB::table('projects')
             ->whereNotNull('start')
             ->whereYear('start', $prevYear)
             ->sum('total_biaya_project');
 
-        $totalNominalChangePct = null;
-        if ($totalNominalProjectPrev > 0) {
-            $totalNominalChangePct = round((($totalNominalProject - $totalNominalProjectPrev) / $totalNominalProjectPrev) * 100, 2);
+        // Persentase perubahan total nilai project
+        $totalProjectValueChangePct = null;
+        if ($totalProjectValuePrev > 0) {
+            $totalProjectValueChangePct = round(
+                (($totalProjectValue - $totalProjectValuePrev) / $totalProjectValuePrev) * 100,
+                2
+            );
         }
 
-        // ----------------- PAYMENTS / INVOICES -----------------
-        $totalPayments = (float) DB::table('invoice_payments')
-            ->whereYear('payment_date', $year)
-            ->sum('amount_paid');
+        // ----------------- TOTAL PENGELUARAN (PAK & PAK ITEMS) -----------------
+        // Ambil semua pak_id dari project di tahun ini yang terhubung PAK
+        $pakIdsForYear = DB::table('projects')
+            ->whereNotNull('start')
+            ->whereYear('start', $year)
+            ->whereNotNull('pak_id')
+            ->pluck('pak_id')
+            ->filter()
+            ->unique()
+            ->toArray();
 
-        $totalPaymentsPrev = (float) DB::table('invoice_payments')
-            ->whereYear('payment_date', $prevYear)
-            ->sum('amount_paid');
+        $totalExpenses = 0.0;
 
-        $totalPaymentsChangePct = null;
-        if ($totalPaymentsPrev > 0) {
-            $totalPaymentsChangePct = round((($totalPayments - $totalPaymentsPrev) / $totalPaymentsPrev) * 100, 2);
+        if (!empty($pakIdsForYear)) {
+            // Total biaya dari pak_items.total_cost
+            $totalItemCost = (float) DB::table('pak_items')
+                ->whereIn('pak_id', $pakIdsForYear)
+                ->sum('total_cost');
+
+            // Total pajak dari paks.pph_23 + paks.ppn
+            $taxSums = DB::table('paks')
+                ->whereIn('id', $pakIdsForYear)
+                ->selectRaw('
+                COALESCE(SUM(pph_23), 0) as sum_pph_23,
+                COALESCE(SUM(ppn), 0)    as sum_ppn
+            ')
+                ->first();
+
+            $sumPph23 = (float) ($taxSums->sum_pph_23 ?? 0);
+            $sumPpn   = (float) ($taxSums->sum_ppn ?? 0);
+
+            // Total pengeluaran = total_cost + pph_23 + ppn
+            $totalExpenses = $totalItemCost + $sumPph23 + $sumPpn;
         }
 
-        // Total invoice amount di tahun (dipakai untuk outstanding) berdasarkan invoices.date
-        $totalInvoiceAmount = (float) DB::table('invoices')
-            ->whereYear('date', $year)
-            ->sum('net_total');
+        // ----- TOTAL PENGELUARAN TAHUN SEBELUMNYA -----
+        $pakIdsForPrevYear = DB::table('projects')
+            ->whereNotNull('start')
+            ->whereYear('start', $prevYear)
+            ->whereNotNull('pak_id')
+            ->pluck('pak_id')
+            ->filter()
+            ->unique()
+            ->toArray();
 
-        $outstanding = $totalInvoiceAmount - $totalPayments;
+        $totalExpensesPrev = 0.0;
 
-        // ---------- BAR CHART: paid vs unpaid per month ----------
+        if (!empty($pakIdsForPrevYear)) {
+            $totalItemCostPrev = (float) DB::table('pak_items')
+                ->whereIn('pak_id', $pakIdsForPrevYear)
+                ->sum('total_cost');
+
+            $taxSumsPrev = DB::table('paks')
+                ->whereIn('id', $pakIdsForPrevYear)
+                ->selectRaw('
+                COALESCE(SUM(pph_23), 0) as sum_pph_23,
+                COALESCE(SUM(ppn), 0)    as sum_ppn
+            ')
+                ->first();
+
+            $sumPph23Prev = (float) ($taxSumsPrev->sum_pph_23 ?? 0);
+            $sumPpnPrev   = (float) ($taxSumsPrev->sum_ppn ?? 0);
+
+            $totalExpensesPrev = $totalItemCostPrev + $sumPph23Prev + $sumPpnPrev;
+        }
+
+        // Persentase perubahan total pengeluaran
+        $totalExpensesChangePct = null;
+        if ($totalExpensesPrev > 0) {
+            $totalExpensesChangePct = round(
+                (($totalExpenses - $totalExpensesPrev) / $totalExpensesPrev) * 100,
+                2
+            );
+        }
+
+        // ----------------- PENDAPATAN BERSIH -----------------
+        // Tahun ini
+        $netIncome = $totalProjectValue - $totalExpenses;
+
+        // Tahun sebelumnya
+        $netIncomePrev = $totalProjectValuePrev - $totalExpensesPrev;
+
+        // Persentase perubahan net income
+        $netIncomeChangePct = null;
+        if ($netIncomePrev > 0) {
+            $netIncomeChangePct = round(
+                (($netIncome - $netIncomePrev) / $netIncomePrev) * 100,
+                2
+            );
+        }
+
+        // ----------------- DATA UNTUK CHART (INVOICE & PAYMENT) -----------------
+
+        // Total invoice per bulan di tahun ini
         $invoicedRows = DB::table('invoices')
             ->selectRaw('MONTH(date) as month, COALESCE(SUM(net_total),0) as total')
             ->whereYear('date', $year)
@@ -216,6 +384,7 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
+        // Total pembayaran per bulan di tahun ini
         $paidRows = DB::table('invoice_payments')
             ->selectRaw('MONTH(payment_date) as month, COALESCE(SUM(amount_paid),0) as total')
             ->whereYear('payment_date', $year)
@@ -223,6 +392,7 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
+        // Total nilai project per bulan (berdasarkan start)
         $projectNominalRows = DB::table('projects')
             ->selectRaw('MONTH(start) as month, COALESCE(SUM(total_biaya_project),0) as total')
             ->whereNotNull('start')
@@ -231,33 +401,40 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
-        $invoicedByMonth = $paidByMonth = $unpaidByMonth = $projectNominalByMonth = [];
+        $invoicedByMonth       = [];
+        $paidByMonth           = [];
+        $unpaidByMonth         = [];
+        $projectNominalByMonth = [];
+
         for ($m = 1; $m <= 12; $m++) {
-            $inv = isset($invoicedRows[$m]) ? (float)$invoicedRows[$m] : 0.0;
-            $paid = isset($paidRows[$m]) ? (float)$paidRows[$m] : 0.0;
-            $projNom = isset($projectNominalRows[$m]) ? (float)$projectNominalRows[$m] : 0.0;
+            $inv     = isset($invoicedRows[$m])       ? (float) $invoicedRows[$m]       : 0.0;
+            $paid    = isset($paidRows[$m])           ? (float) $paidRows[$m]           : 0.0;
+            $projNom = isset($projectNominalRows[$m]) ? (float) $projectNominalRows[$m] : 0.0;
 
+            // Bayaran tidak boleh melebihi total invoice bulan itu (untuk visual)
             $paidCapped = ($paid > $inv) ? $inv : $paid;
-            $unpaid = $inv - $paidCapped;
-            if ($unpaid < 0) $unpaid = 0.0;
+            $unpaid     = $inv - $paidCapped;
+            if ($unpaid < 0) {
+                $unpaid = 0.0;
+            }
 
-            $invoicedByMonth[] = $inv;
-            $paidByMonth[] = $paidCapped;
-            $unpaidByMonth[] = $unpaid;
+            $invoicedByMonth[]       = $inv;
+            $paidByMonth[]           = $paidCapped;
+            $unpaidByMonth[]         = $unpaid;
             $projectNominalByMonth[] = $projNom;
         }
 
-        // ---------- DONUT CHART: PROJECT PROGRESS (aggregate for all projects in year) ----------
+        // ---------- DONUT CHART: PROJECT PROGRESS (semua project di tahun ini) ----------
         $projects = DB::table('projects')
             ->select('id', 'kerjaan_id')
             ->whereNotNull('start')
             ->whereYear('start', $year)
             ->get();
 
-        $projectsTotal = $projects->count();
-        $projectsFinished = 0;
+        $projectsTotal      = $projects->count();
+        $projectsFinished   = 0;
         $projectsInProgress = 0;
-        $sumPercentAll = 0;
+        $sumPercentAll      = 0;
 
         foreach ($projects as $project) {
             $listProses = DB::table('kerjaan_list_proses')
@@ -266,6 +443,7 @@ class DashboardController extends Controller
                 ->get();
 
             $totalProses = $listProses->count();
+
             if ($totalProses === 0) {
                 $persen = 0;
             } else {
@@ -282,15 +460,23 @@ class DashboardController extends Controller
                     });
 
                 $prosesSelesai = (int) $prosesSelesaiQuery->count();
-                $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
+                $persen        = $totalProses > 0
+                    ? round(($prosesSelesai / $totalProses) * 100)
+                    : 0;
             }
 
             $sumPercentAll += $persen;
-            if ($persen >= 100) $projectsFinished++;
-            else $projectsInProgress++;
+
+            if ($persen >= 100) {
+                $projectsFinished++;
+            } else {
+                $projectsInProgress++;
+            }
         }
 
-        $avgProgressPercent = $projectsTotal > 0 ? round($sumPercentAll / $projectsTotal, 2) : 0;
+        $avgProgressPercent = $projectsTotal > 0
+            ? round($sumPercentAll / $projectsTotal, 2)
+            : 0;
 
         // ---------- Years available dari projects berdasarkan start ----------
         $yearsRaw = DB::table('projects')
@@ -308,27 +494,34 @@ class DashboardController extends Controller
 
         // ---------- Return JSON ----------
         return response()->json([
-            'year' => $year,
+            'year'           => $year,
             'availableYears' => $yearsRaw,
-            'summary' => [
-                'totalProjects' => $totalProjects,
-                'activeProjects' => $activeProjects,
-                'totalNominalProject' => $totalNominalProject,
-                'totalNominalProjectPrev' => $totalNominalProjectPrev,
-                'totalNominalChangePct' => $totalNominalChangePct,
-                'totalPayments' => $totalPayments,
-                'totalPaymentsPrev' => $totalPaymentsPrev,
-                'totalPaymentsChangePct' => $totalPaymentsChangePct,
-                'totalInvoiceAmount' => $totalInvoiceAmount,
-                'outstanding' => $outstanding,
+            'summary'        => [
+                'totalProjects'                 => $totalProjects,
+                'activeProjects'                => $activeProjects,
+
+                // Total nilai project + perbandingan
+                'totalProjectValue'             => $totalProjectValue,
+                'totalProjectValuePrev'         => $totalProjectValuePrev,
+                'totalProjectValueChangePct'    => $totalProjectValueChangePct,
+
+                // Total pengeluaran + perbandingan
+                'totalExpenses'                 => $totalExpenses,
+                'totalExpensesPrev'             => $totalExpensesPrev,
+                'totalExpensesChangePct'        => $totalExpensesChangePct,
+
+                // Pendapatan bersih + perbandingan
+                'netIncome'                     => $netIncome,
+                'netIncomePrev'                 => $netIncomePrev,
+                'netIncomeChangePct'            => $netIncomeChangePct,
             ],
             'charts' => [
-                'invoicedByMonth' => $invoicedByMonth,
-                'paidByMonth' => $paidByMonth,
-                'unpaidByMonth' => $unpaidByMonth,
-                'projectProgress' => [
-                    'total' => $projectsTotal,
-                    'finished' => $projectsFinished,
+                'invoicedByMonth'       => $invoicedByMonth,
+                'paidByMonth'           => $paidByMonth,
+                'unpaidByMonth'         => $unpaidByMonth,
+                'projectProgress'       => [
+                    'total'       => $projectsTotal,
+                    'finished'    => $projectsFinished,
                     'in_progress' => $projectsInProgress,
                     'avg_percent' => $avgProgressPercent,
                 ],
@@ -336,6 +529,9 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
+
+
 
     public function projectsData(Request $request)
     {
@@ -361,16 +557,16 @@ class DashboardController extends Controller
         // ->where(function($q){ $q->whereNull('projects.end')->orWhere('projects.end', '>=', now()); })
 
         return DataTables::of($query)
-            ->editColumn('start', function($row){
+            ->editColumn('start', function ($row) {
                 return $row->start ? Carbon::parse($row->start)->format('Y-m-d') : '-';
             })
-            ->editColumn('end', function($row){
+            ->editColumn('end', function ($row) {
                 return $row->end ? Carbon::parse($row->end)->format('Y-m-d') : '-';
             })
-            ->editColumn('total_biaya_project', function($row){
+            ->editColumn('total_biaya_project', function ($row) {
                 return 'Rp ' . number_format((float)$row->total_biaya_project, 0, ',', '.');
             })
-            ->addColumn('status', function($row){
+            ->addColumn('status', function ($row) {
                 $today = now();
                 $end = $row->end ? Carbon::parse($row->end) : null;
                 if (!$row->end || ($end && $end >= $today)) {
@@ -383,7 +579,7 @@ class DashboardController extends Controller
             //     $url = route('projects.show', $row->id);
             //     return '<a href="'. $url .'" class="btn btn-sm btn-outline-primary">Lihat</a>';
             // })
-            ->rawColumns(['status','action'])
+            ->rawColumns(['status', 'action'])
             ->make(true);
     }
 }

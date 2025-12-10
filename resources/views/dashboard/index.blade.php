@@ -9,6 +9,7 @@
         </select>
 
         <div class="row clearfix">
+
             <!-- Total Project -->
             <div class="col-lg-3 col-md-6 col-sm-12">
                 <div class="widget">
@@ -25,7 +26,7 @@
                         <small class="text-small mt-10 d-block" id="w-active-projects">- Active Projects</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: 100%"></div>
+                        <div class="progress-bar bg-info" style="width:100%"></div>
                     </div>
                 </div>
             </div>
@@ -46,52 +47,53 @@
                         <small class="text-small mt-10 d-block" id="w-invoice-status-count">-</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                        <div class="progress-bar bg-success" style="width:100%"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Total Pendapatan -->
+            <!-- Total Pengeluaran -->
             <div class="col-lg-3 col-md-6 col-sm-12">
                 <div class="widget">
                     <div class="widget-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="state">
-                                <h6>Total Pendapatan</h6>
-                                <h2 class="responsive-title" id="w-total-payments">Rp -</h2>
+                                <h6>Total Pengeluaran</h6>
+                                <h2 id="w-total-expenses">Rp -</h2>
+                            </div>
+                            <div class="icon">
+                                <i class="ik ik-arrow-down-circle"></i>
+                            </div>
+                        </div>
+                        <small class="text-small mt-10 d-block" id="w-expenses-note">-</small>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-primary" style="width:100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pendapatan Bersih -->
+            <div class="col-lg-3 col-md-6 col-sm-12">
+                <div class="widget">
+                    <div class="widget-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="state">
+                                <h6>Pendapatan Bersih</h6>
+                                <h2 id="w-net-income">Rp -</h2>
                             </div>
                             <div class="icon">
                                 <i class="ik ik-dollar-sign"></i>
                             </div>
                         </div>
-                        <small class="text-small mt-10 d-block" id="w-growth">-</small>
+                        <small class="text-small mt-10 d-block" id="w-net-income-note">-</small>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+                        <div class="progress-bar bg-danger" style="width:100%"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Outstanding Payment -->
-            <div class="col-lg-3 col-md-6 col-sm-12">
-                <div class="widget">
-                    <div class="widget-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="state">
-                                <h6>Pembayaran Belum Selesai</h6>
-                                <h2 id="w-outstanding">Rp -</h2>
-                            </div>
-                            <div class="icon">
-                                <i class="ik ik-alert-circle"></i>
-                            </div>
-                        </div>
-                        <small class="text-small mt-10 d-block">Harus ditagih</small>
-                    </div>
-                    <div class="progress progress-sm">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Charts -->
@@ -193,55 +195,46 @@
                 });
             }
 
-            // render summary widgets
             function renderSummary(summary) {
-                // total project
+
+                // 1) Total Project
                 $('#w-total-project').text(summary.totalProjects ?? 0);
                 $('#w-active-projects').text((summary.activeProjects ?? 0) + ' Active Projects');
 
-                // total nilai project
-                $('#w-total-nominal').text(formatRupiah(summary.totalNominalProject ?? 0));
-                const nomPct = summary.totalNominalChangePct;
-                const nomPrev = summary.totalNominalProjectPrev ?? 0;
-                const $nomEl = $('#w-invoice-status-count');
-
-                if (!nomPrev || nomPrev === 0 || nomPct === null || nomPct === undefined) {
-                    $nomEl.text('-');
-                    $nomEl.css('color', '');
-                } else {
-                    const sign = nomPct >= 0 ? '+' : '';
-                    const arrow = nomPct >= 0 ? '▲' : '▼';
-                    const color = nomPct >= 0 ? '#2E7D32' : '#C62828';
-                    $nomEl
-                        .html(
-                            `<span style="color:${color}; font-weight:600">${arrow} ${sign}${nomPct}%</span> dari tahun sebelumnya`
-                        )
-                        .css('color', color);
+                // Helper arrow generator
+                function makeArrowText(pct) {
+                    if (pct === null || pct === undefined || isNaN(pct)) return '-';
+                    const sign = pct >= 0 ? '+' : '';
+                    const arrow = pct >= 0 ? '▲' : '▼';
+                    const color = pct >= 0 ? '#2E7D32' : '#C62828';
+                    return `<span style="color:${color}; font-weight:600">${arrow} ${sign}${pct}%</span> dari tahun sebelumnya`;
                 }
 
-                // total pendapatan
-                $('#w-total-payments').text(formatRupiah(summary.totalPayments ?? 0));
-                const payPct = summary.totalPaymentsChangePct;
-                const payPrev = summary.totalPaymentsPrev ?? 0;
-                const $payEl = $('#w-growth');
+                // 2) Total Nilai Project
+                $('#w-total-nominal').text(formatRupiah(summary.totalProjectValue ?? 0));
+                $('#w-invoice-status-count').html(
+                    (summary.totalProjectValuePrev > 0) ?
+                    makeArrowText(summary.totalProjectValueChangePct) :
+                    '-'
+                );
 
-                if (!payPrev || payPrev === 0 || payPct === null || payPct === undefined) {
-                    $payEl.text('-');
-                    $payEl.css('color', '');
-                } else {
-                    const sign2 = payPct >= 0 ? '+' : '';
-                    const arrow2 = payPct >= 0 ? '▲' : '▼';
-                    const color2 = payPct >= 0 ? '#2E7D32' : '#C62828';
-                    $payEl
-                        .html(
-                            `<span style="color:${color2}; font-weight:600">${arrow2} ${sign2}${payPct}%</span> dari tahun sebelumnya`
-                        )
-                        .css('color', color2);
-                }
+                // 3) Total Pengeluaran
+                $('#w-total-expenses').text(formatRupiah(summary.totalExpenses ?? 0));
+                $('#w-expenses-note').html(
+                    (summary.totalExpensesPrev > 0) ?
+                    makeArrowText(summary.totalExpensesChangePct) :
+                    '-'
+                );
 
-                // outstanding
-                $('#w-outstanding').text(formatRupiah(summary.outstanding ?? 0));
+                // 4) Pendapatan Bersih
+                $('#w-net-income').text(formatRupiah(summary.netIncome ?? 0));
+                $('#w-net-income-note').html(
+                    (summary.netIncomePrev > 0) ?
+                    makeArrowText(summary.netIncomeChangePct) :
+                    '-'
+                );
             }
+
 
             // render stacked bar (paid - green, unpaid - red)
             function renderRevenueChart(labels, paidData, unpaidData, projectNominalLabels) {
