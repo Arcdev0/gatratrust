@@ -53,191 +53,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    // public function getData(Request $request)
-    // {
-    //     $year = (int) $request->query('year', Carbon::now()->year);
-    //     $prevYear = $year - 1;
-    //     $today = Carbon::now();
-
-    //     // ----------------- PROJECTS (berdasarkan start) -----------------
-    //     $totalProjects = (int) DB::table('projects')
-    //         ->whereNotNull('start')
-    //         ->whereYear('start', $year)
-    //         ->count();
-
-    //     // activeProjects: start di year & (end null OR end >= today)
-    //     $activeProjects = (int) DB::table('projects')
-    //         ->whereNotNull('start')
-    //         ->whereYear('start', $year)
-    //         ->where(function ($q) use ($today) {
-    //             $q->whereNull('end')->orWhere('end', '>=', $today);
-    //         })
-    //         ->count();
-
-    //     $totalNominalProject = (float) DB::table('projects')
-    //         ->whereNotNull('start')
-    //         ->whereYear('start', $year)
-    //         ->sum('total_biaya_project');
-
-    //     $totalNominalProjectPrev = (float) DB::table('projects')
-    //         ->whereNotNull('start')
-    //         ->whereYear('start', $prevYear)
-    //         ->sum('total_biaya_project');
-
-    //     $totalNominalChangePct = null;
-    //     if ($totalNominalProjectPrev > 0) {
-    //         $totalNominalChangePct = round((($totalNominalProject - $totalNominalProjectPrev) / $totalNominalProjectPrev) * 100, 2);
-    //     }
-
-    //     // ----------------- PAYMENTS / INVOICES -----------------
-    //     $totalPayments = (float) DB::table('invoice_payments')
-    //         ->whereYear('payment_date', $year)
-    //         ->sum('amount_paid');
-
-    //     $totalPaymentsPrev = (float) DB::table('invoice_payments')
-    //         ->whereYear('payment_date', $prevYear)
-    //         ->sum('amount_paid');
-
-    //     $totalPaymentsChangePct = null;
-    //     if ($totalPaymentsPrev > 0) {
-    //         $totalPaymentsChangePct = round((($totalPayments - $totalPaymentsPrev) / $totalPaymentsPrev) * 100, 2);
-    //     }
-
-    //     // Total invoice amount di tahun (dipakai untuk outstanding) berdasarkan invoices.date
-    //     $totalInvoiceAmount = (float) DB::table('invoices')
-    //         ->whereYear('date', $year)
-    //         ->sum('net_total');
-
-    //     $outstanding = $totalInvoiceAmount - $totalPayments;
-
-    //     // ---------- BAR CHART: paid vs unpaid per month ----------
-    //     $invoicedRows = DB::table('invoices')
-    //         ->selectRaw('MONTH(date) as month, COALESCE(SUM(net_total),0) as total')
-    //         ->whereYear('date', $year)
-    //         ->groupBy('month')
-    //         ->pluck('total', 'month')
-    //         ->toArray();
-
-    //     $paidRows = DB::table('invoice_payments')
-    //         ->selectRaw('MONTH(payment_date) as month, COALESCE(SUM(amount_paid),0) as total')
-    //         ->whereYear('payment_date', $year)
-    //         ->groupBy('month')
-    //         ->pluck('total', 'month')
-    //         ->toArray();
-
-    //     $projectNominalRows = DB::table('projects')
-    //         ->selectRaw('MONTH(start) as month, COALESCE(SUM(total_biaya_project),0) as total')
-    //         ->whereNotNull('start')
-    //         ->whereYear('start', $year)
-    //         ->groupBy('month')
-    //         ->pluck('total', 'month')
-    //         ->toArray();
-
-    //     $invoicedByMonth = $paidByMonth = $unpaidByMonth = $projectNominalByMonth = [];
-    //     for ($m = 1; $m <= 12; $m++) {
-    //         $inv = isset($invoicedRows[$m]) ? (float)$invoicedRows[$m] : 0.0;
-    //         $paid = isset($paidRows[$m]) ? (float)$paidRows[$m] : 0.0;
-    //         $projNom = isset($projectNominalRows[$m]) ? (float)$projectNominalRows[$m] : 0.0;
-
-    //         $paidCapped = ($paid > $inv) ? $inv : $paid;
-    //         $unpaid = $inv - $paidCapped;
-    //         if ($unpaid < 0) $unpaid = 0.0;
-
-    //         $invoicedByMonth[] = $inv;
-    //         $paidByMonth[] = $paidCapped;
-    //         $unpaidByMonth[] = $unpaid;
-    //         $projectNominalByMonth[] = $projNom;
-    //     }
-
-    //     // ---------- DONUT CHART: PROJECT PROGRESS (aggregate for all projects in year) ----------
-    //     $projects = DB::table('projects')
-    //         ->select('id', 'kerjaan_id')
-    //         ->whereNotNull('start')
-    //         ->whereYear('start', $year)
-    //         ->get();
-
-    //     $projectsTotal = $projects->count();
-    //     $projectsFinished = 0;
-    //     $projectsInProgress = 0;
-    //     $sumPercentAll = 0;
-
-    //     foreach ($projects as $project) {
-    //         $listProses = DB::table('kerjaan_list_proses')
-    //             ->where('kerjaan_id', $project->kerjaan_id)
-    //             ->select('list_proses_id', 'urutan')
-    //             ->get();
-
-    //         $totalProses = $listProses->count();
-    //         if ($totalProses === 0) {
-    //             $persen = 0;
-    //         } else {
-    //             $prosesSelesaiQuery = DB::table('project_details')
-    //                 ->where('project_id', $project->id)
-    //                 ->where('status', 'done')
-    //                 ->where(function ($q) use ($listProses) {
-    //                     foreach ($listProses as $proses) {
-    //                         $q->orWhere(function ($sub) use ($proses) {
-    //                             $sub->where('kerjaan_list_proses_id', $proses->list_proses_id)
-    //                                 ->where('urutan_id', $proses->urutan);
-    //                         });
-    //                     }
-    //                 });
-
-    //             $prosesSelesai = (int) $prosesSelesaiQuery->count();
-    //             $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
-    //         }
-
-    //         $sumPercentAll += $persen;
-    //         if ($persen >= 100) $projectsFinished++;
-    //         else $projectsInProgress++;
-    //     }
-
-    //     $avgProgressPercent = $projectsTotal > 0 ? round($sumPercentAll / $projectsTotal, 2) : 0;
-
-    //     // ---------- Years available dari projects berdasarkan start ----------
-    //     $yearsRaw = DB::table('projects')
-    //         ->selectRaw('YEAR(start) as year')
-    //         ->whereNotNull('start')
-    //         ->groupBy('year')
-    //         ->orderBy('year', 'asc')
-    //         ->pluck('year')
-    //         ->toArray();
-
-    //     if (!in_array($year, $yearsRaw)) {
-    //         $yearsRaw[] = $year;
-    //         sort($yearsRaw);
-    //     }
-
-    //     // ---------- Return JSON ----------
-    //     return response()->json([
-    //         'year' => $year,
-    //         'availableYears' => $yearsRaw,
-    //         'summary' => [
-    //             'totalProjects' => $totalProjects,
-    //             'activeProjects' => $activeProjects,
-    //             'totalNominalProject' => $totalNominalProject,
-    //             'totalNominalProjectPrev' => $totalNominalProjectPrev,
-    //             'totalNominalChangePct' => $totalNominalChangePct,
-    //             'totalPayments' => $totalPayments,
-    //             'totalPaymentsPrev' => $totalPaymentsPrev,
-    //             'totalPaymentsChangePct' => $totalPaymentsChangePct,
-    //             'totalInvoiceAmount' => $totalInvoiceAmount,
-    //             'outstanding' => $outstanding,
-    //         ],
-    //         'charts' => [
-    //             'invoicedByMonth' => $invoicedByMonth,
-    //             'paidByMonth' => $paidByMonth,
-    //             'unpaidByMonth' => $unpaidByMonth,
-    //             'projectProgress' => [
-    //                 'total' => $projectsTotal,
-    //                 'finished' => $projectsFinished,
-    //                 'in_progress' => $projectsInProgress,
-    //                 'avg_percent' => $avgProgressPercent,
-    //             ],
-    //             'projectNominalByMonth' => $projectNominalByMonth,
-    //         ],
-    //     ]);
-    // }
 
     public function getData(Request $request)
     {
@@ -374,25 +189,8 @@ class DashboardController extends Controller
             );
         }
 
-        // ----------------- DATA UNTUK CHART (INVOICE & PAYMENT) -----------------
+        // ----------------- DATA UNTUK CHART: TOTAL NILAI PROJECT PER BULAN -----------------
 
-        // Total invoice per bulan di tahun ini
-        $invoicedRows = DB::table('invoices')
-            ->selectRaw('MONTH(date) as month, COALESCE(SUM(net_total),0) as total')
-            ->whereYear('date', $year)
-            ->groupBy('month')
-            ->pluck('total', 'month')
-            ->toArray();
-
-        // Total pembayaran per bulan di tahun ini
-        $paidRows = DB::table('invoice_payments')
-            ->selectRaw('MONTH(payment_date) as month, COALESCE(SUM(amount_paid),0) as total')
-            ->whereYear('payment_date', $year)
-            ->groupBy('month')
-            ->pluck('total', 'month')
-            ->toArray();
-
-        // Total nilai project per bulan (berdasarkan start)
         $projectNominalRows = DB::table('projects')
             ->selectRaw('MONTH(start) as month, COALESCE(SUM(total_biaya_project),0) as total')
             ->whereNotNull('start')
@@ -401,26 +199,10 @@ class DashboardController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
-        $invoicedByMonth       = [];
-        $paidByMonth           = [];
-        $unpaidByMonth         = [];
         $projectNominalByMonth = [];
 
         for ($m = 1; $m <= 12; $m++) {
-            $inv     = isset($invoicedRows[$m])       ? (float) $invoicedRows[$m]       : 0.0;
-            $paid    = isset($paidRows[$m])           ? (float) $paidRows[$m]           : 0.0;
             $projNom = isset($projectNominalRows[$m]) ? (float) $projectNominalRows[$m] : 0.0;
-
-            // Bayaran tidak boleh melebihi total invoice bulan itu (untuk visual)
-            $paidCapped = ($paid > $inv) ? $inv : $paid;
-            $unpaid     = $inv - $paidCapped;
-            if ($unpaid < 0) {
-                $unpaid = 0.0;
-            }
-
-            $invoicedByMonth[]       = $inv;
-            $paidByMonth[]           = $paidCapped;
-            $unpaidByMonth[]         = $unpaid;
             $projectNominalByMonth[] = $projNom;
         }
 
@@ -516,9 +298,6 @@ class DashboardController extends Controller
                 'netIncomeChangePct'            => $netIncomeChangePct,
             ],
             'charts' => [
-                'invoicedByMonth'       => $invoicedByMonth,
-                'paidByMonth'           => $paidByMonth,
-                'unpaidByMonth'         => $unpaidByMonth,
                 'projectProgress'       => [
                     'total'       => $projectsTotal,
                     'finished'    => $projectsFinished,
