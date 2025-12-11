@@ -140,9 +140,27 @@ class DailyController extends Controller
             $query->whereDate('tanggal', now());
         }
 
-        $projectMap = ProjectTbl::pluck('no_project', 'id');
-        $prosesMap  = ListProses::pluck('nama_proses', 'id');
+        // 🔹 Map global (untuk tampilan list semua user)
+        $projectMap = ProjectTbl::pluck('no_project', 'id');        // [id => no_project]
+        $prosesMap  = ListProses::pluck('nama_proses', 'id');       // [id => nama_proses]
 
+        // ======================================================
+        // 1) Hitung kombinasi project+proses yang sudah pernah OK
+        // ======================================================
+        $okItems = DailyItem::where('status', true) // true = OK
+            ->whereNotNull('project_id')
+            ->whereNotNull('proses_id')
+            ->get();
+
+        $hasOk = []; // key: "project_id|proses_id" => true
+        foreach ($okItems as $it) {
+            $key = $it->project_id . '|' . $it->proses_id;
+            $hasOk[$key] = true;
+        }
+
+        // ======================================================
+        // 2) Ambil pending (status = false), filter & deduplicate
+        // ======================================================
         $pendingQuery = DailyItem::where('status', false)
             ->with([
                 'daily',
@@ -155,17 +173,42 @@ class DailyController extends Controller
             });
         }
 
-        $pendingRaw = $pendingQuery->get();
+        // supaya "yang pertama dibuat" yang dipakai
+        $pendingRaw = $pendingQuery
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-        $pendingTasks = $pendingRaw->map(function ($item) use ($projectMap, $prosesMap) {
+        $seenKeys    = [];          // untuk deduplicate pending per (project+proses)
+        $pendingTasks = collect();
+
+        foreach ($pendingRaw as $item) {
+
+            // KEY hanya untuk yang punya project & proses
+            if ($item->project_id && $item->proses_id) {
+                $key = $item->project_id . '|' . $item->proses_id;
+
+                // 🔴 Kalau kombinasi ini pernah OK → SKIP semua pending-nya
+                if (!empty($hasOk[$key])) {
+                    continue;
+                }
+
+                // 🟡 Kalau pending untuk key ini sudah pernah dimasukkan → SKIP duplikat
+                if (!empty($seenKeys[$key])) {
+                    continue;
+                }
+
+                // tandai sudah dipakai
+                $seenKeys[$key] = true;
+            }
+
+            // project_no
             $projectNo = $item->project_id
                 ? ($projectMap[$item->project_id] ?? null)
                 : null;
 
+            // PIC
             $picNames = [];
-
             if ($item->jenis === 'project') {
-
                 if ($item->project && $item->project->pics) {
                     $picNames = $item->project->pics->pluck('name')->values()->all();
                 }
@@ -175,29 +218,30 @@ class DailyController extends Controller
                 }
             }
 
-            return [
-                'id'            => $item->id,
-                'tanggal'       => optional($item->daily)->tanggal,
-                'jenis'         => $item->jenis,
-                'project_id'    => $item->project_id,
-                'project_no'    => $projectNo,
-                'proses_id'     => $item->proses_id,
-                'proses'        => $item->proses_id ? ($prosesMap[$item->proses_id] ?? null) : null,
+            $pendingTasks->push([
+                'id'             => $item->id,
+                'tanggal'        => optional($item->daily)->tanggal,
+                'jenis'          => $item->jenis,
+                'project_id'     => $item->project_id,
+                'project_no'     => $projectNo,
+                'proses_id'      => $item->proses_id,
+                'proses'         => $item->proses_id ? ($prosesMap[$item->proses_id] ?? null) : null,
                 'pekerjaan_umum' => $item->pekerjaan_umum,
-                'keterangan'    => $item->keterangan,
-                'pic'           => $picNames,
-                'status'        => $item->status,
-            ];
-        })->values();
+                'keterangan'     => $item->keterangan,
+                'pic'            => $picNames,
+                'status'         => $item->status,
+            ]);
+        }
 
         return response()->json([
             'data'          => $query->get(),
             'auth_user_id'  => auth()->id(),
             'project_map'   => $projectMap,
             'proses_map'    => $prosesMap,
-            'pending_tasks' => $pendingTasks,
+            'pending_tasks' => $pendingTasks->values(),
         ]);
     }
+
 
 
     public function dataDailyComments(Daily $daily)
