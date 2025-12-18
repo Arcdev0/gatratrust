@@ -12,6 +12,7 @@ use App\Http\Controllers\KwitansiController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MpiTestController;
 use App\Http\Controllers\PakController;
+use App\Http\Controllers\ProcedureController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\TblProjectController;
@@ -222,6 +223,28 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/edit', [PakController::class, 'edit'])->name('edit');
         Route::put('/{id}', [PakController::class, 'update'])->name('update');
         Route::delete('/{id}', [PakController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('procedures')->name('procedures.')->group(function () {
+        Route::get('/', [ProcedureController::class, 'index'])->name('index');
+        Route::get('/datatable', [ProcedureController::class, 'datatable'])->name('datatable');
+
+        Route::get('/create', [ProcedureController::class, 'create'])->name('create');
+        Route::post('/', [ProcedureController::class, 'store'])->name('store');
+
+        Route::get('/{procedure}', [ProcedureController::class, 'show'])->name('show');
+        Route::get('/{procedure}/edit', [ProcedureController::class, 'edit'])->name('edit');
+        Route::put('/{procedure}', [ProcedureController::class, 'update'])->name('update');
+        Route::delete('/{procedure}', [ProcedureController::class, 'destroy'])->name('destroy');
+
+        // upload dokumen (buat REV otomatis)
+        Route::post('/{procedure}/upload', [ProcedureController::class, 'upload'])->name('upload');
+
+        // workflow actions (per revision)
+        Route::post('/revisions/{revision}/submit-to-check', [ProcedureController::class, 'submitToCheck'])->name('revisions.submitToCheck');
+        Route::post('/revisions/{revision}/checked', [ProcedureController::class, 'checkedBy'])->name('revisions.checkedBy');
+        Route::post('/revisions/{revision}/approved', [ProcedureController::class, 'approvedBy'])->name('revisions.approvedBy');
+        Route::post('/revisions/{revision}/reject', [ProcedureController::class, 'reject'])->name('revisions.reject');
     });
 
     // export using maatwebsite

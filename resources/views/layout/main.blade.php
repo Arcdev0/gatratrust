@@ -168,11 +168,11 @@
                             <div class="submenu-content">
                                 <a href="{{ route('quotations.index') }}"
                                     class="menu-item {{ request()->routeIs('quotations.index') ? 'active' : '' }}">Quotation</a>
-                                <a href="{{ route('pak.index') }}" 
-                                class="menu-item {{ request()->routeIs('pak.index') ? 'active' : '' }} }}">PAK</a>
+                                <a href="{{ route('pak.index') }}"
+                                    class="menu-item {{ request()->routeIs('pak.index') ? 'active' : '' }} }}">PAK</a>
 
                             </div>
-                            
+
                         </div>
                     @endif
                     {{-- Project --}}
@@ -256,6 +256,15 @@
                             <a href="{{ route('jabatan.index') }}">
                                 <i class="fas fa-network-wired"></i><span>Jabatan</span>
                             </a>
+                        </div>
+                        <div class="nav-item has-sub {{ request()->routeIs('procedures.index') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="far fa-folder-open"></i><span>Dokumen ISO</span>
+                            </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('procedures.index') }}" class="menu-item {{ request()->routeIs('procedures.index') ? 'active' : '' }}">Prosedur</a>
+                                <a href="" class="menu-item">Ruang Lingkup</a>
+                            </div>
                         </div>
                     @endif
                 </nav>
