@@ -263,7 +263,7 @@
                             </a>
                             <div class="submenu-content">
                                 <a href="{{ route('procedures.index') }}" class="menu-item {{ request()->routeIs('procedures.index') ? 'active' : '' }}">Prosedur</a>
-                                <a href="" class="menu-item">Ruang Lingkup</a>
+                                <a href="" class="menu-item">Instruksi Kerja</a>
                             </div>
                         </div>
                     @endif
