@@ -169,20 +169,24 @@ class TblProjectController extends Controller
 
     public function generateNoProject()
     {
-        $lastProject = DB::table('projects')
+        $year  = date('Y');
+        $month = date('m');
+        
+        $lastProjectThisYear = DB::table('projects')
+            ->where('no_project', 'like', "%-{$year}")
             ->orderBy('id', 'desc')
             ->first();
-        if ($lastProject) {
-            $lastNumber = intval(explode('/', $lastProject->no_project)[0]);
-            $newNumber = $lastNumber + 1;
+
+        if ($lastProjectThisYear) {
+            $lastNumber = (int) explode('/', $lastProjectThisYear->no_project)[0];
+            $newNumber  = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
         $formattedNumber = ($newNumber < 100)
             ? str_pad($newNumber, 2, '0', STR_PAD_LEFT)
-            : $newNumber;
-        $month = date('m');
-        $year = date('Y');
+            : (string) $newNumber;
+
         $noProject = "{$formattedNumber}/GPT/{$month}-{$year}";
 
         return response()->json([
@@ -210,7 +214,7 @@ class TblProjectController extends Controller
                 'pic_id' => 'required|array|min:1',
                 'pic_id.*' => 'exists:users,id'
             ]);
-        
+
             $validated['created_by'] = Auth::id();
 
             $project = ProjectTbl::create($validated);
