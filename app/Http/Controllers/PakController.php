@@ -97,26 +97,31 @@ class PakController extends Controller
     {
         $employees = KaryawanData::orderBy('nama_lengkap', 'asc')->get();
 
-        // Ambil data terakhir
-        $lastPak = Pak::orderBy('id', 'desc')->first();
+        $year  = date('Y');
+        $month = date('m');
+        $monthYear = "{$month}-{$year}"; // 01-2026
 
-        // Running number 3 digit
-        $runningNumber = $lastPak ? str_pad($lastPak->id + 1, 3, '0', STR_PAD_LEFT) : '001';
+        // Ambil PAK terakhir khusus tahun berjalan (berdasarkan pak_number)
+        $lastPakThisYear = Pak::where('pak_number', 'like', "%/GPT-PAK/%-{$year}")
+            ->orderBy('id', 'desc')
+            ->first();
 
-        // Format bulan dan tahun
-        $monthYear = date('m-Y'); // contoh: 09-2025
+        if ($lastPakThisYear) {
+            $lastNumber = (int) explode('/', $lastPakThisYear->pak_number)[0];
+            $newNumber  = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
 
-        // Gabungkan format baru
+        $runningNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
         $newPakNo = "{$runningNumber}/GPT-PAK/{$monthYear}";
 
-        // Get existing PAKs for copy feature
         $paks = Pak::orderBy('created_at', 'desc')->get();
         $categories = DB::table('categories')->get();
 
-        // dd($newPakNo);
-
         return view('pak.create', compact('employees', 'newPakNo', 'paks', 'categories'));
     }
+
 
     public function copy($id)
     {

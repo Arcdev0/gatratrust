@@ -151,28 +151,25 @@ class InvoiceController extends Controller
                 return $p->total_invoice < $p->total_biaya_project;
             });
 
-
         $quotation = null;
-
         if ($request->has('quotation_id')) {
             $quotation = Quotation::with(['items', 'status'])
                 ->findOrFail($request->quotation_id);
         }
 
         $now = Carbon::now();
-        $monthYear = $now->format('m-Y');
+        $year = $now->format('Y');
+        $monthYear = $now->format('m-Y'); // 01-2026
 
-        $lastInvoice = Invoice::orderBy('id', 'desc')->first();
+        // Ambil MAX nomor depan sebelum "/" untuk invoice tahun berjalan
+        $maxNumber = Invoice::where('invoice_no', 'like', "%/INV/GPT/%-{$year}")
+            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(invoice_no, '/', 1) AS UNSIGNED)) as max_no")
+            ->value('max_no');
 
-        if ($lastInvoice) {
-            $lastNumber = intval(explode('/', $lastInvoice->invoice_no)[0]);
-            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '001';
-        }
+        $newNumber = $maxNumber ? ($maxNumber + 1) : 1;
+        $runningNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        $newInvoiceNo = $newNumber . '/INV/GPT/' . $monthYear;
-
+        $newInvoiceNo = "{$runningNumber}/INV/GPT/{$monthYear}";
 
         return view('invoice.create', compact('newInvoiceNo', 'projects', 'quotation'));
     }
