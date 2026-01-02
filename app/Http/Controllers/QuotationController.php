@@ -23,7 +23,7 @@ class QuotationController extends Controller
     }
 
     // 2. Ambil data untuk DataTables
-   public function getDataTable(Request $request)
+    public function getDataTable(Request $request)
     {
         if ($request->ajax()) {
             $data = Quotation::with('status')->latest();
@@ -44,13 +44,13 @@ class QuotationController extends Controller
                         'pending'  => '<span class="badge bg-yellow text-white">Pending</span>',
                         'approve'  => '<span class="badge bg-success text-white">Approve</span>',
                         'rejected' => '<span class="badge bg-danger text-white">Rejected</span>',
-                        default    => '<span class="badge bg-secondary text-white">'.$row->status->name.'</span>',
+                        default    => '<span class="badge bg-secondary text-white">' . $row->status->name . '</span>',
                     };
                 })
                 ->addColumn('action', function ($row) {
                     $btns = '
                         <button class="btn btn-sm btn-info showBtn"
-                                data-id="'.$row->id.'" title="Show">
+                                data-id="' . $row->id . '" title="Show">
                             <i class="fas fa-eye"></i>
                         </button>
                     ';
@@ -60,19 +60,19 @@ class QuotationController extends Controller
 
                     if ((int) $row->status_id === 2) {
                         // Approved → hanya PDF
-                        $btns .= ' <a href="'.route('quotations.exportPdf', $row->id).'"
+                        $btns .= ' <a href="' . route('quotations.exportPdf', $row->id) . '"
                                     class="btn btn-sm btn-secondary" target="_blank" title="Export PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>';
                     } elseif ((int) $row->status_id === 3) {
                         // Rejected → hanya Delete
                         $btns .= ' <button class="btn btn-sm btn-danger deleteBtn"
-                                            data-id="'.$row->id.'" title="Delete">
+                                            data-id="' . $row->id . '" title="Delete">
                                         <i class="fas fa-trash"></i>
                                 </button>';
                     } else {
                         // Pending → tampilkan PDF juga
-                        $btns .= ' <a href="'.route('quotations.exportPdf', $row->id).'"
+                        $btns .= ' <a href="' . route('quotations.exportPdf', $row->id) . '"
                                     class="btn btn-sm btn-secondary" target="_blank" title="Export PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>';
@@ -80,11 +80,11 @@ class QuotationController extends Controller
                         if (in_array($roleName, ['superadmin', 'keuangan'])) {
                             $btns .= '
                                 <button class="btn btn-sm btn-success approveBtn"
-                                        data-id="'.$row->id.'" title="Approve">
+                                        data-id="' . $row->id . '" title="Approve">
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                                 <button class="btn btn-sm btn-warning rejectBtn"
-                                        data-id="'.$row->id.'" title="Reject">
+                                        data-id="' . $row->id . '" title="Reject">
                                     <i class="fas fa-times-circle"></i>
                                 </button>
                             ';
@@ -93,7 +93,7 @@ class QuotationController extends Controller
                         // semua role tetap bisa Delete kalau pending
                         $btns .= '
                             <button class="btn btn-sm btn-danger deleteBtn"
-                                    data-id="'.$row->id.'" title="Delete">
+                                    data-id="' . $row->id . '" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
                         ';
@@ -108,21 +108,30 @@ class QuotationController extends Controller
 
     public function create()
     {
-        $lastQuotation = Quotation::orderBy('id', 'desc')->first();
-        if ($lastQuotation && preg_match('/Q\.(\d+)\//', $lastQuotation->quo_no, $matches)) {
-            $lastNumber = (int)$matches[1];
-        } else {
-            $lastNumber = 0;
-        }
-        $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
-        $monthYear = now()->format('m-y');
+        $year2 = now()->format('y');     // 26
+        $monthYear = now()->format('m-y'); // 01-26
 
-        $newQuotationNo = "Q.{$newNumber}/GPT/{$monthYear}";
+        // Ambil MAX nomor Q.xxx untuk tahun berjalan (yy)
+        $maxNumber = Quotation::where('quo_no', 'like', "%/GPT/%-{$year2}")
+            ->selectRaw("
+            MAX(
+                CAST(
+                    REPLACE(SUBSTRING_INDEX(quo_no, '/', 1), 'Q.', '')
+                AS UNSIGNED)
+            ) AS max_no
+        ")
+            ->value('max_no');
+
+        $newNumber = $maxNumber ? ($maxNumber + 1) : 1;
+        $runningNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        $newQuotationNo = "Q.{$runningNumber}/GPT/{$monthYear}";
 
         $quotations = Quotation::orderBy('id', 'desc')->get();
 
         return view('quotations.create', compact('quotations', 'newQuotationNo'));
     }
+
 
 
     public function copy($id)
@@ -142,117 +151,116 @@ class QuotationController extends Controller
         ]);
     }
 
-     public function store(Request $request)
-        {
-            DB::beginTransaction();
+    public function store(Request $request)
+    {
+        DB::beginTransaction();
 
 
-            // dd($request->all());
+        // dd($request->all());
 
 
-            try {
-                // Validasi data
-                $validated = $request->validate([
-                    'quo_no' => 'required|string|max:50|unique:quotation,quo_no',
-                    'date' => 'required|date',
-                    'customer_name' => 'required|string|max:255',
-                    'customer_address' => 'nullable|string',
-                    'attention' => 'nullable|string|max:255',
-                    'your_reference' => 'nullable|string|max:255',
-                    'terms' => 'nullable|string',
-                    'job_no' => 'nullable|string|max:50',
-                    'rev' => 'nullable|string|max:10',
-                    'discount_amount' => 'nullable|min:0',
-                    'payment_terms' => 'nullable|string',
-                    'bank_account' => 'nullable|string',
-                    'tax_included' => 'nullable|boolean',
-                    'items' => 'required|array|min:1',
-                    'items.*.description' => 'required|string',
-                    'items.*.qty' => 'required|numeric|min:1',
-                    'items.*.unit_price' => 'required|numeric|min:0',
-                    'scopes.*.description' => 'required_with:scopes|string',
-                    'scopes.*.responsible_pt_gpt' => 'nullable|boolean',
-                    'scopes.*.responsible_client' => 'nullable|boolean',
-                    'terms_conditions' => 'nullable|array',
-                    'terms_conditions.*.description' => 'required_with:terms_conditions|string|max:500',
+        try {
+            // Validasi data
+            $validated = $request->validate([
+                'quo_no' => 'required|string|max:50|unique:quotation,quo_no',
+                'date' => 'required|date',
+                'customer_name' => 'required|string|max:255',
+                'customer_address' => 'nullable|string',
+                'attention' => 'nullable|string|max:255',
+                'your_reference' => 'nullable|string|max:255',
+                'terms' => 'nullable|string',
+                'job_no' => 'nullable|string|max:50',
+                'rev' => 'nullable|string|max:10',
+                'discount_amount' => 'nullable|min:0',
+                'payment_terms' => 'nullable|string',
+                'bank_account' => 'nullable|string',
+                'tax_included' => 'nullable|boolean',
+                'items' => 'required|array|min:1',
+                'items.*.description' => 'required|string',
+                'items.*.qty' => 'required|numeric|min:1',
+                'items.*.unit_price' => 'required|numeric|min:0',
+                'scopes.*.description' => 'required_with:scopes|string',
+                'scopes.*.responsible_pt_gpt' => 'nullable|boolean',
+                'scopes.*.responsible_client' => 'nullable|boolean',
+                'terms_conditions' => 'nullable|array',
+                'terms_conditions.*.description' => 'required_with:terms_conditions|string|max:500',
 
+            ]);
+
+            // Hitung total amount
+            $total_amount = collect($validated['items'])->sum(function ($item) {
+                return $item['qty'] * $item['unit_price'];
+            });
+
+            $discount = $validated['discount_amount'] ?? 0;
+            $sub_total = $total_amount - $discount;
+
+            // Simpan quotation utama
+            $quotation = Quotation::create([
+                'quo_no' => $validated['quo_no'],
+                'date' => $validated['date'],
+                'customer_name' => $validated['customer_name'],
+                'customer_address' => $validated['customer_address'] ?? null,
+                'attention' => $validated['attention'] ?? null,
+                'your_reference' => $validated['your_reference'] ?? null,
+                'terms' => $validated['terms'] ?? null,
+                'job_no' => $validated['job_no'] ?? null,
+                'rev' => $validated['rev'] ?? null,
+                'total_amount' => $total_amount,
+                'discount' => $discount,
+                'sub_total' => $sub_total,
+                'payment_terms' => $validated['payment_terms'] ?? null,
+                'bank_account' => $validated['bank_account'] ?? null,
+                'tax_included' => $validated['tax_included'] ?? false,
+                'status_id' => 1,
+            ]);
+
+            // Simpan items
+            foreach ($validated['items'] as $item) {
+                $quotation->items()->create([
+                    'description' => $item['description'],
+                    'qty' => $item['qty'],
+                    'unit_price' => $item['unit_price'],
+                    'total_price' => $item['qty'] * $item['unit_price'],
                 ]);
+            }
 
-                // Hitung total amount
-                $total_amount = collect($validated['items'])->sum(function ($item) {
-                    return $item['qty'] * $item['unit_price'];
-                });
-
-                $discount = $validated['discount_amount'] ?? 0;
-                $sub_total = $total_amount - $discount;
-
-                // Simpan quotation utama
-                $quotation = Quotation::create([
-                    'quo_no' => $validated['quo_no'],
-                    'date' => $validated['date'],
-                    'customer_name' => $validated['customer_name'],
-                    'customer_address' => $validated['customer_address'] ?? null,
-                    'attention' => $validated['attention'] ?? null,
-                    'your_reference' => $validated['your_reference'] ?? null,
-                    'terms' => $validated['terms'] ?? null,
-                    'job_no' => $validated['job_no'] ?? null,
-                    'rev' => $validated['rev'] ?? null,
-                    'total_amount' => $total_amount,
-                    'discount' => $discount,
-                    'sub_total' => $sub_total,
-                    'payment_terms' => $validated['payment_terms'] ?? null,
-                    'bank_account' => $validated['bank_account'] ?? null,
-                    'tax_included' => $validated['tax_included'] ?? false,
-                    'status_id' => 1,
-                ]);
-
-                // Simpan items
-                foreach ($validated['items'] as $item) {
-                    $quotation->items()->create([
-                        'description' => $item['description'],
-                        'qty' => $item['qty'],
-                        'unit_price' => $item['unit_price'],
-                        'total_price' => $item['qty'] * $item['unit_price'],
+            if (!empty($validated['scopes'])) {
+                foreach ($validated['scopes'] as $scope) {
+                    $quotation->scopes()->create([
+                        'description' => $scope['description'],
+                        'responsible_pt_gpt' => !empty($scope['responsible_pt_gpt']) ? 1 : 0,
+                        'responsible_client' => !empty($scope['responsible_client']) ? 1 : 0,
                     ]);
                 }
-
-                if (!empty($validated['scopes'])) {
-                    foreach ($validated['scopes'] as $scope) {
-                        $quotation->scopes()->create([
-                            'description' => $scope['description'],
-                            'responsible_pt_gpt' => !empty($scope['responsible_pt_gpt']) ? 1 : 0,
-                            'responsible_client' => !empty($scope['responsible_client']) ? 1 : 0,
-                        ]);
-                    }
-                }
-
-                if (!empty($validated['terms_conditions'])) {
-                    foreach ($validated['terms_conditions'] as $term) {
-                        $quotation->terms()->create([
-                            'description' => $term['description'],
-                        ]);
-                    }
-                }
-
-                DB::commit();
-
-             return response()->json([
-                    'success' => true,
-                    'status'  => 201,
-                    'message' => 'Quotation berhasil dibuat'
-                ], 201);
-
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'status'  => 500,
-                    'message' => $e->getMessage(), // tampilkan error asli
-                ], 500);
             }
+
+            if (!empty($validated['terms_conditions'])) {
+                foreach ($validated['terms_conditions'] as $term) {
+                    $quotation->terms()->create([
+                        'description' => $term['description'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'status'  => 201,
+                'message' => 'Quotation berhasil dibuat'
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => 500,
+                'message' => $e->getMessage(), // tampilkan error asli
+            ], 500);
         }
+    }
 
     // 4. Ambil data untuk form edit
-   public function edit($id)
+    public function edit($id)
     {
         $quotation = Quotation::with(['items', 'scopes'])->findOrFail($id);
         return view('quotations.edit', compact('quotation'));
@@ -272,17 +280,17 @@ class QuotationController extends Controller
         $quotation = Quotation::with(['items', 'scopes', 'terms'])->findOrFail($id);
 
         // Konversi gambar QR code ke base64
-         $qrCodeBase64 = null;
-            if ($quotation->approved_qr) {
-                try {
-                    if (Storage::disk('public')->exists($quotation->approved_qr)) {
-                        $qrCodeData = Storage::disk('public')->get($quotation->approved_qr);
-                        $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeData);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('QR Code Error: '.$e->getMessage());
+        $qrCodeBase64 = null;
+        if ($quotation->approved_qr) {
+            try {
+                if (Storage::disk('public')->exists($quotation->approved_qr)) {
+                    $qrCodeData = Storage::disk('public')->get($quotation->approved_qr);
+                    $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeData);
                 }
+            } catch (\Exception $e) {
+                \Log::error('QR Code Error: ' . $e->getMessage());
             }
+        }
 
         $pdf = Pdf::loadView('quotations.pdf', [
             'quotation' => $quotation,
@@ -336,7 +344,7 @@ class QuotationController extends Controller
         $qrSvg = QrCode::format('svg')->size(200)->generate($qrUrl);
 
         // Simpan di storage
-        $fileName = 'qrcodes/quotation_'.$quotation->id.'_approved.svg';
+        $fileName = 'qrcodes/quotation_' . $quotation->id . '_approved.svg';
         Storage::disk('public')->put($fileName, $qrSvg);
 
         // Ubah ke base64 supaya tetap kompatibel dengan PDF
@@ -369,7 +377,7 @@ class QuotationController extends Controller
     }
 
 
-     public function showApproval($encryptedData)
+    public function showApproval($encryptedData)
     {
         try {
             $decrypted = Crypt::decryptString($encryptedData);
@@ -389,6 +397,4 @@ class QuotationController extends Controller
             abort(404, 'Approval data not found or expired');
         }
     }
-
-
 }

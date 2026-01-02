@@ -300,8 +300,8 @@
                         <td>{{ $i + 1 }}</td>
                         <td>{{ $item->description }}</td>
                         <td>{{ $item->qty }}</td>
-                        <td class="text-right">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($item->total_price, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->unit_price, 2, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->total_price, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -310,15 +310,15 @@
         <table class="no-border">
             <tr>
                 <td class="text-right" style="width:80%;">Sub Total</td>
-                <td class="text-right">{{ number_format($quotation->total_amount, 0, ',', '.') }}</td>
+                <td class="text-right">{{ number_format($quotation->total_amount, 2, ',', '.') }}</td>
             </tr>
             <tr>
                 <td class="text-right">Discount</td>
-                <td class="text-right">{{ number_format($quotation->discount, 0, ',', '.') }}</td>
+                <td class="text-right">{{ number_format($quotation->discount, 2, ',', '.') }}</td>
             </tr>
             <tr>
                 <td class="text-right"><b>Total</b></td>
-                <td class="text-right"><b>{{ number_format($quotation->sub_total, 0, ',', '.') }}</b></td>
+                <td class="text-right"><b>{{ number_format($quotation->sub_total, 2, ',', '.') }}</b></td>
             </tr>
         </table>
 

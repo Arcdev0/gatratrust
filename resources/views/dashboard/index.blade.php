@@ -236,79 +236,12 @@
             }
 
 
-            // render stacked bar (paid - green, unpaid - red)
-            function renderRevenueChart(labels, paidData, unpaidData, projectNominalLabels) {
+            // render bar chart: Total Nilai Project per bulan
+            function renderRevenueChart(labels, projectNominalData) {
                 const ctx = $('#chartRevenue')[0].getContext('2d');
 
-                // plugin yang lebih stabil: gunakan getPixelForValue(totalValue)
-                const topLabelPlugin = {
-                    id: 'topLabelPlugin',
-                    afterDatasetsDraw: function(chart) {
-                        const ctx = chart.ctx;
-                        const meta0 = chart.getDatasetMeta(0);
-                        const meta1 = chart.getDatasetMeta(1);
-                        const paidData = chart.data.datasets[0].data || [];
-                        const unpaidData = chart.data.datasets[1].data || [];
-                        const projectNominal = chart.options.plugins.topLabelData || [];
-
-                        const yScale = chart.scales['y'];
-
-                        for (let i = 0; i < chart.data.labels.length; i++) {
-                            // hitung total stack value (paid + unpaid) atau gunakan invoiced jika ada
-                            const paidVal = Number(paidData[i] || 0);
-                            const unpaidVal = Number(unpaidData[i] || 0);
-                            const totalStackVal = paidVal +
-                                unpaidVal; // ini tinggi stack yang ingin kita tandai
-
-                            // jika total 0, skip
-                            if (!totalStackVal) continue;
-
-                            // x position -> ambil dari salah satu elemen yang ada
-                            let x = null;
-                            if (meta0 && meta0.data[i]) x = meta0.data[i].x;
-                            else if (meta1 && meta1.data[i]) x = meta1.data[i].x;
-                            if (x === null) continue;
-
-                            // dapatkan y pixel tepat untuk nilai totalStackVal
-                            const topPixel = yScale.getPixelForValue(totalStackVal);
-
-                            // ambil project nominal (yang mau ditampilkan). kalau 0 skip
-                            const val = (projectNominal && projectNominal[i]) ? projectNominal[i] : 0;
-                            if (!val) continue;
-
-                            // draw text sedikit di atas topPixel
-                            ctx.save();
-                            ctx.font = '12px Arial';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'bottom';
-                            ctx.fillStyle = '#111';
-                            const text = formatRupiah(val);
-                            // kurangi 6-10 px agar teks tidak menempel ke chart border
-                            const y = topPixel - 8;
-                            ctx.fillText(text, x, y);
-                            ctx.restore();
-                        }
-                    }
-                };
-
-                const datasets = [{
-                        label: 'Paid',
-                        data: paidData,
-                        backgroundColor: '#4CAF50',
-                        stack: 'stack1'
-                    },
-                    {
-                        label: 'Unpaid',
-                        data: unpaidData,
-                        backgroundColor: '#F44336',
-                        stack: 'stack1'
-                    }
-                ];
-
+                // hancurkan chart lama kalau sudah ada
                 if (revenueChart) {
-                    revenueChart.data.labels = labels;
-                    revenueChart.data.datasets[0].data = paidData;
-                    revenueChart.data.datasets[1].data = unpaidData;
                     revenueChart.destroy();
                     revenueChart = null;
                 }
@@ -317,7 +250,11 @@
                     type: 'bar',
                     data: {
                         labels: labels,
-                        datasets: datasets
+                        datasets: [{
+                            label: 'Total Nilai Project',
+                            data: projectNominalData,
+                            backgroundColor: '#4CAF50'
+                        }]
                     },
                     options: {
                         responsive: true,
@@ -326,29 +263,25 @@
                             intersect: false
                         },
                         plugins: {
-                            // title: {
-                            //     display: true,
-                            //     text: 'Paid vs Unpaid per Bulan'
-                            // },
+                            legend: {
+                                position: 'top'
+                            },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        const lab = context.dataset.label || '';
                                         const val = context.parsed.y ?? context.parsed;
-                                        return lab + ': ' + new Intl.NumberFormat('id-ID').format(val);
+                                        return 'Total Nilai Project: ' + new Intl.NumberFormat('id-ID')
+                                            .format(val);
                                     }
                                 }
-                            },
-                            legend: {
-                                position: 'top'
                             }
                         },
                         scales: {
                             x: {
-                                stacked: true
+                                stacked: false
                             },
                             y: {
-                                stacked: true,
+                                stacked: false,
                                 ticks: {
                                     callback: function(v) {
                                         return 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
@@ -358,45 +291,39 @@
                         }
                     },
                     plugins: [{
-                        // wrapping plugin so it has access to projectNominalLabels via closure
-                        id: 'topLabelWrapper',
+                        // plugin untuk nulis nilai di atas bar
+                        id: 'topLabelPlugin',
                         afterDatasetsDraw: function(chart) {
-                            // implement same logic as topLabelPlugin but using projectNominalLabels from outer scope
                             const ctx = chart.ctx;
-                            const meta0 = chart.getDatasetMeta(0);
-                            const meta1 = chart.getDatasetMeta(1);
-                            for (let i = 0; i < chart.data.labels.length; i++) {
-                                let ys = [];
-                                [meta0, meta1].forEach(meta => {
-                                    if (meta && meta.data[i]) {
-                                        const el = meta.data[i];
-                                        let topY = (el && el.y !== undefined) ? el.y :
-                                            null;
-                                        if (topY !== null) ys.push(topY);
-                                    }
-                                });
-                                if (ys.length === 0) continue;
-                                const top = Math.min.apply(null, ys);
-                                let x = null;
-                                if (meta0 && meta0.data[i]) x = meta0.data[i].x;
-                                else if (meta1 && meta1.data[i]) x = meta1.data[i].x;
-                                if (x === null) continue;
+                            const meta = chart.getDatasetMeta(0); // cuma 1 dataset
+                            const data = chart.data.datasets[0].data || [];
 
-                                const val = (projectNominalLabels && projectNominalLabels[i]) ?
-                                    projectNominalLabels[i] : 0;
-                                ctx.save();
-                                ctx.font = '12px Arial';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillStyle = '#111';
-                                const text = formatRupiah(val);
-                                ctx.fillText(text, x, top - 6);
-                                ctx.restore();
+                            ctx.save();
+                            ctx.font = '12px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillStyle = '#111';
+
+                            for (let i = 0; i < data.length; i++) {
+                                const el = meta.data[i];
+                                if (!el) continue;
+
+                                const value = Number(data[i] || 0);
+                                if (!value) continue;
+
+                                const x = el.x;
+                                const y = el.y - 6; // sedikit di atas bar
+                                const text = formatRupiah(value);
+
+                                ctx.fillText(text, x, y);
                             }
+
+                            ctx.restore();
                         }
                     }]
                 });
             }
+
 
             // render donut project progress
             function renderProjectChart(finished, inProgress, avgPercent) {
@@ -466,13 +393,12 @@
                         renderSummary(summary);
 
                         const charts = json.charts || {};
-                        const paid = charts.paidByMonth || Array(12).fill(0);
-                        const unpaid = charts.unpaidByMonth || Array(12).fill(0);
                         const projectNominal = charts.projectNominalByMonth || Array(12).fill(0);
                         const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt',
                             'Nov', 'Des'
                         ];
-                        renderRevenueChart(labels, paid, unpaid, projectNominal);
+
+                        renderRevenueChart(labels, projectNominal);
 
                         const pp = charts.projectProgress || {
                             finished: 0,
