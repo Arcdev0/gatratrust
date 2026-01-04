@@ -257,6 +257,11 @@
                                 <i class="fas fa-network-wired"></i><span>Jabatan</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('assets.index') ? 'active' : '' }}">
+                            <a href="{{ route('assets.index') }}">
+                                <i class="fas fa-network-wired"></i><span>Asset</span>
+                            </a>
+                        </div>
                         <div class="nav-item has-sub {{ request()->routeIs('procedures.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="far fa-folder-open"></i><span>Dokumen ISO</span>

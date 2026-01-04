@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AssetController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
@@ -34,6 +35,7 @@ Route::controller(LoginController::class)->group(function () {
 
 Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
 Route::get('/invoice/approval/{token}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');
+Route::get('assets/scan/{kode_barcode}', [AssetController::class, 'scan'])->name('assets.scan');
 
 
 // Authenticated Routes
@@ -245,6 +247,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/revisions/{revision}/checked', [ProcedureController::class, 'checkedBy'])->name('revisions.checkedBy');
         Route::post('/revisions/{revision}/approved', [ProcedureController::class, 'approvedBy'])->name('revisions.approvedBy');
         Route::post('/revisions/{revision}/reject', [ProcedureController::class, 'reject'])->name('revisions.reject');
+    });
+
+    Route::prefix('assets')->name('assets.')->group(function () {
+        Route::get('/', [AssetController::class, 'index'])->name('index');
+        Route::get('/datatable', [AssetController::class, 'datatable'])->name('datatable');
+        Route::get('/scan/{kode_barcode}', [AssetController::class, 'scan'])->name('scan');
+        Route::post('/', [AssetController::class, 'store'])->name('store');
+        Route::get('/next-no', [AssetController::class, 'nextNo'])->name('nextNo');
+        Route::get('/{id}', [AssetController::class, 'show'])->name('show');
+        Route::put('/{id}', [AssetController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AssetController::class, 'destroy'])->name('destroy');
     });
 
     // export using maatwebsite
