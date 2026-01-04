@@ -259,7 +259,7 @@
                         </div>
                         <div class="nav-item {{ request()->routeIs('assets.index') ? 'active' : '' }}">
                             <a href="{{ route('assets.index') }}">
-                                <i class="fas fa-network-wired"></i><span>Asset</span>
+                               <i class="fas fa-archive"></i><span>Asset</span>
                             </a>
                         </div>
                         <div class="nav-item has-sub {{ request()->routeIs('procedures.index') ? 'active open' : '' }}">
