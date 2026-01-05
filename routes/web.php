@@ -252,7 +252,6 @@ Route::middleware('auth')->group(function () {
     Route::prefix('assets')->name('assets.')->group(function () {
         Route::get('/', [AssetController::class, 'index'])->name('index');
         Route::get('/datatable', [AssetController::class, 'datatable'])->name('datatable');
-        Route::get('/scan/{kode_barcode}', [AssetController::class, 'scan'])->name('scan');
         Route::post('/', [AssetController::class, 'store'])->name('store');
         Route::get('/next-no', [AssetController::class, 'nextNo'])->name('nextNo');
         Route::get('/{id}', [AssetController::class, 'show'])->name('show');

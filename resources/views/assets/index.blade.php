@@ -29,10 +29,16 @@
                                     <th width="70">Jumlah</th>
                                     <th width="120">Harga</th>
                                     <th width="120">Total</th>
+
+                                    <th width="120">Faktur</th>
+                                    <th width="90">Tahun</th>
+                                    <th width="130">Remark</th>
+
                                     <th width="90">Gambar</th>
                                     <th width="160">Action</th>
                                 </tr>
                             </thead>
+
                             <tbody></tbody>
                         </table>
                     </div>
@@ -135,6 +141,31 @@
                                     required>
                             </div>
 
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Upload Faktur Pembelian (opsional)</label>
+                                <input type="file" name="faktur_pembelian" class="form-control"
+                                    accept=".pdf,.jpg,.jpeg,.png">
+                                <small class="text-muted">PDF/JPG/PNG, max 4MB</small>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Tahun Dibeli (opsional)</label>
+                                <input type="number" name="tahun_dibeli" class="form-control" min="1990"
+                                    max="{{ date('Y') }}" placeholder="2025">
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Remark (opsional)</label>
+                                <select name="remark" class="form-control">
+                                    <option value="">- Pilih -</option>
+                                    <option value="baik">Baik</option>
+                                    <option value="perlu_perbaikan">Perlu Perbaikan</option>
+                                    <option value="rusak">Rusak</option>
+                                    <option value="hilang">Hilang</option>
+                                </select>
+                            </div>
+
+
                             {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">URL Gambar (opsional)</label>
                                 <input type="text" name="url_gambar" class="form-control" placeholder="https://...">
@@ -219,6 +250,39 @@
                                 <input type="number" name="harga" id="edit_harga" class="form-control"
                                     min="0" required>
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Upload Faktur Pembelian (opsional)</label>
+                                <input type="file" name="faktur_pembelian" id="edit_faktur_pembelian"
+                                    class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                <small class="text-muted">Jika upload baru, faktur lama akan diganti.</small>
+
+                                <div class="mt-2">
+                                    <a href="#" target="_blank" id="edit_faktur_link" style="display:none;">
+                                        <i class="fas fa-file-alt"></i> Lihat Faktur Lama
+                                    </a>
+                                    <div id="edit_faktur_empty" class="text-muted" style="display:none;">Tidak ada faktur
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Tahun Dibeli</label>
+                                <input type="number" name="tahun_dibeli" id="edit_tahun_dibeli" class="form-control"
+                                    min="1990" max="{{ date('Y') }}">
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Remark</label>
+                                <select name="remark" id="edit_remark" class="form-control">
+                                    <option value="">- Pilih -</option>
+                                    <option value="baik">Baik</option>
+                                    <option value="perlu_perbaikan">Perlu Perbaikan</option>
+                                    <option value="rusak">Rusak</option>
+                                    <option value="hilang">Hilang</option>
+                                </select>
+                            </div>
+
 
                             {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">URL Gambar (opsional)</label>
@@ -307,6 +371,23 @@
                         data: 'total',
                         searchable: false
                     },
+
+                    // ✅ kolom baru
+                    {
+                        data: 'faktur_pembelian',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'tahun_dibeli',
+                        searchable: false
+                    },
+                    {
+                        data: 'remark',
+                        orderable: false,
+                        searchable: false
+                    },
+
                     {
                         data: 'url_gambar',
                         orderable: false,
@@ -324,7 +405,6 @@
             // BARCODE MODAL HANDLER
             // =====================
             $(document).on('click', '.btn-barcode-asset', function() {
-
                 const nama = $(this).data('nama') || '-';
                 const noAsset = $(this).data('no_asset') || '-';
                 const scanUrl = $(this).data('scan_url') || '#';
@@ -339,15 +419,13 @@
                 $('#barcodeEmpty').show().text('QR belum tersedia');
                 $('#btnDownloadBarcode').hide().attr('href', '#');
 
-                if (!barcodeUrl || barcodeUrl === 'null' || barcodeUrl === 'undefined') {
-                    return;
-                }
+                if (!barcodeUrl || barcodeUrl === 'null' || barcodeUrl === 'undefined') return;
 
-                // cache bust biar QR baru langsung kebaca
+                // cache bust
                 const src = barcodeUrl + (barcodeUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
 
                 $('#barcodeImage')
-                    .off('error') // biar ga dobel handler
+                    .off('error')
                     .on('error', function() {
                         $(this).hide().attr('src', '');
                         $('#barcodeEmpty').show().text('QR gagal dimuat (file tidak ditemukan)');
@@ -364,253 +442,43 @@
                     .show();
             });
 
+            // =====================
+            // CREATE MODAL OPEN -> GET next no_asset
+            // =====================
+            $('#createAsset').on('click', function() {
+                const form = document.getElementById('createAssetForm');
+                if (form) form.reset();
 
-
-        });
-
-        $('#createAsset').on('click', function() {
-            // reset form
-            const form = document.getElementById('createAssetForm');
-            if (form) form.reset();
-
-            // isi no_asset otomatis (butuh route assets.nextNo)
-            $.get("{{ route('assets.nextNo') }}")
-                .done(function(res) {
-                    if (res.status) {
-                        $('#no_asset').val(res.no_asset);
-                    }
-                })
-                .fail(function() {
-                    // fallback: biar bisa input manual kalau endpoint error
-                    $('#no_asset').prop('readonly', false);
-                });
-        });
-
-
-        $(document).on('submit', '#createAssetForm', function(e) {
-            e.preventDefault();
-
-            const $form = $(this);
-            const formData = new FormData(this);
-
-            // disable button biar gak double submit
-            const $btn = $('#btnSaveAsset');
-            $btn.prop('disabled', true).text('Menyimpan...');
-
-            $.ajax({
-                url: "{{ route('assets.store') }}",
-                method: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(res) {
-                    if (res.status) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: res.message,
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-
-                        // reload datatable
-                        $('#assetTable').DataTable().ajax.reload(null, false);
-
-                        // reset form
-                        $form[0].reset();
-
-                        // tutup modal
-                        const modalEl = document.getElementById('modalCreateAsset');
-                        const modal = bootstrap.Modal.getInstance(modalEl);
-                        modal.hide();
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: res.message || 'Terjadi kesalahan.'
-                        });
-                    }
-                },
-                error: function(xhr) {
-                    // Laravel validation error -> 422
-                    if (xhr.status === 422) {
-                        const errors = xhr.responseJSON.errors || {};
-                        let msg = '';
-                        Object.keys(errors).forEach(function(key) {
-                            msg += `• ${errors[key][0]}\n`;
-                        });
-
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Validasi gagal',
-                            text: msg ? msg : 'Periksa input.'
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Server error. Coba lagi.'
-                        });
-                    }
-                },
-                complete: function() {
-                    $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
-                }
+                // no_asset auto
+                $.get("{{ route('assets.nextNo') }}")
+                    .done(function(res) {
+                        if (res.status) {
+                            $('#no_asset').val(res.no_asset).prop('readonly', true);
+                        }
+                    })
+                    .fail(function() {
+                        $('#no_asset').prop('readonly', false);
+                    });
             });
-        });
 
-        $(document).on('click', '.btn-edit-asset', function() {
-            const id = $(this).data('id');
-            const no_asset = $(this).data('no_asset') || '';
-            const nama = $(this).data('nama') || '';
-            const merek = $(this).data('merek') || '';
-            const no_seri = $(this).data('no_seri') || '';
-            const lokasi = $(this).data('lokasi') || '';
-            const jumlah = $(this).data('jumlah') || 1;
-            const harga = $(this).data('harga') || 0;
-            const url_gambar = $(this).data('url_gambar') || '';
+            // =====================
+            // CREATE SUBMIT (AJAX)
+            // =====================
+            $(document).on('submit', '#createAssetForm', function(e) {
+                e.preventDefault();
 
-            $('#edit_id').val(id);
-            $('#edit_no_asset').val(no_asset);
-            $('#edit_nama').val(nama);
-            $('#edit_merek').val(merek);
-            $('#edit_no_seri').val(no_seri);
-            $('#edit_lokasi').val(lokasi);
-            $('#edit_jumlah').val(jumlah);
-            $('#edit_harga').val(harga);
-            $('#edit_url_gambar').val(url_gambar);
+                const $form = $(this);
+                const formData = new FormData(this);
 
-            // reset file input
-            $('#edit_gambar').val('');
-
-            // preview
-            if (url_gambar) {
-                $('#edit_preview_img').attr('src', url_gambar).show();
-                $('#edit_preview_empty').hide();
-            } else {
-                $('#edit_preview_img').attr('src', '').hide();
-                $('#edit_preview_empty').show();
-            }
-        });
-
-        $('#edit_gambar').on('change', function() {
-            const file = this.files && this.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                $('#edit_preview_img').attr('src', e.target.result).show();
-                $('#edit_preview_empty').hide();
-            };
-            reader.readAsDataURL(file);
-        });
-
-        $(document).on('submit', '#editAssetForm', function(e) {
-            e.preventDefault();
-
-            const id = $('#edit_id').val();
-            const formData = new FormData(this);
-
-            // IMPORTANT: karena form pakai @method('PUT'), FormData akan membawa _method=PUT
-            const url = "{{ url('/assets') }}/" + id; // sesuaikan kalau prefix route kamu beda
-
-            const $btn = $('#btnUpdateAsset');
-            $btn.prop('disabled', true).text('Updating...');
-
-            $.ajax({
-                url: url,
-                method: "POST", // Laravel akan baca _method=PUT
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-
-                success: function(res) {
-                    if (res.status) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: res.message,
-                            timer: 1300,
-                            showConfirmButton: false
-                        });
-
-                        $('#modalEditAsset').modal('hide');
-                        $('#assetTable').DataTable().ajax.reload(null, false);
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: res.message || 'Terjadi kesalahan.'
-                        });
-                    }
-                },
-
-                error: function(xhr) {
-                    if (xhr.status === 422) {
-                        const errors = xhr.responseJSON.errors || {};
-                        let msg = '';
-                        Object.keys(errors).forEach(function(key) {
-                            msg += `• ${errors[key][0]}\n`;
-                        });
-
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Validasi gagal',
-                            html: msg ? msg.replace(/\n/g, '<br>') : 'Periksa input.'
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Server error. Coba lagi.'
-                        });
-                    }
-                },
-
-                complete: function() {
-                    $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Update');
-                }
-            });
-        });
-
-        $(document).on('click', '.btn-delete-asset', function() {
-            const id = $(this).data('id');
-            const label = $(this).data('label') || 'asset ini';
-
-            if (!id) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'ID asset tidak ditemukan.'
-                });
-                return;
-            }
-
-            Swal.fire({
-                title: 'Hapus Asset?',
-                html: `Yakin ingin menghapus <b>${label}</b>?<br><small class="text-muted">Data dan file terkait akan ikut terhapus.</small>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Hapus',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#d33',
-                reverseButtons: true
-            }).then((result) => {
-                if (!result.isConfirmed) return;
+                const $btn = $('#btnSaveAsset');
+                $btn.prop('disabled', true).text('Menyimpan...');
 
                 $.ajax({
-                    url: "{{ url('/assets') }}/" + id, // sesuaikan jika prefix route berbeda
+                    url: "{{ route('assets.store') }}",
                     method: "POST",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        _method: "DELETE"
-                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     },
@@ -619,35 +487,275 @@
                         if (res.status) {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Terhapus',
-                                text: res.message || 'Asset berhasil dihapus.',
-                                timer: 1200,
+                                title: 'Berhasil',
+                                text: res.message,
+                                timer: 1500,
                                 showConfirmButton: false
                             });
 
                             $('#assetTable').DataTable().ajax.reload(null, false);
+                            $form[0].reset();
+
+                            // ✅ Bootstrap 4 close modal
+                            $('#modalCreateAsset').modal('hide');
                         } else {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
-                                text: res.message || 'Gagal menghapus asset.'
+                                text: res.message || 'Terjadi kesalahan.'
                             });
                         }
                     },
 
                     error: function(xhr) {
-                        let msg = 'Server error. Coba lagi.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON
-                            .message;
+                        if (xhr.status === 422) {
+                            const errors = xhr.responseJSON.errors || {};
+                            let msg = '';
+                            Object.keys(errors).forEach(function(key) {
+                                msg += `• ${errors[key][0]}\n`;
+                            });
 
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: msg
-                        });
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Validasi gagal',
+                                html: msg ? msg.replace(/\n/g, '<br>') :
+                                    'Periksa input.'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Server error. Coba lagi.'
+                            });
+                        }
+                    },
+
+                    complete: function() {
+                        $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
                     }
                 });
             });
+
+            // =====================
+            // EDIT CLICK -> fill modal
+            // =====================
+            $(document).on('click', '.btn-edit-asset', function() {
+                const id = $(this).data('id');
+                const no_asset = $(this).data('no_asset') || '';
+                const nama = $(this).data('nama') || '';
+                const merek = $(this).data('merek') || '';
+                const no_seri = $(this).data('no_seri') || '';
+                const lokasi = $(this).data('lokasi') || '';
+                const jumlah = $(this).data('jumlah') || 1;
+                const harga = $(this).data('harga') || 0;
+                const url_gambar = $(this).data('url_gambar') || '';
+
+                // ✅ field baru
+                const tahun = $(this).data('tahun_dibeli') || '';
+                const remark = $(this).data('remark') || '';
+                const fakturUrl = $(this).data('faktur_pembelian') || '';
+
+                $('#edit_id').val(id);
+                $('#edit_no_asset').val(no_asset);
+                $('#edit_nama').val(nama);
+                $('#edit_merek').val(merek);
+                $('#edit_no_seri').val(no_seri);
+                $('#edit_lokasi').val(lokasi);
+                $('#edit_jumlah').val(jumlah);
+                $('#edit_harga').val(harga);
+
+                // ❌ kamu tidak punya input edit_url_gambar (comment), jadi jangan set itu
+                // $('#edit_url_gambar').val(url_gambar);
+
+                // reset file input
+                $('#edit_gambar').val('');
+                $('#edit_faktur_pembelian').val('');
+
+                // preview gambar
+                if (url_gambar) {
+                    $('#edit_preview_img').attr('src', url_gambar).show();
+                    $('#edit_preview_empty').hide();
+                } else {
+                    $('#edit_preview_img').attr('src', '').hide();
+                    $('#edit_preview_empty').show();
+                }
+
+                // set tahun + remark
+                $('#edit_tahun_dibeli').val(tahun);
+                $('#edit_remark').val(remark);
+
+                // link faktur lama
+                if (fakturUrl) {
+                    $('#edit_faktur_link').attr('href', fakturUrl).show();
+                    $('#edit_faktur_empty').hide();
+                } else {
+                    $('#edit_faktur_link').hide().attr('href', '#');
+                    $('#edit_faktur_empty').show();
+                }
+            });
+
+            // preview gambar saat pilih file
+            $('#edit_gambar').on('change', function() {
+                const file = this.files && this.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#edit_preview_img').attr('src', e.target.result).show();
+                    $('#edit_preview_empty').hide();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // =====================
+            // EDIT SUBMIT (AJAX)
+            // =====================
+            $(document).on('submit', '#editAssetForm', function(e) {
+                e.preventDefault();
+
+                const id = $('#edit_id').val();
+                const formData = new FormData(this);
+                const url = "{{ url('/assets') }}/" + id;
+
+                const $btn = $('#btnUpdateAsset');
+                $btn.prop('disabled', true).text('Updating...');
+
+                $.ajax({
+                    url: url,
+                    method: "POST", // _method=PUT
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+
+                    success: function(res) {
+                        if (res.status) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: res.message,
+                                timer: 1300,
+                                showConfirmButton: false
+                            });
+
+                            $('#modalEditAsset').modal('hide');
+                            $('#assetTable').DataTable().ajax.reload(null, false);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: res.message || 'Terjadi kesalahan.'
+                            });
+                        }
+                    },
+
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            const errors = xhr.responseJSON.errors || {};
+                            let msg = '';
+                            Object.keys(errors).forEach(function(key) {
+                                msg += `• ${errors[key][0]}\n`;
+                            });
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Validasi gagal',
+                                html: msg ? msg.replace(/\n/g, '<br>') :
+                                    'Periksa input.'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Server error. Coba lagi.'
+                            });
+                        }
+                    },
+
+                    complete: function() {
+                        $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Update');
+                    }
+                });
+            });
+
+            // =====================
+            // DELETE (SweetAlert + AJAX)
+            // =====================
+            $(document).on('click', '.btn-delete-asset', function() {
+                const id = $(this).data('id');
+                const label = $(this).data('label') || 'asset ini';
+
+                if (!id) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'ID asset tidak ditemukan.'
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Hapus Asset?',
+                    html: `Yakin ingin menghapus <b>${label}</b>?<br><small class="text-muted">Data dan file terkait akan ikut terhapus.</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#d33',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: "{{ url('/assets') }}/" + id,
+                        method: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            _method: "DELETE"
+                        },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+
+                        success: function(res) {
+                            if (res.status) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Terhapus',
+                                    text: res.message ||
+                                        'Asset berhasil dihapus.',
+                                    timer: 1200,
+                                    showConfirmButton: false
+                                });
+
+                                $('#assetTable').DataTable().ajax.reload(null, false);
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: res.message ||
+                                        'Gagal menghapus asset.'
+                                });
+                            }
+                        },
+
+                        error: function(xhr) {
+                            let msg = 'Server error. Coba lagi.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr
+                                .responseJSON.message;
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: msg
+                            });
+                        }
+                    });
+                });
+            });
+
         });
     </script>
 

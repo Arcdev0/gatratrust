@@ -18,6 +18,9 @@ class Asset extends Model
         'harga',
         'total',
         'url_gambar',
+        'faktur_pembelian',
+        'tahun_dibeli',
+        'remark',
         'url_barcode',
         'kode_barcode',
     ];

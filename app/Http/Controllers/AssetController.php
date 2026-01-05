@@ -31,6 +31,9 @@ class AssetController extends Controller
             'harga',
             'total',
             'url_gambar',
+            'faktur_pembelian',
+            'tahun_dibeli',
+            'remark',
             'url_barcode',
             'kode_barcode',
             'created_at',
@@ -39,28 +42,50 @@ class AssetController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
 
-            ->editColumn('harga', function ($row) {
-                return number_format((float) $row->harga, 0, ',', '.');
-            })
-            ->editColumn('total', function ($row) {
-                return number_format((float) $row->total, 0, ',', '.');
-            })
+            ->editColumn('harga', fn($row) => number_format((float) $row->harga, 0, ',', '.'))
+            ->editColumn('total', fn($row) => number_format((float) $row->total, 0, ',', '.'))
 
             ->editColumn('url_gambar', function ($row) {
-                if (empty($row->url_gambar)) {
-                    return '<span class="text-muted">-</span>';
-                }
+                if (empty($row->url_gambar)) return '<span class="text-muted">-</span>';
 
                 $url = e($row->url_gambar);
-
                 return '
-        <a href="' . $url . '" target="_blank" title="Lihat gambar">
-            <img src="' . $url . '"
-                 style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
-        </a>
-    ';
+                <a href="' . $url . '" target="_blank" rel="noopener" title="Lihat gambar">
+                    <img src="' . $url . '"
+                        style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                </a>
+            ';
             })
 
+            ->editColumn('faktur_pembelian', function ($row) {
+                if (empty($row->faktur_pembelian)) return '<span class="text-muted">-</span>';
+
+                $url = e($row->faktur_pembelian);
+                return '
+                <a href="' . $url . '" target="_blank" rel="noopener" title="Lihat faktur">
+                    <i class="fas fa-file-alt"></i> Faktur
+                </a>
+            ';
+            })
+
+            ->editColumn('tahun_dibeli', function ($row) {
+                return $row->tahun_dibeli ? e($row->tahun_dibeli) : '<span class="text-muted">-</span>';
+            })
+
+            ->editColumn('remark', function ($row) {
+                if (empty($row->remark)) return '<span class="text-muted">-</span>';
+
+                $label = strtoupper(str_replace('_', ' ', $row->remark));
+
+                // badge sederhana
+                $class = 'badge badge-secondary';
+                if ($row->remark === 'baik') $class = 'badge badge-success';
+                if ($row->remark === 'perlu_perbaikan') $class = 'badge badge-warning';
+                if ($row->remark === 'rusak') $class = 'badge badge-danger';
+                if ($row->remark === 'hilang') $class = 'badge badge-dark';
+
+                return '<span class="' . $class . '">' . $label . '</span>';
+            })
 
             ->addColumn('action', function ($row) {
 
@@ -69,75 +94,66 @@ class AssetController extends Controller
 
                 // QR (MODAL)
                 $btnBarcode = '
-        <button type="button"
-            class="btn btn-sm  btn-dark btn-barcode-asset"
-            title="QR Code"
-            data-toggle="modal"
-            data-target="#modalBarcodeAsset"
-            data-id="' . $row->id . '"
-            data-no_asset="' . e($row->no_asset) . '"
-            data-nama="' . e($row->nama) . '"
-            data-kode_barcode="' . e($row->kode_barcode) . '"
-            data-scan_url="' . e($scanUrl) . '"
-            data-url_barcode="' . e($barcodeUrl) . '"
-        >
-            <i class="fas fa-qrcode"></i>
-        </button>
-    ';
+                <button type="button"
+                    class="btn btn-sm btn-dark btn-barcode-asset"
+                    title="QR Code"
+                    data-toggle="modal"
+                    data-target="#modalBarcodeAsset"
+                    data-id="' . $row->id . '"
+                    data-no_asset="' . e($row->no_asset) . '"
+                    data-nama="' . e($row->nama) . '"
+                    data-kode_barcode="' . e($row->kode_barcode) . '"
+                    data-scan_url="' . e($scanUrl) . '"
+                    data-url_barcode="' . e($barcodeUrl) . '"
+                >
+                    <i class="fas fa-qrcode"></i>
+                </button>
+            ';
 
-                // VIEW
-                //             $btnView = '
-                //     <a href="' . route('assets.show', $row->id) . '"
-                //        class="btn btn-sm btn-info"
-                //        title="Detail Asset">
-                //         <i class="fas fa-eye"></i>
-                //     </a>
-                // ';
-
-                // EDIT (MODAL)
+                // EDIT (MODAL) + include field baru utk prefill
                 $btnEdit = '
-        <button type="button"
-            class="btn btn-sm btn-secondary btn-edit-asset"
-            title="Edit Asset"
-            data-toggle="modal"
-            data-target="#modalEditAsset"
-            data-id="' . $row->id . '"
-            data-no_asset="' . e($row->no_asset) . '"
-            data-nama="' . e($row->nama) . '"
-            data-merek="' . e($row->merek ?? '') . '"
-            data-no_seri="' . e($row->no_seri ?? '') . '"
-            data-lokasi="' . e($row->lokasi) . '"
-            data-jumlah="' . (int)$row->jumlah . '"
-            data-harga="' . (float)$row->harga . '"
-            data-url_gambar="' . e($row->url_gambar ?? '') . '"
-        >
-            <i class="fas fa-edit"></i>
-        </button>
-    ';
+                <button type="button"
+                    class="btn btn-sm btn-secondary btn-edit-asset"
+                    title="Edit Asset"
+                    data-toggle="modal"
+                    data-target="#modalEditAsset"
+                    data-id="' . $row->id . '"
+                    data-no_asset="' . e($row->no_asset) . '"
+                    data-nama="' . e($row->nama) . '"
+                    data-merek="' . e($row->merek ?? '') . '"
+                    data-no_seri="' . e($row->no_seri ?? '') . '"
+                    data-lokasi="' . e($row->lokasi) . '"
+                    data-jumlah="' . (int)$row->jumlah . '"
+                    data-harga="' . (float)$row->harga . '"
+                    data-url_gambar="' . e($row->url_gambar ?? '') . '"
+                    data-tahun_dibeli="' . e($row->tahun_dibeli ?? '') . '"
+                    data-remark="' . e($row->remark ?? '') . '"
+                    data-faktur_pembelian="' . e($row->faktur_pembelian ?? '') . '"
+                >
+                    <i class="fas fa-edit"></i>
+                </button>
+            ';
 
-                // DELETE (MODAL)
+                // DELETE (SweetAlert) -> jangan pakai modal lagi
                 $btnDelete = '
-        <button type="button"
-            class="btn btn-sm btn-danger btn-delete-asset"
-            title="Hapus Asset"
-            data-toggle="modal"
-            data-target="#modalDeleteAsset"
-            data-id="' . $row->id . '"
-            data-label="' . e($row->nama) . ' (' . e($row->no_asset) . ')"
-        >
-            <i class="fas fa-trash-alt"></i>
-        </button>
-    ';
+                <button type="button"
+                    class="btn btn-sm btn-danger btn-delete-asset"
+                    title="Hapus Asset"
+                    data-id="' . $row->id . '"
+                    data-label="' . e($row->nama) . ' (' . e($row->no_asset) . ')"
+                >
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            ';
 
                 return '
-        <div class="d-flex gap-1 justify-content-center flex-wrap">
-            ' . $btnBarcode . $btnEdit . $btnDelete . '
-        </div>
-    ';
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                    ' . $btnBarcode . $btnEdit . $btnDelete . '
+                </div>
+            ';
             })
 
-
-            ->rawColumns(['url_gambar', 'action'])
+            ->rawColumns(['url_gambar', 'faktur_pembelian', 'tahun_dibeli', 'remark', 'action'])
             ->make(true);
     }
 
@@ -185,12 +201,20 @@ class AssetController extends Controller
             'harga'      => ['required', 'numeric', 'min:0'],
             'url_gambar' => ['nullable', 'string', 'max:500'],
             'gambar'     => ['nullable', 'image'],
+            'faktur_pembelian' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'tahun_dibeli'     => ['nullable', 'integer', 'digits:4', 'min:1990', 'max:' . date('Y')],
+            'remark'           => ['nullable', Rule::in(['baik', 'perlu_perbaikan', 'rusak', 'hilang'])],
         ]);
 
         // upload gambar asset (optional)
         if ($request->hasFile('gambar')) {
             $path = $request->file('gambar')->store('assets', 'public');
             $data['url_gambar'] = Storage::url($path);
+        }
+
+        if ($request->hasFile('faktur_pembelian')) {
+            $path = $request->file('faktur_pembelian')->store('faktur', 'public');
+            $data['faktur_pembelian'] = Storage::url($path);
         }
 
         // ✅ generate kode_barcode random & unik (untuk URL publik)
@@ -258,41 +282,48 @@ class AssetController extends Controller
             'jumlah'     => ['required', 'integer', 'min:1'],
             'harga'      => ['required', 'numeric', 'min:0'],
             'url_gambar' => ['nullable', 'string', 'max:500'],
-            'gambar'     => ['nullable', 'image'],
+            'gambar'     => ['nullable', 'image', 'max:2048'],
+            'faktur_pembelian' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'tahun_dibeli'     => ['nullable', 'integer', 'digits:4', 'min:1990', 'max:' . date('Y')],
+            'remark'           => ['nullable', Rule::in(['baik', 'perlu_perbaikan', 'rusak', 'hilang'])],
         ]);
 
+        // upload gambar asset baru
         if ($request->hasFile('gambar')) {
-
             if ($asset->url_gambar && str_contains($asset->url_gambar, '/storage/')) {
-                $oldPath = str_replace('/storage/', '', parse_url($asset->url_gambar, PHP_URL_PATH));
-                Storage::disk('public')->delete($oldPath);
+                $old = str_replace('/storage/', '', parse_url($asset->url_gambar, PHP_URL_PATH));
+                Storage::disk('public')->delete($old);
             }
-
             $path = $request->file('gambar')->store('assets', 'public');
             $data['url_gambar'] = Storage::url($path);
         }
 
-        $asset->update($data);
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'status'  => true,
-                'message' => 'Asset berhasil diupdate.',
-                'data'    => $asset->fresh(),
-            ]);
+        // upload faktur pembelian baru
+        if ($request->hasFile('faktur_pembelian')) {
+            if ($asset->faktur_pembelian && str_contains($asset->faktur_pembelian, '/storage/')) {
+                $old = str_replace('/storage/', '', parse_url($asset->faktur_pembelian, PHP_URL_PATH));
+                Storage::disk('public')->delete($old);
+            }
+            $path = $request->file('faktur_pembelian')->store('faktur', 'public');
+            $data['faktur_pembelian'] = Storage::url($path);
         }
 
-        return redirect()
-            ->route('assets.show', $asset->id)
-            ->with('success', 'Asset berhasil diupdate.');
+        $asset->update($data);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Asset berhasil diupdate.',
+            'data'    => $asset->fresh(),
+        ]);
     }
+
 
     public function destroy(Request $request, $id)
     {
         $asset = Asset::findOrFail($id);
 
         try {
-          
+
             if (!empty($asset->url_barcode) && str_contains($asset->url_barcode, '/storage/')) {
                 $barcodePath = parse_url($asset->url_barcode, PHP_URL_PATH);
                 $barcodePath = str_replace('/storage/', '', $barcodePath);
