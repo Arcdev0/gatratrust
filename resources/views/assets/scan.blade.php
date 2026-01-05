@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Asset Verification</title>
@@ -125,7 +126,9 @@
 
         /* Mobile-specific improvements */
         @media (max-width: 576px) {
-            body { padding: 5px; }
+            body {
+                padding: 5px;
+            }
 
             .doc-container {
                 margin: 10px auto;
@@ -133,22 +136,45 @@
                 border-radius: 10px;
             }
 
-            .doc-header { margin-bottom: 20px; padding-bottom: 15px; }
+            .doc-header {
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+            }
 
-            .doc-header img { height: 60px; margin-bottom: 12px; }
+            .doc-header img {
+                height: 60px;
+                margin-bottom: 12px;
+            }
 
-            .doc-header h3 { font-size: 1.2rem; }
+            .doc-header h3 {
+                font-size: 1.2rem;
+            }
 
-            .doc-table td { padding: 8px 5px; font-size: 0.95rem; }
+            .doc-table td {
+                padding: 8px 5px;
+                font-size: 0.95rem;
+            }
 
-            .doc-table td:first-child { width: 35%; min-width: 120px; }
+            .doc-table td:first-child {
+                width: 35%;
+                min-width: 120px;
+            }
 
-            .info-box { padding: 12px; font-size: 0.9rem; }
+            .info-box {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
         }
 
         @media (max-width: 400px) {
-            .doc-header h3 { font-size: 1.1rem; }
-            .doc-table td { font-size: 0.9rem; padding: 7px 4px; }
+            .doc-header h3 {
+                font-size: 1.1rem;
+            }
+
+            .doc-table td {
+                font-size: 0.9rem;
+                padding: 7px 4px;
+            }
         }
     </style>
 </head>
@@ -189,13 +215,35 @@
                 <td>: {{ $asset->jumlah }}</td>
             </tr>
             <tr>
-                <td><strong>Harga</strong></td>
-                <td>: Rp {{ number_format((float)$asset->harga, 0, ',', '.') }}</td>
+                <td><strong>Remark</strong></td>
+                <td>:
+                    @php
+                        $r = $asset->remark;
+                        $label = $r ? strtoupper(str_replace('_', ' ', $r)) : '-';
+
+                        $cls = 'text-bg-secondary';
+                        if ($r === 'baik') {
+                            $cls = 'text-bg-success';
+                        }
+                        if ($r === 'perlu_perbaikan') {
+                            $cls = 'text-bg-warning';
+                        }
+                        if ($r === 'rusak') {
+                            $cls = 'text-bg-danger';
+                        }
+                        if ($r === 'hilang') {
+                            $cls = 'text-bg-dark';
+                        }
+                    @endphp
+
+                    @if ($r)
+                        <span class="badge rounded-pill {{ $cls }}">{{ $label }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
+                </td>
             </tr>
-            <tr>
-                <td><strong>Total</strong></td>
-                <td>: <strong>Rp {{ number_format((float)$asset->total, 0, ',', '.') }}</strong></td>
-            </tr>
+
         </table>
 
         <div class="row g-3">
@@ -203,7 +251,7 @@
                 <div class="qr-box" style="text-align:center;">
                     <div class="fw-bold mb-2">Gambar Asset</div>
 
-                    @if(!empty($asset->url_gambar))
+                    @if (!empty($asset->url_gambar))
                         <a href="{{ $asset->url_gambar }}" target="_blank" rel="noopener">
                             <img src="{{ $asset->url_gambar }}" alt="Gambar Asset" class="asset-image">
                         </a>
@@ -222,21 +270,6 @@
             Dicatat pada: <strong>{{ $asset->created_at?->format('d F Y, H:i') }}</strong>
         </div>
     </div>
-
-    <script>
-        function copyText(text){
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => alert('Tersalin: ' + text));
-            } else {
-                const t = document.createElement('textarea');
-                t.value = text;
-                document.body.appendChild(t);
-                t.select();
-                document.execCommand('copy');
-                t.remove();
-                alert('Tersalin: ' + text);
-            }
-        }
-    </script>
 </body>
+
 </html>
