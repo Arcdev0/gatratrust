@@ -35,7 +35,7 @@ Route::controller(LoginController::class)->group(function () {
 
 Route::get('/quotation/approval/{encryptedData}', [QuotationController::class, 'showApproval'])->name('quotation.approval');
 Route::get('/invoice/approval/{token}', [InvoiceController::class, 'showApproval'])->name('invoice.approval');
-Route::get('assets/scan/{kode_barcode}', [AssetController::class, 'scan'])->name('assets.scan');
+Route::get('/assets/scan/{kode_barcode}', [AssetController::class, 'scan'])->name('assets.scan');
 
 
 // Authenticated Routes

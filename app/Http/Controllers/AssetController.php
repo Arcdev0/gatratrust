@@ -287,20 +287,40 @@ class AssetController extends Controller
             ->with('success', 'Asset berhasil diupdate.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $asset = Asset::findOrFail($id);
-        $asset->delete();
 
-        return redirect()
-            ->route('assets.index')
-            ->with('success', 'Asset berhasil dihapus.');
+        try {
+          
+            if (!empty($asset->url_barcode) && str_contains($asset->url_barcode, '/storage/')) {
+                $barcodePath = parse_url($asset->url_barcode, PHP_URL_PATH);
+                $barcodePath = str_replace('/storage/', '', $barcodePath);
+                Storage::disk('public')->delete($barcodePath);
+            }
+
+            if (!empty($asset->url_gambar) && str_contains($asset->url_gambar, '/storage/')) {
+                $gambarPath = parse_url($asset->url_gambar, PHP_URL_PATH);
+                $gambarPath = str_replace('/storage/', '', $gambarPath);
+                Storage::disk('public')->delete($gambarPath);
+            }
+
+            $asset->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Asset berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal menghapus asset.',
+                'error'   => app()->isLocal() ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
-    /**
-     * Halaman publik / scan barcode:
-     * contoh URL: /asset-scan/{kode_barcode}
-     */
     public function scan($kode_barcode)
     {
         $asset = Asset::where('kode_barcode', $kode_barcode)->firstOrFail();

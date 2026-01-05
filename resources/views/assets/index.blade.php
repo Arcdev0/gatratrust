@@ -184,7 +184,8 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">No Asset</label>
-                                <input type="text" name="no_asset" id="edit_no_asset" class="form-control" readonly required>
+                                <input type="text" name="no_asset" id="edit_no_asset" class="form-control" readonly
+                                    required>
                             </div>
 
                             <div class="col-md-8 mb-3">
@@ -575,6 +576,77 @@
                 complete: function() {
                     $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Update');
                 }
+            });
+        });
+
+        $(document).on('click', '.btn-delete-asset', function() {
+            const id = $(this).data('id');
+            const label = $(this).data('label') || 'asset ini';
+
+            if (!id) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'ID asset tidak ditemukan.'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Hapus Asset?',
+                html: `Yakin ingin menghapus <b>${label}</b>?<br><small class="text-muted">Data dan file terkait akan ikut terhapus.</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d33',
+                reverseButtons: true
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: "{{ url('/assets') }}/" + id, // sesuaikan jika prefix route berbeda
+                    method: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        _method: "DELETE"
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+
+                    success: function(res) {
+                        if (res.status) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Terhapus',
+                                text: res.message || 'Asset berhasil dihapus.',
+                                timer: 1200,
+                                showConfirmButton: false
+                            });
+
+                            $('#assetTable').DataTable().ajax.reload(null, false);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: res.message || 'Gagal menghapus asset.'
+                            });
+                        }
+                    },
+
+                    error: function(xhr) {
+                        let msg = 'Server error. Coba lagi.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON
+                            .message;
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: msg
+                        });
+                    }
+                });
             });
         });
     </script>
