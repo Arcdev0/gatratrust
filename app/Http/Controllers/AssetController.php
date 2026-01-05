@@ -250,34 +250,37 @@ class AssetController extends Controller
         $asset = Asset::findOrFail($id);
 
         $data = $request->validate([
-            'no_asset'      => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('assets', 'no_asset')->ignore($asset->id),
-            ],
-            'nama'          => ['required', 'string', 'max:150'],
-            'merek'         => ['nullable', 'string', 'max:100'],
-            'no_seri'       => ['nullable', 'string', 'max:100'],
-            'lokasi'        => ['required', 'string', 'max:150'],
-            'jumlah'        => ['required', 'integer', 'min:1'],
-            'harga'         => ['required', 'numeric', 'min:0'],
-            'kode_barcode'  => [
-                'required',
-                'string',
-                'max:100',
-                Rule::unique('assets', 'kode_barcode')->ignore($asset->id),
-            ],
-            'url_gambar'    => ['nullable', 'string', 'max:500'],
-            'gambar'        => ['nullable', 'image'],
+            'no_asset'   => ['required', 'string', 'max:50', Rule::unique('assets', 'no_asset')->ignore($asset->id)],
+            'nama'       => ['required', 'string', 'max:150'],
+            'merek'      => ['nullable', 'string', 'max:100'],
+            'no_seri'    => ['nullable', 'string', 'max:100'],
+            'lokasi'     => ['required', 'string', 'max:150'],
+            'jumlah'     => ['required', 'integer', 'min:1'],
+            'harga'      => ['required', 'numeric', 'min:0'],
+            'url_gambar' => ['nullable', 'string', 'max:500'],
+            'gambar'     => ['nullable', 'image'],
         ]);
 
         if ($request->hasFile('gambar')) {
+
+            if ($asset->url_gambar && str_contains($asset->url_gambar, '/storage/')) {
+                $oldPath = str_replace('/storage/', '', parse_url($asset->url_gambar, PHP_URL_PATH));
+                Storage::disk('public')->delete($oldPath);
+            }
+
             $path = $request->file('gambar')->store('assets', 'public');
             $data['url_gambar'] = Storage::url($path);
         }
 
         $asset->update($data);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'  => true,
+                'message' => 'Asset berhasil diupdate.',
+                'data'    => $asset->fresh(),
+            ]);
+        }
 
         return redirect()
             ->route('assets.show', $asset->id)

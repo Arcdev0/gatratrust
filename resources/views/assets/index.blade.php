@@ -135,10 +135,10 @@
                                     required>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">URL Gambar (opsional)</label>
                                 <input type="text" name="url_gambar" class="form-control" placeholder="https://...">
-                            </div>
+                            </div> --}}
 
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Upload Gambar (opsional)</label>
@@ -162,7 +162,101 @@
     </div>
 
 
-    <div class="modal fade" id="modalEditAsset" tabindex="-1"></div>
+    <div class="modal fade" id="modalEditAsset" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Asset</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form id="editAssetForm" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+
+                    <input type="hidden" id="edit_id" name="id">
+
+                    <div class="modal-body">
+                        <div class="row">
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">No Asset</label>
+                                <input type="text" name="no_asset" id="edit_no_asset" class="form-control" readonly required>
+                            </div>
+
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Nama</label>
+                                <input type="text" name="nama" id="edit_nama" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Merek</label>
+                                <input type="text" name="merek" id="edit_merek" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">No Seri</label>
+                                <input type="text" name="no_seri" id="edit_no_seri" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Lokasi</label>
+                                <input type="text" name="lokasi" id="edit_lokasi" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Jumlah</label>
+                                <input type="number" name="jumlah" id="edit_jumlah" class="form-control"
+                                    min="1" required>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Harga</label>
+                                <input type="number" name="harga" id="edit_harga" class="form-control"
+                                    min="0" required>
+                            </div>
+
+                            {{-- <div class="col-md-6 mb-3">
+                                <label class="form-label">URL Gambar (opsional)</label>
+                                <input type="text" name="url_gambar" id="edit_url_gambar" class="form-control"
+                                    placeholder="https://...">
+                                <small class="text-muted">Jika upload dipilih, URL akan ditimpa.</small>
+                            </div> --}}
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Upload Gambar (opsional)</label>
+                                <input type="file" name="gambar" id="edit_gambar" class="form-control"
+                                    accept="image/*">
+                            </div>
+
+                            <div class="col-12">
+                                <div class="border rounded p-2 text-center">
+                                    <div class="small text-muted mb-2">Preview</div>
+                                    <img id="edit_preview_img" src="" alt="Preview"
+                                        style="max-height:180px; display:none; border-radius:8px; border:1px solid #eee;">
+                                    <div id="edit_preview_empty" class="text-muted">Tidak ada gambar</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary" id="btnUpdateAsset">
+                            <i class="fas fa-save"></i> Update
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
 
 @endsection
 
@@ -363,6 +457,123 @@
                 },
                 complete: function() {
                     $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
+                }
+            });
+        });
+
+        $(document).on('click', '.btn-edit-asset', function() {
+            const id = $(this).data('id');
+            const no_asset = $(this).data('no_asset') || '';
+            const nama = $(this).data('nama') || '';
+            const merek = $(this).data('merek') || '';
+            const no_seri = $(this).data('no_seri') || '';
+            const lokasi = $(this).data('lokasi') || '';
+            const jumlah = $(this).data('jumlah') || 1;
+            const harga = $(this).data('harga') || 0;
+            const url_gambar = $(this).data('url_gambar') || '';
+
+            $('#edit_id').val(id);
+            $('#edit_no_asset').val(no_asset);
+            $('#edit_nama').val(nama);
+            $('#edit_merek').val(merek);
+            $('#edit_no_seri').val(no_seri);
+            $('#edit_lokasi').val(lokasi);
+            $('#edit_jumlah').val(jumlah);
+            $('#edit_harga').val(harga);
+            $('#edit_url_gambar').val(url_gambar);
+
+            // reset file input
+            $('#edit_gambar').val('');
+
+            // preview
+            if (url_gambar) {
+                $('#edit_preview_img').attr('src', url_gambar).show();
+                $('#edit_preview_empty').hide();
+            } else {
+                $('#edit_preview_img').attr('src', '').hide();
+                $('#edit_preview_empty').show();
+            }
+        });
+
+        $('#edit_gambar').on('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#edit_preview_img').attr('src', e.target.result).show();
+                $('#edit_preview_empty').hide();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $(document).on('submit', '#editAssetForm', function(e) {
+            e.preventDefault();
+
+            const id = $('#edit_id').val();
+            const formData = new FormData(this);
+
+            // IMPORTANT: karena form pakai @method('PUT'), FormData akan membawa _method=PUT
+            const url = "{{ url('/assets') }}/" + id; // sesuaikan kalau prefix route kamu beda
+
+            const $btn = $('#btnUpdateAsset');
+            $btn.prop('disabled', true).text('Updating...');
+
+            $.ajax({
+                url: url,
+                method: "POST", // Laravel akan baca _method=PUT
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+
+                success: function(res) {
+                    if (res.status) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message,
+                            timer: 1300,
+                            showConfirmButton: false
+                        });
+
+                        $('#modalEditAsset').modal('hide');
+                        $('#assetTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: res.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                },
+
+                error: function(xhr) {
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON.errors || {};
+                        let msg = '';
+                        Object.keys(errors).forEach(function(key) {
+                            msg += `• ${errors[key][0]}\n`;
+                        });
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Validasi gagal',
+                            html: msg ? msg.replace(/\n/g, '<br>') : 'Periksa input.'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Server error. Coba lagi.'
+                        });
+                    }
+                },
+
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Update');
                 }
             });
         });
