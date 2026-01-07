@@ -41,137 +41,175 @@ class TblProjectController extends Controller
 
     public function getListProject(Request $request)
     {
-        if ($request->ajax()) {
-            $query = ProjectTbl::with(['client', 'kerjaan', 'pics', 'pak'])->select('projects.*')
-                ->orderBy('id', 'desc');
-
-            // Jika user adalah client, filter hanya project miliknya
-            if (auth()->user()->role_id == 2) {
-                $query->where('client_id', auth()->id());
-            }
-
-            return DataTables::of($query)
-                ->addColumn('project_name', function ($project) {
-                    return $project->nama_project ?? '-';
-                })
-                ->addColumn('client', function ($project) {
-                    $name = $project->client->name ?? '-';
-                    $company = $project->client->company ?? null;
-
-                    return $company ? "{$name} ({$company})" : $name;
-                })
-                ->addColumn('total_biaya_project', function ($project) {
-                    if (auth()->user()->role_id == 1) {
-                        return $project->total_biaya_project;
-                    }
-                    return null;
-                })
-                ->addColumn('status', function ($project) {
-                    $totalInvoice = $project->total_biaya_project;
-                    $totalPaid    = $project->invoices->flatMap->payments->sum('amount_paid');
-                    $remaining    = $totalInvoice - $totalPaid;
-
-                    if ($totalInvoice == 0) {
-                        return '<span class="badge badge-secondary">Belum Ada Invoice</span>';
-                    }
-
-                    if ($remaining <= 0) {
-                        return '<span class="badge badge-success">Lunas</span>';
-                    }
-
-                    return '<span class="badge badge-warning">Sisa: ' . number_format($remaining, 0, ',', '.') . '</span>';
-                })
-                ->addColumn('selesai', function ($project) {
-                    $listProses = DB::table('kerjaan_list_proses')
-                        ->where('kerjaan_id', $project->kerjaan_id)
-                        ->select('list_proses_id', 'urutan')
-                        ->get();
-
-                    $totalProses = $listProses->count();
-                    $prosesSelesai = DB::table('project_details')
-                        ->where('project_id', $project->id)
-                        ->where(function ($query) use ($listProses) {
-                            foreach ($listProses as $proses) {
-                                $query->orWhere(function ($q) use ($proses) {
-                                    $q->where('kerjaan_list_proses_id', $proses->list_proses_id)
-                                        ->where('urutan_id', $proses->urutan);
-                                });
-                            }
-                        })
-                        ->where('status', 'done')
-                        ->count();
-
-                    $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
-                    $icon = $persen == 100 ? '<i class="fas fa-check text-success ml-1"></i>' : '';
-
-                    return "$persen% $icon";
-                })
-                ->addColumn('periode', function ($project) {
-                    if ($project->start && $project->end) {
-                        return '
-                            <small class="d-block">Mulai: ' . $project->start->format('d M Y') . '</small>
-                            <small class="d-block">Selesai: ' . $project->end->format('d M Y') . '</small>
-                        ';
-                    }
-                    return '<span class="text-muted">Belum ditentukan</span>';
-                })
-                ->addColumn('aksi', function ($project) {
-                    $viewBtn = '
-                        <a class="btn btn-sm btn-info" href="' . route('projects.show', $project->id) . '">
-                            <i class="fas fa-eye"></i>
-                        </a>';
-
-                    if (auth()->user()->role_id == 1) {
-                        $editBtn = '
-                            <button type="button" class="btn btn-sm btn-secondary btn-edit-project"
-                                data-toggle="modal" data-target="#EditProjectModal"
-                                data-id="' . $project->id . '"
-                                data-no="' . $project->no_project . '"
-                                data-nama="' . $project->nama_project . '"
-                                data-client="' . $project->client_id . '"
-                                data-kerjaan="' . $project->kerjaan_id . '"
-                                data-deskripsi="' . $project->deskripsi . '"
-                                data-biaya="' . $project->total_biaya_project . '"
-                                data-start="' . optional($project->start)->format('Y-m-d') . '"
-                                data-end="' . optional($project->end)->format('Y-m-d') . '"
-                                data-pics="' . $project->pics->pluck('id')->implode(';') . '"
-                                data-pak="' . ($project->pak_id ?? '') . '"
-                                >
-                                <i class="fas fa-edit"></i>
-                            </button>';
-
-                        $deleteBtn = '
-                            <button type="button" class="btn btn-sm btn-danger btnDeletProject"
-                                data-id="' . $project->id . '">
-                                <i class="fas fa-trash"></i>
-                            </button>';
-
-                        return $viewBtn . ' ' . $editBtn . ' ' . $deleteBtn;
-                    }
-
-                    return $viewBtn;
-                })
-                ->addColumn('pak_number', function ($project) {
-                    return $project->pak->pak_number ?? '-';
-                })
-                ->addColumn('pic', function ($project) {
-                    if (!$project->pics || $project->pics->isEmpty()) {
-                        return '-';
-                    }
-
-                    // Gabungkan semua nama PIC dengan tanda ";"
-                    return $project->pics->pluck('name')->implode(';');
-                })
-                ->rawColumns(['periode', 'aksi', 'selesai', 'status', 'pic'])
-                ->make(true);
+        if (!$request->ajax()) {
+            abort(404);
         }
+
+        $query = ProjectTbl::with([
+            'client',
+            'kerjaan',
+            'pics',
+            'pak',
+            'invoices.payments', 
+        ])
+            ->select('projects.*')
+            ->orderBy('id', 'desc');
+
+        if (auth()->user()->role_id == 2) {
+            $query->where('client_id', auth()->id());
+        }
+
+       
+        $yearNow = Carbon::now()->year;
+
+        $years = $request->input('tahun'); 
+
+        // Normalisasi jadi array
+        if (is_string($years)) {
+            // bisa "2024,2025" atau "2025"
+            $years = explode(',', $years);
+        } elseif (!is_array($years)) {
+            $years = [];
+        }
+
+        // Bersihkan: trim, cast int, buang yang tidak valid
+        $years = collect($years)
+            ->map(fn($y) => (int) trim($y))
+            ->filter(fn($y) => $y >= 2000 && $y <= ($yearNow + 5)) // batas aman, silakan ubah
+            ->unique()
+            ->values()
+            ->all();
+
+        // Default: tahun sekarang
+        if (empty($years)) {
+            $years = [$yearNow];
+        }
+
+        $query->whereIn(DB::raw('YEAR(projects.start)'), $years);
+
+        return DataTables::of($query)
+            ->addColumn('project_name', function ($project) {
+                return $project->nama_project ?? '-';
+            })
+            ->addColumn('client', function ($project) {
+                $name = $project->client->name ?? '-';
+                $company = $project->client->company ?? null;
+                return $company ? "{$name} ({$company})" : $name;
+            })
+            ->addColumn('total_biaya_project', function ($project) {
+                if (auth()->user()->role_id == 1) {
+                    return $project->total_biaya_project;
+                }
+                return null;
+            })
+            ->addColumn('status', function ($project) {
+                $totalInvoice = (float) $project->total_biaya_project;
+
+                $totalPaid = $project->invoices
+                    ->flatMap(fn($inv) => $inv->payments)
+                    ->sum('amount_paid');
+
+                $remaining = $totalInvoice - $totalPaid;
+
+                if ($totalInvoice == 0) {
+                    return '<span class="badge badge-secondary">Belum Ada Invoice</span>';
+                }
+
+                if ($remaining <= 0) {
+                    return '<span class="badge badge-success">Lunas</span>';
+                }
+
+                return '<span class="badge badge-warning">Sisa: ' . number_format($remaining, 0, ',', '.') . '</span>';
+            })
+            ->addColumn('selesai', function ($project) {
+                $listProses = DB::table('kerjaan_list_proses')
+                    ->where('kerjaan_id', $project->kerjaan_id)
+                    ->select('list_proses_id', 'urutan')
+                    ->get();
+
+                $totalProses = $listProses->count();
+
+                $prosesSelesai = DB::table('project_details')
+                    ->where('project_id', $project->id)
+                    ->where(function ($query) use ($listProses) {
+                        foreach ($listProses as $proses) {
+                            $query->orWhere(function ($q) use ($proses) {
+                                $q->where('kerjaan_list_proses_id', $proses->list_proses_id)
+                                    ->where('urutan_id', $proses->urutan);
+                            });
+                        }
+                    })
+                    ->where('status', 'done')
+                    ->count();
+
+                $persen = $totalProses > 0 ? round(($prosesSelesai / $totalProses) * 100) : 0;
+                $icon = $persen == 100 ? '<i class="fas fa-check text-success ml-1"></i>' : '';
+
+                return "$persen% $icon";
+            })
+            ->addColumn('periode', function ($project) {
+                if ($project->start && $project->end) {
+                    return '
+                    <small class="d-block">Mulai: ' . $project->start->format('d M Y') . '</small>
+                    <small class="d-block">Selesai: ' . $project->end->format('d M Y') . '</small>
+                ';
+                }
+                return '<span class="text-muted">Belum ditentukan</span>';
+            })
+            ->addColumn('aksi', function ($project) {
+                $viewBtn = '
+                <a class="btn btn-sm btn-info" href="' . route('projects.show', $project->id) . '">
+                    <i class="fas fa-eye"></i>
+                </a>';
+
+                if (auth()->user()->role_id == 1) {
+                    $editBtn = '
+                    <button type="button" class="btn btn-sm btn-secondary btn-edit-project"
+                        data-toggle="modal" data-target="#EditProjectModal"
+                        data-id="' . $project->id . '"
+                        data-no="' . $project->no_project . '"
+                        data-nama="' . $project->nama_project . '"
+                        data-client="' . $project->client_id . '"
+                        data-kerjaan="' . $project->kerjaan_id . '"
+                        data-deskripsi="' . $project->deskripsi . '"
+                        data-biaya="' . $project->total_biaya_project . '"
+                        data-start="' . optional($project->start)->format('Y-m-d') . '"
+                        data-end="' . optional($project->end)->format('Y-m-d') . '"
+                        data-pics="' . $project->pics->pluck('id')->implode(';') . '"
+                        data-pak="' . ($project->pak_id ?? '') . '"
+                    >
+                        <i class="fas fa-edit"></i>
+                    </button>';
+
+                    $deleteBtn = '
+                    <button type="button" class="btn btn-sm btn-danger btnDeletProject"
+                        data-id="' . $project->id . '">
+                        <i class="fas fa-trash"></i>
+                    </button>';
+
+                    return $viewBtn . ' ' . $editBtn . ' ' . $deleteBtn;
+                }
+
+                return $viewBtn;
+            })
+            ->addColumn('pak_number', function ($project) {
+                return $project->pak->pak_number ?? '-';
+            })
+            ->addColumn('pic', function ($project) {
+                if (!$project->pics || $project->pics->isEmpty()) {
+                    return '-';
+                }
+                return $project->pics->pluck('name')->implode(';');
+            })
+            ->rawColumns(['periode', 'aksi', 'selesai', 'status', 'pic'])
+            ->make(true);
     }
 
     public function generateNoProject()
     {
         $year  = date('Y');
         $month = date('m');
-        
+
         $lastProjectThisYear = DB::table('projects')
             ->where('no_project', 'like', "%-{$year}")
             ->orderBy('id', 'desc')

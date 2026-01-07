@@ -4,6 +4,17 @@
 
 @section('content')
 
+    <style>
+        .select2-selection__choice {
+            padding-left: 1.6em !important;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            height: 1.6em;
+            line-height: 1.6em;
+        }
+    </style>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -20,8 +31,24 @@
     </div>
     <div class="card">
         <div class="card-body">
+
+
             <div class="table-responsive">
+
                 <div class="container">
+                    <div class="d-flex flex-wrap align-items-end mb-3" style="gap:12px;">
+                        <div style="min-width: 280px;">
+                            <label class="form-label mb-1">Filter Tahun</label>
+                            <select id="filterTahun" class="form-select form-select-sm" multiple="multiple"></select>
+                        </div>
+
+                        <div>
+                            <button type="button" id="btnResetFilter" class="btn btn-sm btn-outline-secondary">
+                                Reset (Tahun Sekarang)
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="table" id="projectTable">
                         <thead>
                             <tr>
@@ -337,12 +364,44 @@
                 $(this).find('input[name="end"]').attr('min', today);
             }
         });
+        // ====== CONFIG ======
+        const START_YEAR = 2025; // sesuaikan
+        const currentYear = new Date().getFullYear();
 
+        // ====== Isi opsi tahun ke Select2 ======
+        (function fillYearOptions() {
+            const endYear = currentYear; // opsional: kasih 1 tahun ke depan
+            for (let y = endYear; y >= START_YEAR; y--) {
+                $('#filterTahun').append(new Option(String(y), String(y), false, false));
+            }
+        })();
+
+        // ====== Init Select2 ======
+        $('#filterTahun').select2({
+            placeholder: 'Pilih tahun...',
+            width: '100%',
+            closeOnSelect: false,
+            allowClear: true
+        });
+
+        // ====== Default: pilih tahun sekarang (UI) ======
+        $('#filterTahun').val([String(currentYear)]).trigger('change');
+
+        // ====== DataTable ======
         let table = $('#projectTable').DataTable({
             processing: true,
             serverSide: true,
             responsive: true,
-            ajax: '{{ route('projects.list') }}',
+            ajax: {
+                url: "{{ route('projects.list') }}",
+                data: function(d) {
+                    // kirim array tahun: tahun[]
+                    d.tahun = $('#filterTahun').val(); // contoh: ["2024","2025"]
+
+                    // optional: kalau kamu pakai param filter_basis di controller
+                    // d.filter_basis = 'start';
+                }
+            },
             columns: [{
                     data: 'no_project',
                     name: 'no_project'
@@ -363,26 +422,26 @@
                     orderable: false,
                     searchable: false
                 },
+
                 @if (Auth::user()->role_id == 1)
                     {
                         data: 'pic',
                         name: 'pics.name',
                         orderable: false,
                         searchable: false,
-                        render: function(data, type, row) {
+                        render: function(data) {
                             if (!data) return '-';
-                            // ubah tanda ";" jadi <br> agar lebih rapi di tampilan
                             return data.split(';').join(', ');
                         }
                     }, {
                         data: 'pak_number',
-                        name: 'pak.pak_number',
+                        name: 'pak.pak_number'
                     }, {
                         data: 'total_biaya_project',
                         name: 'total_biaya_project',
                         orderable: false,
                         searchable: false,
-                        render: function(data, type, row) {
+                        render: function(data) {
                             if (data == null) return '-';
                             return 'Rp ' + parseInt(data).toLocaleString('id-ID');
                         }
@@ -392,7 +451,9 @@
                         orderable: false,
                         searchable: false
                     },
-                @endif {
+                @endif
+
+                {
                     data: 'selesai',
                     name: 'selesai',
                     orderable: false,
@@ -403,9 +464,19 @@
                     name: 'aksi',
                     orderable: false,
                     searchable: false
-                }
+                },
             ],
             autoWidth: false
+        });
+
+        // ====== Reload table saat filter berubah ======
+        $('#filterTahun').on('change', function() {
+            table.ajax.reload();
+        });
+
+        // ====== Reset: balik ke tahun sekarang ======
+        $('#btnResetFilter').on('click', function() {
+            $('#filterTahun').val([String(currentYear)]).trigger('change'); // trigger akan reload
         });
 
 
