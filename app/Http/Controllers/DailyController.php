@@ -373,97 +373,92 @@ class DailyController extends Controller
     public function update(Request $request, $id)
     {
         $daily = NewDaily::findOrFail($id);
-
-        // hanya pemilik daily yg boleh edit
         abort_if(Auth::id() !== (int) $daily->user_id, 403);
 
-        // validasi dasar
         $request->validate([
-            'tanggal' => ['required'], // kita parse manual, karena bisa datetime-local
-            'items'   => ['required'], // json string
+            'tanggal'     => ['required'],
+            'items'       => ['required'], // JSON string
             'upload_file' => ['nullable', 'file', 'max:5120'],
         ]);
 
-        // parse items
         $items = json_decode($request->items, true);
         if (!is_array($items)) {
             return response()->json([
-                'message' => 'items harus berupa array JSON'
+                'message' => 'The items field must be an array.',
+                'errors'  => ['items' => ['The items field must be an array.']]
             ], 422);
         }
 
-        // normalize tanggal (datetime-local => ambil date)
-        $tanggalRaw = $request->tanggal;
-        // contoh: "2026-01-13T10:30" atau "2026-01-13"
-        $tanggalOnly = substr($tanggalRaw, 0, 10);
+        $tanggalOnly = substr((string) $request->tanggal, 0, 10);
 
-        DB::transaction(function () use ($request, $daily, $items, $tanggalOnly) {
+        // helper mapping
+        $normalizeTaskStatus = function ($v) {
+            // tasks.status: open/done
+            return ($v === 'done') ? 'done' : 'open';
+        };
 
-            // =========================
-            // 1) UPDATE HEADER DAILY
-            // =========================
+        $normalizeLogStatus = function ($v) {
+            // task_logs.status_hari_ini: lanjut/done
+            return ($v === 'done') ? 'done' : 'lanjut';
+        };
+
+        DB::transaction(function () use (
+            $request,
+            $daily,
+            $items,
+            $tanggalOnly,
+            $normalizeTaskStatus,
+            $normalizeLogStatus
+        ) {
+
+            // 1) header daily
             $daily->tanggal = $tanggalOnly;
 
             if ($request->hasFile('upload_file')) {
-                // optional: hapus file lama
                 if ($daily->upload_file) {
                     Storage::disk('public')->delete($daily->upload_file);
                 }
-
-                $path = $request->file('upload_file')->store('daily_uploads', 'public');
-                $daily->upload_file = $path;
+                $daily->upload_file = $request->file('upload_file')->store('daily_uploads', 'public');
             }
 
             $daily->save();
 
-            // =========================
-            // 2) PROSES ITEMS (LOGS)
-            // =========================
+            // 2) items
             foreach ($items as $it) {
                 $jenis = $it['jenis'] ?? null;
-                $statusHariIni = $it['status_hari_ini'] ?? 'lanjut';
                 $keterangan = $it['keterangan'] ?? null;
+
+                // input status dari JS (bebas), kita normalkan:
+                $rawStatus = $it['status_hari_ini'] ?? 'open';
+                $taskStatus = $normalizeTaskStatus($rawStatus); // open/done
+                $logStatus  = $normalizeLogStatus($rawStatus);  // lanjut/done
 
                 $logId  = $it['log_id'] ?? null;
                 $taskId = $it['task_id'] ?? null;
 
-                // -------------------------
-                // A) UPDATE LOG LAMA (kalau ada log_id)
-                // -------------------------
+                // A) update log lama
                 if (!empty($logId)) {
                     $log = TaskLog::where('id', $logId)
                         ->where('daily_id', $daily->id)
                         ->firstOrFail();
 
+                    $log->tanggal = $tanggalOnly;
                     $log->keterangan = $keterangan;
-                    $log->status_hari_ini = $statusHariIni;
-                    $log->tanggal = $tanggalOnly; // sync ke tanggal daily (optional tapi enak)
+                    $log->status_hari_ini = $logStatus; // lanjut/done
                     $log->save();
 
-                    // update status task sesuai status hari ini
                     $task = Task::find($log->task_id);
                     if ($task) {
-                        $task->status = ($statusHariIni === 'done') ? 'done' : 'lanjut';
-
-                        if ($statusHariIni === 'done') {
-                            $task->finished_at = $tanggalOnly;
-                            // kalau started_at kosong, isi
-                            if (!$task->started_at) $task->started_at = $tanggalOnly;
-                        } else {
-                            // kalau masih lanjut, finished_at kosongkan
-                            $task->finished_at = null;
-                            if (!$task->started_at) $task->started_at = $tanggalOnly;
-                        }
-
+                        $task->status = $taskStatus; // open/done
+                        if (!$task->started_at) $task->started_at = $tanggalOnly;
+                        $task->finished_at = ($taskStatus === 'done') ? $tanggalOnly : null;
                         $task->save();
                     }
 
                     continue;
                 }
 
-                // -------------------------
-                // B) ITEM BARU -> pastikan punya TASK
-                // -------------------------
+                // B) pastikan task ada
                 if (empty($taskId)) {
                     $task = new Task();
                     $task->user_id = Auth::id();
@@ -480,47 +475,36 @@ class DailyController extends Controller
                         $task->judul_umum = $it['judul_umum'] ?? null;
                     }
 
-                    $task->status = ($statusHariIni === 'done') ? 'done' : 'lanjut';
+                    $task->status = $taskStatus; // open/done
                     $task->started_at = $tanggalOnly;
-                    $task->finished_at = ($statusHariIni === 'done') ? $tanggalOnly : null;
-
+                    $task->finished_at = ($taskStatus === 'done') ? $tanggalOnly : null;
                     $task->save();
+
                     $taskId = $task->id;
                 } else {
-                    // kalau taskId dikirim (misal reuse), update status juga
                     $task = Task::find($taskId);
                     if ($task) {
-                        $task->status = ($statusHariIni === 'done') ? 'done' : 'lanjut';
-
+                        $task->status = $taskStatus;
                         if (!$task->started_at) $task->started_at = $tanggalOnly;
-
-                        if ($statusHariIni === 'done') {
-                            $task->finished_at = $tanggalOnly;
-                        } else {
-                            $task->finished_at = null;
-                        }
-
+                        $task->finished_at = ($taskStatus === 'done') ? $tanggalOnly : null;
                         $task->save();
                     }
                 }
 
-                // buat log baru untuk daily ini
+                // C) buat log baru
                 TaskLog::create([
-                    'daily_id' => $daily->id,
-                    'task_id'  => $taskId,
-                    'user_id'  => Auth::id(),
-                    'tanggal'  => $tanggalOnly,
-                    'keterangan' => $keterangan,
-                    'status_hari_ini' => $statusHariIni,
-                    // upload_file untuk log (kalau kamu memang pakai per-log file, kalau tidak ya biarkan null)
-                    'upload_file' => null,
+                    'daily_id'        => $daily->id,
+                    'task_id'         => $taskId,
+                    'user_id'         => Auth::id(),
+                    'tanggal'         => $tanggalOnly,
+                    'keterangan'      => $keterangan,
+                    'status_hari_ini' => $logStatus, // lanjut/done
+                    'upload_file'     => null,
                 ]);
             }
         });
 
-        return response()->json([
-            'message' => 'Daily berhasil diperbarui'
-        ]);
+        return response()->json(['message' => 'Daily berhasil diperbarui']);
     }
 
     /**
