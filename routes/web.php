@@ -93,12 +93,26 @@ Route::middleware('auth')->group(function () {
     // Daily
     Route::prefix('daily')->group(function () {
         Route::get('/', [DailyController::class, 'index'])->name('daily.index');
-        Route::get('/list', [DailyController::class, 'getList'])->name('daily.getList');
-        Route::post('/store', [DailyController::class, 'store'])->name('daily.store');
-        Route::get('/edit/{id}', [DailyController::class, 'edit'])->name('daily.edit');
-        Route::put('/update/{id}', [DailyController::class, 'update'])->name('daily.update');
-        Route::delete('/delete/{id}', [DailyController::class, 'destroy'])->name('daily.destroy');
+        // Route::get('/list', [DailyController::class, 'getList'])->name('daily.getList');
+        // Route::post('/store', [DailyController::class, 'store'])->name('daily.store');
+        // Route::get('/edit/{id}', [DailyController::class, 'edit'])->name('daily.edit');
+        // Route::put('/update/{id}', [DailyController::class, 'update'])->name('daily.update');
+        // Route::delete('/delete/{id}', [DailyController::class, 'destroy'])->name('daily.destroy');
     });
+
+    // api untuk ajax
+    Route::get('/new-daily/pending', [DailyController::class, 'pendingTasks'])->name('newdaily.pending');
+    Route::get('/new-daily/cards', [DailyController::class, 'listCards'])->name('newdaily.cards');
+    Route::get('/new-daily/my-open-tasks', [DailyController::class, 'myOpenTasks'])->name('newdaily.my_open_tasks');
+
+    Route::post('/new-daily', [DailyController::class, 'store'])->name('newdaily.store');
+    Route::get('/new-daily/{id}/edit', [DailyController::class, 'edit'])->name('newdaily.edit');
+    Route::post('/new-daily/{id}', [DailyController::class, 'update'])->name('newdaily.update');
+    Route::delete('/new-daily/{id}', [DailyController::class, 'destroy'])->name('newdaily.destroy');
+    Route::get('/new-daily/project-data', [DailyController::class, 'projectData'])
+        ->name('newdaily.projectData');
+
+
     Route::get('/daily/{daily}/comments', [DailyController::class, 'dataDailyComments']);
     Route::post('/daily/{daily}/comments', [DailyController::class, 'storeDailyComments']);
     Route::delete('/daily/comments/{comment}', [DailyController::class, 'destroyDailyComments']);

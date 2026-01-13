@@ -5,11 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Daily;
 use App\Models\DailyComment;
 use App\Models\DailyItem;
+use App\Models\KerjaanListProses;
 use App\Models\ListProses;
+use App\Models\NewDaily;
 use App\Models\ProjectTbl;
+use App\Models\Task;
+use App\Models\TaskLog;
 use App\Models\TimelineTahunan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class DailyController extends Controller
 {
@@ -22,223 +29,159 @@ class DailyController extends Controller
     }
 
 
-    public function getProjectData()
+    public function pendingTasks(Request $request)
     {
-        $userId = auth()->id();
+        $user = Auth::user();
 
-        // 1) Project user + prosesnya
-        $projects = ProjectTbl::with(['kerjaan.prosesList'])
-            ->join('project_user', 'projects.id', '=', 'project_user.project_id')
-            ->where('project_user.user_id', $userId)
-            ->select('projects.*')
-            ->get();
+        // Optional filter tanggal (misal untuk tampilkan pending sampai tanggal tertentu)
+        $tanggal = $request->input('tanggal'); // YYYY-MM-DD
 
-        // project_id => list proses
-        $projectProcesses = $projects->mapWithKeys(function ($p) {
-            if (!$p->kerjaan) {
-                return [$p->id => []];
-            }
-
-            $list = $p->kerjaan->prosesList->map(function ($proses) {
-                return [
-                    'id'     => $proses->id,
-                    'nama'   => $proses->nama_proses,
-                    'urutan' => $proses->pivot->urutan,
-                    'hari'   => $proses->pivot->hari,
-                ];
-            });
-
-            return [$p->id => $list->values()];
-        });
-
-        // 2) Cari proses ongoing & selesai (untuk disable / hide di form)
-        $ongoing = DailyItem::where('status', false)
-            ->whereNotNull('project_id')
-            ->whereNotNull('proses_id')
-            ->get()
-            ->groupBy('project_id');
-
-        $allWorked = DailyItem::whereNotNull('project_id')
-            ->whereNotNull('proses_id')
-            ->get()
-            ->groupBy('project_id');
-
-        $doneProcessesByProject = [];
-        $completedProjects      = [];
-
-        foreach ($allWorked as $projectId => $items) {
-            $allProsesIds = $items->pluck('proses_id')->unique()->values()->all();
-
-            $ongoingForProject = $ongoing->get($projectId) ?? collect();
-            $ongoingIds = $ongoingForProject->pluck('proses_id')->unique()->values()->all();
-
-            // proses selesai = pernah dikerjakan - yang masih ongoing
-            $doneIds = array_values(array_diff($allProsesIds, $ongoingIds));
-            if (!empty($doneIds)) {
-                $doneProcessesByProject[$projectId] = $doneIds;
-            }
-        }
-
-        // project yang semua prosesnya selesai
-        foreach ($projects as $p) {
-            $prosesList = $projectProcesses[$p->id] ?? collect();
-            $allProsesIds = collect($prosesList)->pluck('id')->all();
-
-            if (empty($allProsesIds)) continue;
-
-            $doneIdsForProject = $doneProcessesByProject[$p->id] ?? [];
-
-            if (!array_diff($allProsesIds, $doneIdsForProject)) {
-                $completedProjects[] = $p->id;
-            }
-        }
-
-        // Carry over dari daily terakhir user ini
-        $lastDaily = Daily::with(['items' => function ($q) {
-            $q->where('status', false);
-        }])
-            ->where('user_id', $userId)
-            ->orderBy('tanggal', 'desc')
-            ->first();
-
-        $carryOverItems = [];
-
-        if ($lastDaily) {
-            $carryOverItems = $lastDaily->items->map(function ($item) {
-                return [
-                    'jenis'          => $item->jenis,
-                    'project_id'     => $item->project_id,
-                    'proses_id'      => $item->proses_id,
-                    'pekerjaan_umum' => $item->pekerjaan_umum,
-                    'keterangan'     => $item->keterangan,
-                    'status'         => $item->status ? 'ok' : 'belum',
-                ];
-            })->values()->toArray();
-        }
-
-        return response()->json([
-            'projects'               => $projects,
-            'projectProcesses'       => $projectProcesses,
-            'doneProcessesByProject' => $doneProcessesByProject,
-            'completedProjects'      => $completedProjects,
-            'carryOverItems'         => $carryOverItems,
-        ]);
-    }
-
-
-    public function getList(Request $request)
-    {
-        $tanggal = $request->get('tanggal');
-
-        $query = Daily::with(['user'])
-            ->withCount('comments')
-            ->orderBy('tanggal', 'desc');
-
-        if ($tanggal) {
-            $query->whereDate('tanggal', $tanggal);
-        } else {
-            $query->whereDate('tanggal', now());
-        }
-
-        // 🔹 Map global (untuk tampilan list semua user)
-        $projectMap = ProjectTbl::pluck('no_project', 'id');        // [id => no_project]
-        $prosesMap  = ListProses::pluck('nama_proses', 'id');       // [id => nama_proses]
-
-        // ======================================================
-        // 1) Hitung kombinasi project+proses yang sudah pernah OK
-        // ======================================================
-        $okItems = DailyItem::where('status', true) // true = OK
-            ->whereNotNull('project_id')
-            ->whereNotNull('proses_id')
-            ->get();
-
-        $hasOk = []; // key: "project_id|proses_id" => true
-        foreach ($okItems as $it) {
-            $key = $it->project_id . '|' . $it->proses_id;
-            $hasOk[$key] = true;
-        }
-
-        // ======================================================
-        // 2) Ambil pending (status = false), filter & deduplicate
-        // ======================================================
-        $pendingQuery = DailyItem::where('status', false)
+        $query = Task::query()
             ->with([
-                'daily',
-                'project.pics',
-            ]);
+                'user:id,name',
+                'project:id,no_project,nama_project', // sesuaikan kolom project kamu
+                'latestLog' => function ($q) use ($tanggal) {
+                    if ($tanggal) $q->whereDate('tanggal', '<=', $tanggal);
+                }
+            ])
+            ->open();
 
+        // kalau kamu ingin pending table hanya task milik user login:
+        // $query->forUser($user->id);
+
+        // kalau ingin pending task semua user (seperti di view ada kolom PIC):
+        // biarkan tanpa filter user
+
+        // Kalau tanggal filter ada, pastikan task punya log sebelum/di tanggal itu
         if ($tanggal) {
-            $pendingQuery->whereHas('daily', function ($q) use ($tanggal) {
+            $query->whereHas('logs', function ($q) use ($tanggal) {
                 $q->whereDate('tanggal', '<=', $tanggal);
             });
         }
 
-        // supaya "yang pertama dibuat" yang dipakai
-        $pendingRaw = $pendingQuery
-            ->orderBy('created_at', 'asc')
+        $tasks = $query
+            ->orderByDesc('updated_at')
             ->get();
 
-        $seenKeys    = [];          // untuk deduplicate pending per (project+proses)
-        $pendingTasks = collect();
+        // Bentuk data untuk DataTable (simple)
+        $data = $tasks->map(function ($task, $idx) {
+            $last = $task->latestLog;
 
-        foreach ($pendingRaw as $item) {
+            return [
+                'no'        => $idx + 1,
+                'tanggal'   => optional($last?->tanggal)->format('Y-m-d') ?? optional($task->started_at)->format('Y-m-d'),
+                'project'   => $task->jenis === 'project'
+                    ? (optional($task->project)->no_project ?? ('#' . $task->project_id))
+                    : '-',
+                'pic'       => optional($task->user)->name ?? '-',
+                'jenis'     => $task->jenis,
+                'pekerjaan' => $task->jenis === 'umum'
+                    ? ($task->judul_umum ?? '-')
+                    : 'Project Task',
+                'keterangan' => $last?->keterangan ?? ($task->deskripsi ?? '-'),
+                'status'    => $task->status, // open
+                'status_hari_ini' => $last?->status_hari_ini ?? 'lanjut',
+                'task_id'   => $task->id,
+            ];
+        });
 
-            // KEY hanya untuk yang punya project & proses
-            if ($item->project_id && $item->proses_id) {
-                $key = $item->project_id . '|' . $item->proses_id;
+        return response()->json([
+            'count' => $data->count(),
+            'data'  => $data,
+        ]);
+    }
 
-                // 🔴 Kalau kombinasi ini pernah OK → SKIP semua pending-nya
-                if (!empty($hasOk[$key])) {
-                    continue;
-                }
 
-                // 🟡 Kalau pending untuk key ini sudah pernah dimasukkan → SKIP duplikat
-                if (!empty($seenKeys[$key])) {
-                    continue;
-                }
+    public function myOpenTasks(Request $request)
+    {
+        $userId = Auth::id();
 
-                // tandai sudah dipakai
-                $seenKeys[$key] = true;
-            }
+        $tasks = Task::query()
+            ->forUser($userId)
+            ->open()
+            ->with(['project:id,no_project,nama_project', 'latestLog'])
+            ->orderByDesc('updated_at')
+            ->get();
 
-            // project_no
-            $projectNo = $item->project_id
-                ? ($projectMap[$item->project_id] ?? null)
-                : null;
+        return response()->json([
+            'data' => $tasks
+        ]);
+    }
 
-            // PIC
-            $picNames = [];
-            if ($item->jenis === 'project') {
-                if ($item->project && $item->project->pics) {
-                    $picNames = $item->project->pics->pluck('name')->values()->all();
-                }
-            } else {
-                if ($item->daily && $item->daily->user) {
-                    $picNames = [$item->daily->user->name];
-                }
-            }
+    public function projectData()
+    {
+        $userId = Auth::id();
 
-            $pendingTasks->push([
-                'id'             => $item->id,
-                'tanggal'        => optional($item->daily)->tanggal,
-                'jenis'          => $item->jenis,
-                'project_id'     => $item->project_id,
-                'project_no'     => $projectNo,
-                'proses_id'      => $item->proses_id,
-                'proses'         => $item->proses_id ? ($prosesMap[$item->proses_id] ?? null) : null,
-                'pekerjaan_umum' => $item->pekerjaan_umum,
-                'keterangan'     => $item->keterangan,
-                'pic'            => $picNames,
-                'status'         => $item->status,
-            ]);
+        $projects = ProjectTbl::query()
+            ->select('id', 'no_project', 'kerjaan_id')
+            ->whereHas('pics', function ($q) use ($userId) {
+                $q->where('users.id', $userId);
+            })
+            ->orderBy('no_project')
+            ->get();
+
+        $kerjaanIds = $projects->pluck('kerjaan_id')->filter()->unique()->values();
+
+        $processRows = KerjaanListProses::query()
+            ->with(['listProses:id,nama_proses', 'kerjaan:id,nama_kerjaan'])
+            ->whereIn('kerjaan_id', $kerjaanIds)
+            ->orderBy('urutan')
+            ->get();
+
+        $processByKerjaan = $processRows->groupBy('kerjaan_id')->map(function ($rows) {
+            return $rows->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'urutan' => $r->urutan,
+                    'nama_proses' => $r->listProses?->nama_proses,
+                    'nama_kerjaan' => $r->kerjaan?->nama_kerjaan,
+                ];
+            })->values();
+        });
+
+        $projectProcesses = [];
+        foreach ($projects as $p) {
+            $projectProcesses[$p->id] = $processByKerjaan[$p->kerjaan_id] ?? [];
         }
 
         return response()->json([
-            'data'          => $query->get(),
-            'auth_user_id'  => auth()->id(),
-            'project_map'   => $projectMap,
-            'proses_map'    => $prosesMap,
-            'pending_tasks' => $pendingTasks->values(),
+            'projects' => $projects,
+            'projectProcesses' => $projectProcesses,
+        ]);
+    }
+
+
+    public function listCards(Request $request)
+    {
+        $tanggal = $request->input('tanggal');
+        if (!$tanggal) $tanggal = now()->toDateString();
+
+        $dailies = NewDaily::query()
+            ->with([
+                'user:id,name',
+                'taskLogs' => function ($q) {
+                    $q->with([
+                        'task.project',
+                        'task.user',
+                        'task.prosesRel.kerjaan',
+                        'task.prosesRel.listProses',
+                    ])->orderBy('id', 'asc');
+                }
+            ])
+            ->whereDate('tanggal', $tanggal)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+
+        // tambahkan field tampilan supaya tidak ISO
+        $dailies->each(function ($d) {
+            $d->tanggal_display = optional($d->tanggal)->format('d-m-Y');
+        });
+
+        return response()->json([
+            'auth_user_id' => Auth::id(),
+            'tanggal'      => $tanggal,
+            'data'         => $dailies,
         ]);
     }
 
@@ -281,172 +224,302 @@ class DailyController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
+        $userId = Auth::id();
 
-        $request->validate([
-            'user_id'        => 'required|exists:users,id',
-            'tanggal'        => 'required|date',
-            'achievements'   => 'required|array|min:1',
-            'achievements.*.jenis'        => 'required|in:project,umum',
-            'achievements.*.project_id'   => 'nullable|exists:projects,id',
-            'achievements.*.proses_id'    => 'nullable|exists:list_proses,id',
-            'achievements.*.pekerjaan_umum' => 'nullable|string',
-            'achievements.*.status'       => 'required|in:ok,belum',
 
-            'tomorrows'      => 'nullable|array',
-            'tomorrows.*.jenis'      => 'required_with:tomorrows|in:project,umum',
-            'tomorrows.*.project_id' => 'nullable|exists:projects,id',
-            'tomorrows.*.proses_id'  => 'nullable|exists:list_proses,id',
+        if ($request->filled('items') && is_string($request->items)) {
+            $decoded = json_decode($request->items, true);
 
-            'upload_file'    => 'nullable|file|max:2048',
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $request->merge(['items' => $decoded]);
+            }
+        }
+
+        $validated = $request->validate([
+            'tanggal' => ['required'],
+            'problem' => ['nullable', 'string'],
+            'summary' => ['nullable', 'string'],
+            'upload_file' => ['nullable', 'file', 'max:5120'],
+
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.task_id' => ['nullable', 'integer', 'exists:tasks,id'],
+            'items.*.jenis' => ['required', Rule::in(['project', 'umum'])],
+            'items.*.project_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'items.*.kerjaan_id' => ['nullable', 'integer'],
+            'items.*.proses_id' => ['nullable', 'integer'],
+            'items.*.judul_umum' => ['nullable', 'string', 'max:255'],
+            'items.*.deskripsi' => ['nullable', 'string'],
+            'items.*.keterangan' => ['nullable', 'string'],
+            'items.*.status_hari_ini' => ['required', Rule::in(['lanjut', 'done'])],
         ]);
 
-        // ----- 1. Siapkan header Daily -----
-        $data = [
-            'user_id'       => $request->user_id,
-            'tanggal'       => $request->tanggal,
-            // simpan JSON untuk kompatibilitas dengan struktur lama
-            'plan_today'    => json_encode($request->input('achievements', [])),
-            'plan_tomorrow' => json_encode($request->input('tomorrows', [])),
-            'problem'       => null, // sementara tidak dipakai
-        ];
+        $tanggal = date('Y-m-d', strtotime($validated['tanggal']));
 
-        if ($request->hasFile('upload_file')) {
-            $data['upload_file'] = $request->file('upload_file')->store('uploads/daily', 'public');
-        }
+        return DB::transaction(function () use ($request, $validated, $tanggal, $userId) {
 
-        $daily = Daily::create($data);
-
-        // ----- 2. Simpan detail ke daily_items -----
-        $achievements = $request->input('achievements', []);
-
-        foreach ($achievements as $item) {
-            $projectId  = $item['project_id'] ?? null;
-            $prosesId   = $item['proses_id'] ?? null;
-            $jenis      = $item['jenis'];
-            $statusText = $item['status'] ?? 'ok';
-
-            // Ambil kerjaan_id dari ProjectTbl
-            $kerjaanId = null;
-            if ($projectId) {
-                $project   = ProjectTbl::find($projectId);
-                $kerjaanId = $project ? $project->kerjaan_id : null;
+            // upload file (header daily)
+            $path = null;
+            if ($request->hasFile('upload_file')) {
+                $path = $request->file('upload_file')->store('daily_uploads', 'public');
             }
 
-            DailyItem::create([
-                'daily_id'       => $daily->id,
-                'jenis'          => $jenis,                  // 'project' / 'umum'
-                'project_id'     => $projectId,
-                'kerjaan_id'     => $kerjaanId,              // diambil dari ProjectTbl
-                'proses_id'      => $prosesId,               // dari ListProses
-                'pekerjaan_umum' => $item['pekerjaan_umum'] ?? null,
-                'keterangan'     => $item['keterangan'] ?? null,
-                'status'         => $statusText === 'ok',    // boolean: true=ok, false=belum
+
+
+            // upsert daily header (1 user 1 tanggal)
+            $daily = NewDaily::updateOrCreate(
+                ['user_id' => $userId, 'tanggal' => $tanggal],
+                [
+                    'problem' => $validated['problem'] ?? null,
+                    'summary' => $validated['summary'] ?? null,
+                    'upload_file' => $path ?? (NewDaily::where('user_id', $userId)->where('tanggal', $tanggal)->value('upload_file')),
+                ]
+            );
+
+            $createdTaskIds = [];
+
+            foreach ($validated['items'] as $row) {
+                $taskId = $row['task_id'] ?? null;
+
+                // kalau task_id tidak ada -> create task baru
+                if (!$taskId) {
+                    $task = Task::create([
+                        'user_id'     => $userId,
+                        'created_by'  => $userId,
+                        'jenis'       => $row['jenis'],
+                        'project_id'  => $row['jenis'] === 'project' ? ($row['project_id'] ?? null) : null,
+                        'kerjaan_id'  => $row['kerjaan_id'] ?? null,
+                        'proses_id'   => $row['proses_id'] ?? null,
+                        'judul_umum'  => $row['jenis'] === 'umum' ? ($row['judul_umum'] ?? '-') : null,
+                        'deskripsi'   => $row['deskripsi'] ?? null,
+                        'status'      => 'open',
+                        'started_at'  => $tanggal,
+                        'finished_at' => null,
+                    ]);
+
+                    $taskId = $task->id;
+                    $createdTaskIds[] = $taskId;
+                } else {
+                    // validasi: task yang di-log harus milik user ini (biar tidak bisa ngerubah task orang)
+                    $task = Task::where('id', $taskId)->where('user_id', $userId)->first();
+                    if (!$task) {
+                        abort(403, 'Task tidak ditemukan atau bukan milik Anda.');
+                    }
+                }
+
+                // upsert log hari ini untuk task tsb (unique task_id+tanggal)
+                $log = TaskLog::updateOrCreate(
+                    ['task_id' => $taskId, 'tanggal' => $tanggal],
+                    [
+                        'daily_id' => $daily->id,
+                        'user_id'  => $userId,
+                        'keterangan' => $row['keterangan'] ?? null,
+                        'status_hari_ini' => $row['status_hari_ini'],
+                        // upload_file per row belum aku handle, bisa ditambah kalau kamu butuh per item
+                    ]
+                );
+
+                // kalau done -> tutup task master
+                if (($row['status_hari_ini'] ?? 'lanjut') === 'done') {
+                    Task::where('id', $taskId)->update([
+                        'status' => 'done',
+                        'finished_at' => $tanggal,
+                    ]);
+                } else {
+                    // pastikan masih open
+                    Task::where('id', $taskId)->update([
+                        'status' => 'open',
+                        'finished_at' => null,
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'message' => 'Daily berhasil disimpan.',
+                'daily_id' => $daily->id,
+                'created_task_ids' => $createdTaskIds,
             ]);
-        }
-
-        // (Opsional) Kalau mau simpan "tomorrows" ke tabel lain atau ke daily_items juga,
-        // bisa ditambah loop kedua di sini.
-
-        return response()->json([
-            'message' => 'Daily created successfully',
-            'data'    => $daily,
-        ], 201);
+        });
     }
+
 
     /**
      * Show the form for editing the specified daily record.
      */
     public function edit($id)
     {
-        $daily = Daily::findOrFail($id);
-        return response()->json($daily);
-    }
-
-    /**
-     * Update the specified daily record.
-     */
-    public function update(Request $request, $id)
-    {
-        $daily = Daily::findOrFail($id);
-
-        $request->validate([
-            'tanggal'        => 'required|date',
-
-            // SAMA seperti di store()
-            'achievements'   => 'required|array|min:1',
-            'achievements.*.jenis'          => 'required|in:project,umum',
-            'achievements.*.project_id'     => 'nullable|exists:projects,id',
-            'achievements.*.proses_id'      => 'nullable|exists:list_proses,id',
-            'achievements.*.pekerjaan_umum' => 'nullable|string',
-            'achievements.*.status'         => 'required|in:ok,belum',
-
-            'tomorrows'      => 'nullable|array',
-            'tomorrows.*.jenis'      => 'required_with:tomorrows|in:project,umum',
-            'tomorrows.*.project_id' => 'nullable|exists:projects,id',
-            'tomorrows.*.proses_id'  => 'nullable|exists:list_proses,id',
-
-            'upload_file'    => 'nullable|file|max:2048',
-        ]);
-
-        // ----- 1. Update header Daily (master) -----
-        $data = [
-            'tanggal'       => $request->tanggal,
-            // simpan JSON supaya kompatibel dengan format lama
-            'plan_today'    => json_encode($request->input('achievements', [])),
-            'plan_tomorrow' => json_encode($request->input('tomorrows', [])),
-            'problem'       => null, // sekarang memang tidak dipakai lagi
-        ];
-
-        // handle file
-        if ($request->hasFile('upload_file')) {
-            // hapus file lama kalau ada
-            if ($daily->upload_file && Storage::disk('public')->exists($daily->upload_file)) {
-                Storage::disk('public')->delete($daily->upload_file);
+        $daily = NewDaily::with([
+            'user:id,name',
+            'taskLogs' => function ($q) {
+                $q->with([
+                    'task.project:id,no_project',
+                    'task.prosesRel.listProses:id,nama_proses',
+                    'task.prosesRel.kerjaan:id,nama_kerjaan',
+                ])->orderBy('id', 'asc');
             }
+        ])->findOrFail($id);
 
-            $data['upload_file'] = $request->file('upload_file')->store('uploads/daily', 'public');
-        }
-
-        $daily->update($data);
-
-        // ----- 2. Reset & simpan ulang detail (daily_items) -----
-        // untuk simpel: hapus semua item lama, lalu insert ulang dari achievements baru
-        $daily->items()->delete();
-
-        $achievements = $request->input('achievements', []);
-
-        foreach ($achievements as $item) {
-            $projectId  = $item['project_id'] ?? null;
-            $prosesId   = $item['proses_id'] ?? null;
-            $jenis      = $item['jenis'];
-            $statusText = $item['status'] ?? 'ok';
-
-            // Ambil kerjaan_id dari ProjectTbl (kalau ada project)
-            $kerjaanId = null;
-            if ($projectId) {
-                $project   = ProjectTbl::find($projectId);
-                $kerjaanId = $project ? $project->kerjaan_id : null;
-            }
-
-            DailyItem::create([
-                'daily_id'       => $daily->id,
-                'jenis'          => $jenis,                       // 'project' / 'umum'
-                'project_id'     => $projectId,
-                'kerjaan_id'     => $kerjaanId,                   // diambil dari ProjectTbl
-                'proses_id'      => $prosesId,                    // dari ListProses
-                'pekerjaan_umum' => $item['pekerjaan_umum'] ?? null,
-                'keterangan'     => $item['keterangan'] ?? null,
-                'status'         => $statusText === 'ok',         // boolean: true=ok, false=belum
-            ]);
-        }
-
-        // (opsional) kalau nanti Tuan mau juga simpan "tomorrows" ke tabel lain,
-        // bisa ditambah loop di bawah ini.
+        // hanya owner yang boleh edit
+        abort_if(auth()->id() !== (int)$daily->user_id, 403);
 
         return response()->json([
-            'message' => 'Daily updated successfully',
-            'data'    => $daily,
+            'data' => $daily,
+            'auth_user_id' => auth()->id(),
+        ]);
+    }
+
+
+
+
+    public function update(Request $request, $id)
+    {
+        $daily = NewDaily::findOrFail($id);
+
+        // hanya pemilik daily yg boleh edit
+        abort_if(Auth::id() !== (int) $daily->user_id, 403);
+
+        // validasi dasar
+        $request->validate([
+            'tanggal' => ['required'], // kita parse manual, karena bisa datetime-local
+            'items'   => ['required'], // json string
+            'upload_file' => ['nullable', 'file', 'max:5120'],
+        ]);
+
+        // parse items
+        $items = json_decode($request->items, true);
+        if (!is_array($items)) {
+            return response()->json([
+                'message' => 'items harus berupa array JSON'
+            ], 422);
+        }
+
+        // normalize tanggal (datetime-local => ambil date)
+        $tanggalRaw = $request->tanggal;
+        // contoh: "2026-01-13T10:30" atau "2026-01-13"
+        $tanggalOnly = substr($tanggalRaw, 0, 10);
+
+        DB::transaction(function () use ($request, $daily, $items, $tanggalOnly) {
+
+            // =========================
+            // 1) UPDATE HEADER DAILY
+            // =========================
+            $daily->tanggal = $tanggalOnly;
+
+            if ($request->hasFile('upload_file')) {
+                // optional: hapus file lama
+                if ($daily->upload_file) {
+                    Storage::disk('public')->delete($daily->upload_file);
+                }
+
+                $path = $request->file('upload_file')->store('daily_uploads', 'public');
+                $daily->upload_file = $path;
+            }
+
+            $daily->save();
+
+            // =========================
+            // 2) PROSES ITEMS (LOGS)
+            // =========================
+            foreach ($items as $it) {
+                $jenis = $it['jenis'] ?? null;
+                $statusHariIni = $it['status_hari_ini'] ?? 'lanjut';
+                $keterangan = $it['keterangan'] ?? null;
+
+                $logId  = $it['log_id'] ?? null;
+                $taskId = $it['task_id'] ?? null;
+
+                // -------------------------
+                // A) UPDATE LOG LAMA (kalau ada log_id)
+                // -------------------------
+                if (!empty($logId)) {
+                    $log = TaskLog::where('id', $logId)
+                        ->where('daily_id', $daily->id)
+                        ->firstOrFail();
+
+                    $log->keterangan = $keterangan;
+                    $log->status_hari_ini = $statusHariIni;
+                    $log->tanggal = $tanggalOnly; // sync ke tanggal daily (optional tapi enak)
+                    $log->save();
+
+                    // update status task sesuai status hari ini
+                    $task = Task::find($log->task_id);
+                    if ($task) {
+                        $task->status = ($statusHariIni === 'done') ? 'done' : 'lanjut';
+
+                        if ($statusHariIni === 'done') {
+                            $task->finished_at = $tanggalOnly;
+                            // kalau started_at kosong, isi
+                            if (!$task->started_at) $task->started_at = $tanggalOnly;
+                        } else {
+                            // kalau masih lanjut, finished_at kosongkan
+                            $task->finished_at = null;
+                            if (!$task->started_at) $task->started_at = $tanggalOnly;
+                        }
+
+                        $task->save();
+                    }
+
+                    continue;
+                }
+
+                // -------------------------
+                // B) ITEM BARU -> pastikan punya TASK
+                // -------------------------
+                if (empty($taskId)) {
+                    $task = new Task();
+                    $task->user_id = Auth::id();
+                    $task->created_by = Auth::id();
+                    $task->jenis = $jenis;
+
+                    if ($jenis === 'project') {
+                        $task->project_id = $it['project_id'] ?? null;
+                        $task->proses_id  = $it['proses_id'] ?? null;
+                        $task->judul_umum = null;
+                    } else {
+                        $task->project_id = null;
+                        $task->proses_id  = null;
+                        $task->judul_umum = $it['judul_umum'] ?? null;
+                    }
+
+                    $task->status = ($statusHariIni === 'done') ? 'done' : 'lanjut';
+                    $task->started_at = $tanggalOnly;
+                    $task->finished_at = ($statusHariIni === 'done') ? $tanggalOnly : null;
+
+                    $task->save();
+                    $taskId = $task->id;
+                } else {
+                    // kalau taskId dikirim (misal reuse), update status juga
+                    $task = Task::find($taskId);
+                    if ($task) {
+                        $task->status = ($statusHariIni === 'done') ? 'done' : 'lanjut';
+
+                        if (!$task->started_at) $task->started_at = $tanggalOnly;
+
+                        if ($statusHariIni === 'done') {
+                            $task->finished_at = $tanggalOnly;
+                        } else {
+                            $task->finished_at = null;
+                        }
+
+                        $task->save();
+                    }
+                }
+
+                // buat log baru untuk daily ini
+                TaskLog::create([
+                    'daily_id' => $daily->id,
+                    'task_id'  => $taskId,
+                    'user_id'  => Auth::id(),
+                    'tanggal'  => $tanggalOnly,
+                    'keterangan' => $keterangan,
+                    'status_hari_ini' => $statusHariIni,
+                    // upload_file untuk log (kalau kamu memang pakai per-log file, kalau tidak ya biarkan null)
+                    'upload_file' => null,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Daily berhasil diperbarui'
         ]);
     }
 
@@ -455,18 +528,22 @@ class DailyController extends Controller
      */
     public function destroy($id)
     {
-        $daily = Daily::with('items')->findOrFail($id);
+        $daily = NewDaily::findOrFail($id);
 
+        if ($daily->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak punya akses hapus daily ini.');
+        }
 
+        // hapus file
         if ($daily->upload_file && Storage::disk('public')->exists($daily->upload_file)) {
             Storage::disk('public')->delete($daily->upload_file);
         }
 
-        $daily->items()->delete();
-
         $daily->delete();
 
-        return response()->json(['message' => 'Daily deleted successfully']);
+        return response()->json([
+            'message' => 'Daily berhasil dihapus.',
+        ]);
     }
 
     /**
