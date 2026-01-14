@@ -14,5 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([KerjaanListProsesSeeder::class,]);
         $this->call([StatusSeeder::class,]);
         $this->call([KategoriSeeder::class,]);
+        $this->call([AccountingSettingsSeeder::class,]);
+        $this->call([CoaSeeder::class,]);
     }
 }
