@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\AccountingSettingController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\CoaController;
@@ -275,7 +276,7 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    Route::prefix('coa')->middleware('auth')->group(function () {
+    Route::prefix('coa')->group(function () {
         Route::get('/', [CoaController::class, 'index'])->name('coa.index');
         Route::get('/list', [CoaController::class, 'getlistcoa'])->name('coa.list');
         Route::post('/', [CoaController::class, 'store'])->name('coa.store');
@@ -284,6 +285,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [CoaController::class, 'destroy'])->name('coa.destroy');
 
         Route::post('/next-code', [CoaController::class, 'getNextAccountCode'])->name('coa.next-code');
+    });
+
+    Route::prefix('accounting-settings')->group(function () {
+        Route::get('/', [AccountingSettingController::class, 'index'])->name('accounting-settings.index');
+        Route::post('/save', [AccountingSettingController::class, 'save'])->name('accounting-settings.save');
     });
 
 

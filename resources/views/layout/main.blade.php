@@ -247,13 +247,15 @@
                         </div> --}}
 
                         <div
-                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') ? 'active open' : '' }}">
+                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') || request()->routeIs('accounting-settings.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fas fa-coins"></i><span>Accounting</span>
                             </a>
                             <div class="submenu-content">
                                 <a href="{{ route('coa.index') }}"
                                     class="menu-item {{ request()->routeIs('coa.index') ? 'active' : '' }}">COA</a>
+                                <a href="{{ route('accounting-settings.index') }}"
+                                    class="menu-item {{ request()->routeIs('accounting-settings.index') ? 'active' : '' }}">Accounting Settings</a>
                                 <a href="{{ route('accounting.index') }}"
                                     class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Dana
                                     Cash Yogi</a>
