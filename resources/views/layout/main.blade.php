@@ -247,7 +247,7 @@
                         </div> --}}
 
                         <div
-                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') || request()->routeIs('accounting-settings.index') ? 'active open' : '' }}">
+                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') || request()->routeIs('accounting-settings.index') || request()->routeIs('journals.index')? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fas fa-coins"></i><span>Accounting</span>
                             </a>
