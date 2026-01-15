@@ -240,10 +240,25 @@
                         </div>
 
                         {{-- Accounting --}}
-                        <div class="nav-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">
+                        {{-- <div class="nav-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">
                             <a href="{{ route('accounting.index') }}">
                                 <i class="fas fa-coins"></i><span>Accounting</span>
                             </a>
+                        </div> --}}
+
+                        <div
+                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="fas fa-coins"></i><span>Accounting</span>
+                            </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('coa.index') }}"
+                                    class="menu-item {{ request()->routeIs('coa.index') ? 'active' : '' }}">COA</a>
+                                <a href="{{ route('accounting.index') }}"
+                                    class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Dana
+                                    Cash Yogi</a>
+
+                            </div>
                         </div>
 
                         {{-- Data Karyawan --}}
@@ -259,15 +274,17 @@
                         </div>
                         <div class="nav-item {{ request()->routeIs('assets.index') ? 'active' : '' }}">
                             <a href="{{ route('assets.index') }}">
-                               <i class="fas fa-archive"></i><span>Asset</span>
+                                <i class="fas fa-archive"></i><span>Asset</span>
                             </a>
                         </div>
-                        <div class="nav-item has-sub {{ request()->routeIs('procedures.index') ? 'active open' : '' }}">
+                        <div
+                            class="nav-item has-sub {{ request()->routeIs('procedures.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="far fa-folder-open"></i><span>Dokumen ISO</span>
                             </a>
                             <div class="submenu-content">
-                                <a href="{{ route('procedures.index') }}" class="menu-item {{ request()->routeIs('procedures.index') ? 'active' : '' }}">Prosedur</a>
+                                <a href="{{ route('procedures.index') }}"
+                                    class="menu-item {{ request()->routeIs('procedures.index') ? 'active' : '' }}">Prosedur</a>
                                 <a href="" class="menu-item">Instruksi Kerja</a>
                             </div>
                         </div>

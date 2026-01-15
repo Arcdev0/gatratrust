@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\CoaController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
@@ -272,6 +273,19 @@ Route::middleware('auth')->group(function () {
         Route::put('/{id}', [AssetController::class, 'update'])->name('update');
         Route::delete('/{id}', [AssetController::class, 'destroy'])->name('destroy');
     });
+
+
+    Route::prefix('coa')->middleware('auth')->group(function () {
+        Route::get('/', [CoaController::class, 'index'])->name('coa.index');
+        Route::get('/list', [CoaController::class, 'getlistcoa'])->name('coa.list');
+        Route::post('/', [CoaController::class, 'store'])->name('coa.store');
+        Route::get('/{id}', [CoaController::class, 'show'])->name('coa.show');
+        Route::put('/{id}', [CoaController::class, 'update'])->name('coa.update');
+        Route::delete('/{id}', [CoaController::class, 'destroy'])->name('coa.destroy');
+
+        Route::post('/next-code', [CoaController::class, 'getNextAccountCode'])->name('coa.next-code');
+    });
+
 
     // export using maatwebsite
     Route::get('/mpi-tests/{id}/export', [MpiTestController::class, 'exportExcel'])->name('mpi.tests.export');
