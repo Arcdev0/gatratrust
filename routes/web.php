@@ -9,6 +9,7 @@ use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\JabatanController;
+use App\Http\Controllers\JournalController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\KwitansiController;
@@ -291,6 +292,32 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AccountingSettingController::class, 'index'])->name('accounting-settings.index');
         Route::post('/save', [AccountingSettingController::class, 'save'])->name('accounting-settings.save');
     });
+
+
+    Route::prefix('journals')->group(function () {
+
+        Route::get('/', [JournalController::class, 'index'])
+            ->name('journals.index');
+
+        Route::get('/datatable', [JournalController::class, 'datatable'])
+            ->name('journals.datatable');
+
+        Route::get('/create', [JournalController::class, 'create'])
+            ->name('journals.create');
+
+        Route::get('/{id}/edit', [JournalController::class, 'edit'])
+            ->name('journals.edit');
+
+        Route::post('/', [JournalController::class, 'store'])
+            ->name('journals.store');
+
+        Route::put('/{id}', [JournalController::class, 'update'])
+            ->name('journals.update');
+
+        Route::delete('/{id}', [JournalController::class, 'destroy'])
+            ->name('journals.destroy');
+    });
+
 
 
     // export using maatwebsite

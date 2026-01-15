@@ -256,9 +256,10 @@
                                     class="menu-item {{ request()->routeIs('coa.index') ? 'active' : '' }}">COA</a>
                                 <a href="{{ route('accounting-settings.index') }}"
                                     class="menu-item {{ request()->routeIs('accounting-settings.index') ? 'active' : '' }}">Accounting Settings</a>
+                                <a href="{{ route('journals.index') }}"
+                                    class="menu-item {{ request()->routeIs('journals.index') ? 'active' : '' }}">Jurnal</a>
                                 <a href="{{ route('accounting.index') }}"
-                                    class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Dana
-                                    Cash Yogi</a>
+                                    class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Petty Cash</a>
 
                             </div>
                         </div>
