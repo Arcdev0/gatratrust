@@ -50,10 +50,13 @@ class JournalController extends Controller
             })
             ->addColumn('action', function ($row) {
                 return '
+                <button type="button" class="btn btn-sm btn-info text-white btnViewJournal" data-id="' . $row->id . '">
+                    <i class="fas fa-eye"></i>
+                </button>
                 <a href="' . route('journals.edit', $row->id) . '" class="btn btn-sm btn-secondary">
                     <i class="fas fa-edit"></i>
                 </a>
-                <button class="btn btn-sm btn-danger btnDeleteJournal" data-id="' . $row->id . '">
+                <button type="button" class="btn btn-sm btn-danger btnDeleteJournal" data-id="' . $row->id . '">
                     <i class="fas fa-trash"></i>
                 </button>
             ';

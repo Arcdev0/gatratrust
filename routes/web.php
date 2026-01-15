@@ -316,6 +316,9 @@ Route::middleware('auth')->group(function () {
 
         Route::delete('/{id}', [JournalController::class, 'destroy'])
             ->name('journals.destroy');
+
+        Route::get('show/{id}', [JournalController::class, 'show'])
+            ->name('journals.show');
     });
 
 
