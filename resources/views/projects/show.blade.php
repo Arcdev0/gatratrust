@@ -366,6 +366,100 @@
                 height: 15px;
             }
         }
+
+        /* Paste/Drop file row */
+        .paste-drop-row {
+            border: 1px dashed #cfd4da;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            position: relative;
+        }
+
+        .paste-drop-row:focus-within {
+            border-color: #198754;
+            box-shadow: 0 0 0 3px rgba(25, 135, 84, .12);
+        }
+
+        .paste-zone {
+            border: 1px dashed rgba(0, 0, 0, .2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .75);
+            padding: 12px;
+            min-height: 86px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .paste-zone.dragover {
+            border-color: #f1c40f;
+            box-shadow: 0 0 0 3px rgba(241, 196, 15, .18);
+        }
+
+        .paste-hint {
+            font-size: 13px;
+            color: #6c757d;
+            line-height: 1.35;
+        }
+
+        .paste-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .hidden-file {
+            display: none !important;
+        }
+
+        .file-preview-mini {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            background: #fff;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+
+        .file-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-meta {
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 700;
+            font-size: 13px;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 360px;
+        }
+
+        .file-sub {
+            margin: 0;
+            font-size: 12px;
+            color: #6c757d;
+        }
     </style>
 
     <div class="container-fluid">
@@ -833,10 +927,10 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     ${isAdmin ? `
-                                                        <button class="btn btn-outline-danger btn-sm btn-delete-fileadmin" data-id="${file.id}">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    ` : ''}
+                                                                    <button class="btn btn-outline-danger btn-sm btn-delete-fileadmin" data-id="${file.id}">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1085,9 +1179,9 @@
                                     <div>
                                        <h6 class="mb-0">${k.user_name ?? 'Unknown User'}
                                             ${k.role_name ? `
-                                                                                                                                                                            <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
-                                                                                                                                                                                ${k.role_name}
-                                                                                                                                                                            </span>` : ''}
+                                                                                                                                                                                        <span class="badge ${k.role_name === 'Client' ? 'bg-white text-dark border' : (k.role_name === 'Admin' ? 'bg-success text-white' : 'bg-secondary')}">
+                                                                                                                                                                                            ${k.role_name}
+                                                                                                                                                                                        </span>` : ''}
                                         </h6>
                                         <div class="comment-meta">${formatDate(k.created_at)}</div>
                                     </div>
@@ -1269,20 +1363,169 @@
                 $('#timelineModal').modal('show');
             });
 
-            $('#addFileBtn').on('click', function() {
-                const inputGroup = $(`
-        <div class="form-group position-relative border rounded p-3 mb-2 bg-light">
-             <button type="button" class="btn btn-sm btn-danger float-right mb-2 remove-file-btn">
-                &times;
-            </button>
-            <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Contoh : Sertifikat">
-            <input type="file" class="form-control mb-2" name="fileInput[]">
-        </div>
+            let fileRowIndex = 0;
 
-    `);
+            function formatBytes(bytes) {
+                if (!Number.isFinite(bytes)) return '-';
+                const units = ['B', 'KB', 'MB', 'GB'];
+                let i = 0,
+                    n = bytes;
+                while (n >= 1024 && i < units.length - 1) {
+                    n /= 1024;
+                    i++;
+                }
+                return `${n.toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
+            }
+
+            function renderFilePreview($row, file) {
+                const isImage = file.type && file.type.startsWith('image/');
+                const name = file.name || 'Clipboard File';
+                const sub = `${file.type || 'unknown'} • ${formatBytes(file.size || 0)}`;
+
+                let thumbHtml = `<div class="file-thumb"><div class="text-muted small">FILE</div></div>`;
+                if (isImage) {
+                    const url = URL.createObjectURL(file);
+                    thumbHtml = `<div class="file-thumb"><img src="${url}" alt="preview"></div>`;
+                }
+
+                $row.find('.file-preview-mini').remove();
+                $row.append(`
+    <div class="file-preview-mini">
+      ${thumbHtml}
+      <div class="file-meta">
+        <p class="file-name mb-1">${name}</p>
+        <p class="file-sub">${sub}</p>
+      </div>
+    </div>
+  `);
+
+                $row.find('.paste-hint').html(
+                    `<b>File terpasang:</b> ${name}<br><span class="text-muted">Klik zona untuk ganti / paste ulang</span>`
+                );
+            }
+
+            $('#addFileBtn').on('click', function() {
+                fileRowIndex++;
+
+                const inputGroup = $(`
+                <div class="form-group paste-drop-row mb-3" data-row="${fileRowIndex}">
+                <button type="button" class="btn btn-sm btn-danger float-right mb-2 remove-file-btn">&times;</button>
+
+                <input type="text" class="form-control mb-2" name="fileLabel[]" placeholder="Contoh : Sertifikat">
+
+                <!-- Hidden file input (yang dipakai FormData kamu) -->
+                <input type="file" class="form-control hidden-file file-real-input" name="fileInput[]">
+
+                <!-- Paste/Drop Zone -->
+                <div class="paste-zone" tabindex="0">
+                    <div class="paste-hint">
+                    <b>Paste / Drag & Drop file di sini</b><br>
+                    Klik area ini lalu tekan <b>Ctrl+V</b> (screenshot juga bisa) atau drop file dari folder.
+                    </div>
+                    <div class="paste-actions">
+                    <button type="button" class="btn btn-outline-primary btn-sm btn-pick">Pilih File</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-clear">Clear</button>
+                    </div>
+                </div>
+                </div>
+            `);
 
                 $('#fileInputContainer').append(inputGroup);
             });
+
+            // Klik zona -> fokus untuk paste
+            $(document).on('click', '.paste-zone', function(e) {
+                // biar klik tombol di dalamnya tidak memaksa fokus
+                if ($(e.target).closest('button').length) return;
+                this.focus();
+            });
+
+            // Tombol pilih file -> trigger input file hidden
+            $(document).on('click', '.btn-pick', function() {
+                const $row = $(this).closest('.paste-drop-row');
+                $row.find('.file-real-input').trigger('click');
+            });
+
+            // Tombol clear
+            $(document).on('click', '.btn-clear', function() {
+                const $row = $(this).closest('.paste-drop-row');
+                const $input = $row.find('.file-real-input');
+                $input.val('');
+                $row.find('.file-preview-mini').remove();
+                $row.find('.paste-hint').html(`
+    <b>Paste / Drag & Drop file di sini</b><br>
+    Klik area ini lalu tekan <b>Ctrl+V</b> (screenshot juga bisa) atau drop file dari folder.
+  `);
+            });
+
+            // Saat user pilih file manual
+            $(document).on('change', '.file-real-input', function() {
+                const $row = $(this).closest('.paste-drop-row');
+                const file = this.files && this.files[0];
+                if (file) renderFilePreview($row, file);
+            });
+
+            // Paste handler (Ctrl+V) untuk file dari clipboard
+            $(document).on('paste', '.paste-zone', function(e) {
+                const evt = e.originalEvent;
+                const dt = evt.clipboardData;
+                if (!dt || !dt.items) return;
+
+                let file = null;
+                for (const item of dt.items) {
+                    if (item.kind === 'file') {
+                        file = item.getAsFile();
+                        if (file) break;
+                    }
+                }
+
+                if (file) {
+                    e.preventDefault();
+                    const $row = $(this).closest('.paste-drop-row');
+                    const $input = $row.find('.file-real-input')[0];
+
+                    // Masukkan file ke input[type=file] memakai DataTransfer
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    $input.files = dataTransfer.files;
+
+                    renderFilePreview($row, file);
+                }
+            });
+
+            // Drag & drop handlers
+            $(document).on('dragenter dragover', '.paste-zone', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+
+            $(document).on('dragleave', '.paste-zone', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+
+            $(document).on('drop', '.paste-zone', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+
+                const evt = e.originalEvent;
+                const files = evt.dataTransfer && evt.dataTransfer.files;
+                if (!files || !files.length) return;
+
+                const file = files[0]; // 1 file per row
+                const $row = $(this).closest('.paste-drop-row');
+                const $input = $row.find('.file-real-input')[0];
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                $input.files = dataTransfer.files;
+
+                renderFilePreview($row, file);
+            });
+
 
             // Event delegasi untuk hapus input file
             $('#fileInputContainer').on('click', '.remove-file-btn', function() {
