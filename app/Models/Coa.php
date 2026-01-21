@@ -44,4 +44,9 @@ class Coa extends Model
     {
         return $this->hasMany(JournalLine::class, 'coa_id');
     }
+
+    public function wallets(): HasMany
+    {
+        return $this->hasMany(Wallet::class, 'coa_id');
+    }
 }

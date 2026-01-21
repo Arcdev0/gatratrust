@@ -17,10 +17,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Traits\JournalTrait;
+
 
 class InvoiceController extends Controller
 {
     use LogsActivity;
+    use JournalTrait;
 
     public function index()
     {
@@ -293,6 +296,52 @@ class InvoiceController extends Controller
                 'net_total'        => $validated['net_total'],
                 'status'           => 'open',
             ]);
+
+
+            $d = $this->journalDefaults();
+            
+            if (empty($d['ar']) || empty($d['sales'])) {
+                throw new \Exception("Accounting Settings belum lengkap. Isi default AR & Sales terlebih dahulu.");
+            }
+
+            if (($invoice->tax ?? 0) > 0 && empty($d['tax'])) {
+                throw new \Exception("Invoice memiliki pajak, tetapi default Tax Payable COA belum diisi.");
+            }
+
+            $net = (float) $invoice->net_total;
+            $tax = (float) ($invoice->tax ?? 0);
+            $sales = $net - $tax;
+
+            $journal = $this->createJournal(
+                [
+                    'journal_date' => $invoice->date,
+                    'type' => 'general',
+                    'category' => 'invoice',
+                    'reference_no' => $invoice->invoice_no,
+                    'memo' => "Auto journal Invoice {$invoice->invoice_no}",
+                    'status' => 'posted',
+                ],
+                array_filter([
+                    [
+                        'coa_id' => $d['ar'],
+                        'debit' => $net,
+                        'credit' => 0,
+                        'description' => 'Accounts Receivable',
+                    ],
+                    [
+                        'coa_id' => $d['sales'],
+                        'debit' => 0,
+                        'credit' => $sales,
+                        'description' => 'Sales Revenue',
+                    ],
+                    $tax > 0 ? [
+                        'coa_id' => $d['tax'],
+                        'debit' => 0,
+                        'credit' => $tax,
+                        'description' => 'Tax Payable',
+                    ] : null
+                ])
+            );
 
             $this->logActivity(
                 "Membuat Invoice {$invoice->invoice_no}",

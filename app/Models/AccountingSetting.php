@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AccountingSetting extends Model
 {
@@ -11,28 +12,48 @@ class AccountingSetting extends Model
     public $timestamps = true;
 
     protected $fillable = [
-        'default_cash_coa_id',
-        'default_bank_coa_id',
+
+        'default_ar_coa_id',
+        'default_sales_coa_id',
+        'default_tax_payable_coa_id',
+        'default_expense_coa_id',
         'default_suspense_coa_id',
         'default_retained_earning_coa_id',
+
         'journal_prefix',
         'journal_running_number',
         'fiscal_year_start_month',
     ];
 
     protected $casts = [
+        // 'default_wallet_id' => 'integer',
         'journal_running_number' => 'integer',
         'fiscal_year_start_month' => 'integer',
     ];
 
-    public function defaultCash(): BelongsTo
+    public function wallets(): HasMany
     {
-        return $this->belongsTo(Coa::class, 'default_cash_coa_id');
+        return $this->hasMany(Wallet::class, 'accounting_setting_id');
     }
 
-    public function defaultBank(): BelongsTo
+    public function defaultAR(): BelongsTo
     {
-        return $this->belongsTo(Coa::class, 'default_bank_coa_id');
+        return $this->belongsTo(Coa::class, 'default_ar_coa_id');
+    }
+
+    public function defaultSales(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_sales_coa_id');
+    }
+
+    public function defaultTaxPayable(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_tax_payable_coa_id');
+    }
+
+    public function defaultExpense(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_expense_coa_id');
     }
 
     public function defaultSuspense(): BelongsTo
