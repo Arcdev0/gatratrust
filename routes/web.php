@@ -7,6 +7,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\CoaController;
 use App\Http\Controllers\DailyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FpuController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\JournalController;
@@ -319,6 +320,20 @@ Route::middleware('auth')->group(function () {
 
         Route::get('show/{id}', [JournalController::class, 'show'])
             ->name('journals.show');
+    });
+
+
+
+    Route::prefix('fpus')->group(function () {
+        Route::get('/', [FpuController::class, 'index'])->name('fpus.index');
+        Route::get('/datatable', [FpuController::class, 'datatable'])->name('fpus.datatable');
+
+        Route::get('/{id}', [FpuController::class, 'show'])->name('fpus.show');
+
+        Route::post('/{id}/approve', [FpuController::class, 'approve'])->name('fpus.approve');
+
+        Route::post('/lines/{lineId}/attachments', [FpuController::class, 'uploadLineAttachment'])->name('fpus.lines.attachments.store');
+        Route::delete('/attachments/{attachmentId}', [FpuController::class, 'deleteLineAttachment'])->name('fpus.attachments.delete');
     });
 
 

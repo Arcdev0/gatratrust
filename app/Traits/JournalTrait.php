@@ -164,6 +164,7 @@ trait JournalTrait
             'sales'  => $s?->default_sales_coa_id,
             'tax'    => $s?->default_tax_payable_coa_id,
             'expense' => $s?->default_expense_coa_id,
+            'suspense' => $s?->default_suspense_coa_id,
         ];
     }
 }
