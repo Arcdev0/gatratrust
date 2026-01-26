@@ -56,6 +56,14 @@ class Fpu extends Model
     public const PURPOSE_VENDOR    = 'bayar_vendor';
     public const PURPOSE_LAINNYA   = 'lainnya';
 
+    public const PURPOSES = [
+        self::PURPOSE_TAGIHAN,
+        self::PURPOSE_MATERIAL,
+        self::PURPOSE_AKOMODASI,
+        self::PURPOSE_VENDOR,
+        self::PURPOSE_LAINNYA,
+    ];
+
     // ======================
     // RELATIONS
     // ======================

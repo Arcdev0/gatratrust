@@ -7,6 +7,7 @@ use App\Models\Coa;
 use App\Models\Fpu;
 use App\Models\FpuLine;
 use App\Models\FpuLineAttachment;
+use App\Models\ProjectTbl;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +56,7 @@ class FpuController extends Controller
                 return $fpu->walletCoa->code_account_id . ' - ' . $fpu->walletCoa->name;
             })
             ->addColumn('requester', function (Fpu $fpu) {
-                return $fpu->requester?->name ?? $fpu->requester_name ?? '-';
+                return $fpu->requester_name ?? $fpu->requester?->name ?? '-';
             })
             ->addColumn('approved_info', function (Fpu $fpu) {
                 if ($fpu->status !== Fpu::STATUS_APPROVED && $fpu->status !== Fpu::STATUS_PAID) return '-';
@@ -101,6 +102,250 @@ class FpuController extends Controller
             })
             ->rawColumns(['status_badge', 'action'])
             ->make(true);
+    }
+
+
+    public function create()
+    {
+        $projects = ProjectTbl::query()
+            ->orderBy('no_project')
+            ->get(['id', 'no_project']);
+
+        return view('fpus.create', compact('projects'));
+    }
+
+    public function searchProjects(Request $request)
+    {
+        return ProjectTbl::orderBy('no_project')
+            ->get(['id', 'no_project'])
+            ->map(fn($p) => [
+                'id'   => $p->id,
+                'text' => $p->no_project,
+            ]);
+    }
+
+
+    public function getProjectPakItems($projectId)
+    {
+        $project = ProjectTbl::with('pak.items.category')->find($projectId);
+
+        if (!$project) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Project tidak ditemukan'
+            ], 404);
+        }
+
+        if (!$project->pak) {
+            return response()->json([
+                'success' => true,
+                'has_pak' => false,
+                'items' => [],
+                'message' => 'Project ini belum memiliki PAK'
+            ]);
+        }
+
+        // Ambil kategori A, B, C
+        $allowedCategoryCodes = ['A', 'B', 'C'];
+
+        $items = $project->pak->items()
+            ->whereHas('category', function ($q) use ($allowedCategoryCodes) {
+                $q->whereIn('code', $allowedCategoryCodes);
+            })
+            ->get()
+            ->map(function ($item) {
+
+                $name = trim((string) $item->name);
+                $desc = trim((string) $item->description);
+
+                // anggap '-' atau kosong sebagai tidak ada deskripsi
+                $hasDesc = $desc !== '' && $desc !== '-';
+
+                return [
+                    'description' => $hasDesc
+                        ? "{$name} - {$desc}"
+                        : $name,
+                    'amount' => (float) $item->total_cost,
+                ];
+            });
+
+
+        return response()->json([
+            'success' => true,
+            'has_pak' => true,
+            'items' => $items,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'request_date' => ['required', 'date'],
+            'requester_name' => ['nullable', 'string', 'max:150'],
+            'purpose' => ['nullable', Rule::in([
+                Fpu::PURPOSE_TAGIHAN,
+                Fpu::PURPOSE_MATERIAL,
+                Fpu::PURPOSE_AKOMODASI,
+                Fpu::PURPOSE_VENDOR,
+                Fpu::PURPOSE_LAINNYA,
+            ])],
+            'notes' => ['nullable', 'string'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.description' => ['required', 'string'],
+            'lines.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'action' => ['required', Rule::in(['draft', 'submit'])],
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+
+            $year = now()->format('Y');
+            $seq  = str_pad((string)(Fpu::max('id') + 1), 6, '0', STR_PAD_LEFT);
+            $fpuNo = "FPU-{$year}-{$seq}";
+
+            $status = $validated['action'] === 'submit'
+                ? Fpu::STATUS_SUBMITTED
+                : Fpu::STATUS_DRAFT;
+
+            $fpu = Fpu::create([
+                'fpu_no' => $fpuNo,
+                'project_id' => $validated['project_id'],
+                'request_date' => $validated['request_date'],
+                'requester_id' => auth()->id(),
+                'requester_name' => $validated['requester_name'] ?? auth()->user()->name,
+                'purpose' => $validated['purpose'],
+                'notes' => $validated['notes'],
+                'status' => $status,
+                'submitted_at' => $status === Fpu::STATUS_SUBMITTED ? now() : null,
+                'submitted_by' => $status === Fpu::STATUS_SUBMITTED ? auth()->id() : null,
+                'total_amount' => 0,
+            ]);
+
+            $total = 0;
+            foreach ($validated['lines'] as $i => $line) {
+                $amount = (float) $line['amount'];
+
+                $fpu->lines()->create([
+                    'line_no' => $i + 1,
+                    'description' => $line['description'],
+                    'amount' => $amount,
+                    'has_proof' => false,
+                    'proof_count' => 0,
+                ]);
+
+                $total += $amount;
+            }
+
+            $fpu->update(['total_amount' => $total]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $status === 'submitted'
+                    ? 'FPU berhasil disubmit'
+                    : 'FPU berhasil disimpan sebagai draft',
+                'data' => $fpu,
+            ], 201);
+        });
+    }
+
+
+
+    public function edit($id)
+    {
+        $fpu = Fpu::with('lines')->findOrFail($id);
+
+        // if ($fpu->status !== Fpu::STATUS_DRAFT) {
+        //     abort(403, 'Hanya FPU draft yang bisa diedit');
+        // }
+
+        $projects = ProjectTbl::orderBy('no_project')->get();
+
+        return view('fpus.edit', compact('fpu', 'projects'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $fpu = Fpu::findOrFail($id);
+
+        if ($fpu->status !== Fpu::STATUS_DRAFT) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya FPU draft yang bisa diubah'
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'request_date' => ['required', 'date'],
+            'requester_name' => ['nullable', 'string', 'max:150'],
+            'purpose' => ['nullable', Rule::in(Fpu::PURPOSES)],
+            'notes' => ['nullable', 'string'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.description' => ['required', 'string'],
+            'lines.*.amount' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        return DB::transaction(function () use ($fpu, $validated) {
+
+            // update header
+            $fpu->update([
+                'project_id' => $validated['project_id'],
+                'request_date' => $validated['request_date'],
+                'requester_name' => $validated['requester_name'],
+                'purpose' => $validated['purpose'],
+                'notes' => $validated['notes'],
+            ]);
+
+            // replace lines
+            $fpu->lines()->delete();
+
+            $total = 0;
+            foreach ($validated['lines'] as $i => $line) {
+                $amount = (float) $line['amount'];
+
+                $fpu->lines()->create([
+                    'line_no' => $i + 1,
+                    'description' => $line['description'],
+                    'amount' => $amount,
+                    'has_proof' => false,
+                    'proof_count' => 0,
+                ]);
+
+                $total += $amount;
+            }
+
+            $fpu->update(['total_amount' => $total]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'FPU draft berhasil diperbarui'
+            ]);
+        });
+    }
+
+
+
+    public function submit($id)
+    {
+        $fpu = Fpu::findOrFail($id);
+
+        if ($fpu->status !== Fpu::STATUS_DRAFT) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya FPU draft yang bisa disubmit'
+            ], 422);
+        }
+
+        $fpu->update([
+            'status' => Fpu::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+            'submitted_by' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'FPU berhasil disubmit'
+        ]);
     }
 
     /**

@@ -189,6 +189,11 @@
                                 <i class="ik ik-file-text"></i><span>Invoice</span>
                             </a>
                         </div>
+                        <div class="nav-item {{ request()->routeIs('fpus.index') || request()->routeIs('fpus.create') ? 'active' : '' }}">
+                            <a href="{{ route('fpus.index') }}">
+                               <i class="fas fa-hand-holding-usd"></i><span>FPU</span>
+                            </a>
+                        </div>
                         <div class="nav-item {{ request()->routeIs('kwitansi.index') ? 'active' : '' }}">
                             <a href="{{ route('kwitansi.index') }}">
                                 <i class="fas fa-file-invoice"></i><span>Kwitansi</span>

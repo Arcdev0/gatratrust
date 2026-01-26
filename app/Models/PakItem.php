@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PakItem extends Model
 {
@@ -30,7 +31,7 @@ class PakItem extends Model
         'quantity'   => 'decimal:2',
         'unit_cost'  => 'integer',
         'total_cost' => 'integer',
-        'category_id'=> 'integer',
+        'category_id' => 'integer',
         'pak_id'     => 'integer',
         'created_by' => 'integer',
     ];
@@ -41,5 +42,10 @@ class PakItem extends Model
     public function pak()
     {
         return $this->belongsTo(Pak::class, 'pak_id', 'id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 }

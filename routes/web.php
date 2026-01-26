@@ -324,16 +324,52 @@ Route::middleware('auth')->group(function () {
 
 
 
-    Route::prefix('fpus')->group(function () {
-        Route::get('/', [FpuController::class, 'index'])->name('fpus.index');
-        Route::get('/datatable', [FpuController::class, 'datatable'])->name('fpus.datatable');
+    Route::prefix('fpus')->name('fpus.')->group(function () {
 
-        Route::get('/{id}', [FpuController::class, 'show'])->name('fpus.show');
+        // =========================
+        // MAIN PAGES
+        // =========================
+        Route::get('/', [FpuController::class, 'index'])->name('index');
+        Route::get('/datatable', [FpuController::class, 'datatable'])->name('datatable');
 
-        Route::post('/{id}/approve', [FpuController::class, 'approve'])->name('fpus.approve');
+        Route::get('/create', [FpuController::class, 'create'])->name('create');
+        Route::post('/', [FpuController::class, 'store'])->name('store');
 
-        Route::post('/lines/{lineId}/attachments', [FpuController::class, 'uploadLineAttachment'])->name('fpus.lines.attachments.store');
-        Route::delete('/attachments/{attachmentId}', [FpuController::class, 'deleteLineAttachment'])->name('fpus.attachments.delete');
+        Route::get('/{id}', [FpuController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [FpuController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [FpuController::class, 'update'])->name('update');
+
+        // =========================
+        // FLOW ACTIONS
+        // =========================
+        Route::post('/{id}/submit', [FpuController::class, 'submit'])->name('submit');
+        Route::post('/{id}/approve', [FpuController::class, 'approve'])->name('approve');
+
+        // =========================
+        // ATTACHMENTS (PER LINE)
+        // =========================
+        Route::post(
+            '/lines/{lineId}/attachments',
+            [FpuController::class, 'uploadLineAttachment']
+        )->name('lines.attachments.store');
+
+        Route::delete(
+            '/attachments/{attachmentId}',
+            [FpuController::class, 'deleteLineAttachment']
+        )->name('attachments.delete');
+
+        // =========================
+        // AJAX
+        // =========================
+        Route::get(
+            '/ajax/projects',
+            [FpuController::class, 'searchProjects']
+        )->name('ajax.projects');
+
+        Route::get(
+            '/ajax/project/{project}/pak-items',
+            [FpuController::class, 'getProjectPakItems']
+        )->name('ajax.project.pak-items');
     });
 
 
