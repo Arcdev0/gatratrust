@@ -445,7 +445,7 @@ class FpuController extends Controller
                 $journal = $this->createJournal(
                     [
                         'journal_date' => $fpu->request_date,
-                        'type' => 'cash_out',
+                        'type' => 'general',
                         'category' => 'fpu_approve',
                         'reference_no' => $fpu->fpu_no,
                         'memo' => "Accrual FPU Approved {$fpu->fpu_no}",
