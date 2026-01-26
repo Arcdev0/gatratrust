@@ -14,6 +14,7 @@ class AccountingSetting extends Model
     protected $fillable = [
 
         'default_ar_coa_id',
+        'default_ap_coa_id',
         'default_sales_coa_id',
         'default_tax_payable_coa_id',
         'default_expense_coa_id',

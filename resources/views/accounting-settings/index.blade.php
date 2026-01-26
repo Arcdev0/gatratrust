@@ -61,6 +61,24 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="font-weight-semibold">
+                                Default Accounts Payable (AP)
+                            </label>
+                            <select class="form-control" id="default_ap_coa_id">
+                                <option value="">-- pilih akun --</option>
+                                @foreach ($coaSelectable as $coa)
+                                    <option value="{{ $coa->id }}"
+                                        {{ optional($setting)->default_ap_coa_id == $coa->id ? 'selected' : '' }}>
+                                        {{ $coa->code_account_id }} - {{ $coa->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">
+                                Dipakai untuk FPU saat approve (utang ke vendor).
+                            </small>
+                        </div>
+
+                        <div class="form-group">
                             <label class="font-weight-semibold">Default Sales / Revenue</label>
                             <select class="form-control" id="default_sales_coa_id">
                                 <option value="">-- pilih akun --</option>
@@ -130,6 +148,8 @@
                                 @endforeach
                             </select>
                         </div>
+
+
 
                     </div>
                 </div>
@@ -213,7 +233,7 @@
             });
 
             // Select2
-            $('#wallet_coa_ids, #default_ar_coa_id, #default_sales_coa_id, #default_tax_payable_coa_id, #default_expense_coa_id, #default_suspense_coa_id, #default_retained_earning_coa_id, #fiscal_year_start_month')
+            $('#wallet_coa_ids, #default_ar_coa_id, #default_sales_coa_id, #default_tax_payable_coa_id, #default_expense_coa_id, #default_suspense_coa_id, #default_retained_earning_coa_id, #fiscal_year_start_month, #default_ap_coa_id')
                 .select2({
                     width: '100%',
                     placeholder: 'Pilih...',
@@ -288,6 +308,8 @@
                             journal_prefix: $('#journal_prefix').val(),
                             journal_running_number: $('#journal_running_number').val(),
                             fiscal_year_start_month: $('#fiscal_year_start_month').val(),
+                            default_ap_coa_id: $('#default_ap_coa_id').val(),
+
                         },
                         success: function(res) {
                             Swal.close();

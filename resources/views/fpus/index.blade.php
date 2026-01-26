@@ -38,6 +38,85 @@
 
     </div>
 
+    <div class="modal fade" id="modalViewFpu" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">Detail FPU</h5>
+                        <div class="text-muted small" id="v_fpu_no">-</div>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    {{-- HEADER INFO --}}
+                    <table class="table table-sm table-borderless mb-3">
+                        <tr>
+                            <th width="150">Project</th>
+                            <td id="v_project">-</td>
+                            <th width="150">Tanggal</th>
+                            <td id="v_date">-</td>
+                        </tr>
+                        <tr>
+                            <th>Requester</th>
+                            <td id="v_requester">-</td>
+                            <th>Status</th>
+                            <td id="v_status">-</td>
+                        </tr>
+                        <tr>
+                            <th>Wallet</th>
+                            <td id="v_wallet">-</td>
+                            <th>Purpose</th>
+                            <td id="v_purpose">-</td>
+                        </tr>
+                        <tr>
+                            <th>Notes</th>
+                            <td colspan="3" id="v_notes">-</td>
+                        </tr>
+                    </table>
+
+                    {{-- LINES --}}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th width="60">No</th>
+                                    <th>Description</th>
+                                    <th width="180" class="text-right">Amount</th>
+                                    <th width="180">Attachments</th>
+                                </tr>
+                            </thead>
+                            <tbody id="v_lines_body">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">-</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="2" class="text-right">TOTAL</th>
+                                    <th class="text-right" id="v_total">0</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
     {{-- ===================== MODAL APPROVE ===================== --}}
     <div class="modal fade" id="modalApproveFpu" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -212,5 +291,76 @@
             });
 
         });
+
+        $(document).on('click', '.btnViewFpu', function() {
+            const id = $(this).data('id');
+
+            $('#modalViewFpu').modal('show');
+
+            // reset
+            $('#v_lines_body').html('<tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>');
+
+            $.get(`/fpus/${id}`, function(res) {
+                const fpu = res.data;
+
+                $('#v_fpu_no').text(fpu.fpu_no);
+                $('#v_project').text(fpu.project?.no_project || '-');
+
+
+                  const dateText = fpu.request_date ?
+                        new Date(fpu.request_date).toLocaleString('id-ID', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) :
+                        '-';
+
+                $('#v_date').text(dateText);
+
+
+
+                $('#v_requester').text(fpu.requester?.name || fpu.requester_name);
+                $('#v_status').html(`<span class="badge badge-info">${fpu.status}</span>`);
+                $('#v_wallet').text(
+                    fpu.wallet_coa ?
+                    `${fpu.wallet_coa.code_account_id} - ${fpu.wallet_coa.name}` :
+                    '-'
+                );
+                $('#v_purpose').text(fpu.purpose || '-');
+                $('#v_notes').text(fpu.notes || '-');
+
+                let rows = '';
+                let total = 0;
+
+                fpu.lines.forEach((l, i) => {
+                    total += parseFloat(l.amount);
+
+                    let attHtml = '-';
+                    if (l.attachments.length > 0) {
+                        attHtml = l.attachments.map(a =>
+                            `<a href="${a.file_url}" target="_blank" class="d-block">📎 ${a.original_name}</a>`
+                        ).join('');
+                    }
+
+                    rows += `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${l.description}</td>
+                    <td class="text-right">${formatNumber(l.amount)}</td>
+                    <td>${attHtml}</td>
+                </tr>
+            `;
+                });
+
+                $('#v_lines_body').html(rows);
+                $('#v_total').text(formatNumber(total));
+            });
+        });
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(num);
+        }
     </script>
 @endsection

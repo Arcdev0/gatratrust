@@ -44,6 +44,7 @@ class AccountingSettingController extends Controller
 
                 // COA mapping
                 'default_ar_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
+                'default_ap_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
                 'default_sales_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
                 'default_tax_payable_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
                 'default_expense_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],

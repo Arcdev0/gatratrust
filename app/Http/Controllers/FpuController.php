@@ -86,9 +86,11 @@ class FpuController extends Controller
                         <i class="fas fa-edit"></i> Edit
                     </a>';
                 } else {
-                    $btn .= '<a href="' . route('fpus.show', $fpu->id) . '" class="btn btn-sm btn-outline-secondary mr-1">
+                    $btn .= '<button type="button"
+                        class="btn btn-sm btn-outline-secondary mr-1 btnViewFpu"
+                        data-id="' . $fpu->id . '">
                         <i class="fas fa-eye"></i> View
-                    </a>';
+                    </button>';
                 }
 
                 // approve hanya submitted (nanti modal approve)
@@ -353,8 +355,18 @@ class FpuController extends Controller
      */
     public function show($id)
     {
-        $fpu = Fpu::with(['lines.attachments', 'walletCoa'])->findOrFail($id);
-        return view('fpus.show', compact('fpu'));
+        $fpu = Fpu::with([
+            'project:id,no_project',
+            'walletCoa:id,code_account_id,name',
+            'requester:id,name',
+            'approvedBy:id,name',
+            'lines.attachments'
+        ])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $fpu
+        ]);
     }
 
     /**
