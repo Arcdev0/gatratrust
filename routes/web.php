@@ -370,6 +370,10 @@ Route::middleware('auth')->group(function () {
             '/ajax/project/{project}/pak-items',
             [FpuController::class, 'getProjectPakItems']
         )->name('ajax.project.pak-items');
+
+        Route::get('/{id}/payment', [FpuController::class, 'payment'])
+            ->name('payment'); // akses halaman proof/payment (finance only)
+
     });
 
 

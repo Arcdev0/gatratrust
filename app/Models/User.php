@@ -61,4 +61,8 @@ class User extends Authenticatable
         return $this->hasMany(ProjectTbl::class, 'client_id');
     }
 
+    public function isFinance(): bool
+    {
+        return $this->role_id === 4;
+    }
 }

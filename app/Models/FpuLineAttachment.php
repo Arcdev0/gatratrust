@@ -22,6 +22,8 @@ class FpuLineAttachment extends Model
         'file_size' => 'integer',
     ];
 
+    protected $appends = ['file_url'];
+
     public function line(): BelongsTo
     {
         return $this->belongsTo(FpuLine::class, 'fpu_line_id');
@@ -30,5 +32,11 @@ class FpuLineAttachment extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+
+    public function getFileUrlAttribute(): string
+    {
+        return asset('storage/' . $this->file_path);
     }
 }

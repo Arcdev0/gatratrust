@@ -94,11 +94,24 @@ class FpuController extends Controller
                 }
 
                 // approve hanya submitted (nanti modal approve)
-                if ($fpu->status === Fpu::STATUS_SUBMITTED) {
-                    $btn .= '<button type="button" class="btn btn-sm btn-primary btnApproveFpu" data-id="' . $fpu->id . '">
+                if (
+                    $fpu->status === Fpu::STATUS_SUBMITTED &&
+                    auth()->user()?->isFinance()
+                ) {
+                    $btn .= '<button type="button"
+                        class="btn btn-sm btn-primary btnApproveFpu"
+                        data-id="' . $fpu->id . '">
                         <i class="fas fa-check"></i> Approve
                     </button>';
                 }
+
+
+                if (auth()->user()?->isFinance() && in_array($fpu->status, [Fpu::STATUS_APPROVED, Fpu::STATUS_PAID], true)) {
+                    $btn .= '<a href="' . route('fpus.payment', $fpu->id) . '" class="btn btn-sm btn-success ml-1">
+                        <i class="fas fa-receipt"></i> Payment
+                    </a>';
+                }
+
 
                 return $btn;
             })
@@ -385,6 +398,10 @@ class FpuController extends Controller
             ], 422);
         }
 
+        if (auth()->user()->role_id !== 4) {
+            abort(403, 'Anda tidak memiliki akses approve FPU');
+        }
+
         $validated = $request->validate([
             'wallet_coa_id' => ['required', 'integer', Rule::exists('coa', 'id')],
         ]);
@@ -478,6 +495,24 @@ class FpuController extends Controller
         });
     }
 
+
+    public function payment($id)
+    {
+        // ✅ guard role finance
+        if (!auth()->user()?->isFinance()) {
+            abort(403, 'Anda tidak memiliki akses.');
+        }
+
+        $fpu = Fpu::with(['project', 'lines.attachments', 'walletCoa'])->findOrFail($id);
+
+        // optional: hanya boleh kalau sudah approved/paid
+        if (!in_array($fpu->status, [Fpu::STATUS_APPROVED, Fpu::STATUS_PAID], true)) {
+            abort(403, 'Halaman payment hanya bisa diakses setelah FPU di-approve.');
+        }
+
+        return view('fpus.payment', compact('fpu'));
+    }
+
     /**
      * Upload bukti untuk FPU Line
      * - hanya boleh jika FPU status approved / paid (pilih salah satu)
@@ -485,6 +520,8 @@ class FpuController extends Controller
      */
     public function uploadLineAttachment(Request $request, $lineId)
     {
+        if (!auth()->user()?->isFinance()) abort(403);
+
         $line = FpuLine::with('fpu')->findOrFail($lineId);
         $fpu  = $line->fpu;
 
@@ -602,6 +639,8 @@ class FpuController extends Controller
      */
     public function deleteLineAttachment($attachmentId)
     {
+        if (!auth()->user()?->isFinance()) abort(403);
+        
         $att = FpuLineAttachment::with('line.fpu')->findOrFail($attachmentId);
         $line = $att->line;
         $fpu  = $line->fpu;
