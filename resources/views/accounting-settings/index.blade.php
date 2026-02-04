@@ -8,26 +8,28 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h3 class="mb-0 text-primary fw-bold">Accounting Settings</h3>
             <button class="btn btn-success" id="btnSaveSetting">
-                <i class="fas fa-save mr-2"></i>Save Settings
+                <i class="fas fa-save mr-2"></i>Simpan Pengaturan
             </button>
         </div>
 
         <div class="row">
 
-            {{-- LEFT: SETTING FORM --}}
+            {{-- KIRI: FORM SETTING --}}
             <div class="col-lg-7">
                 <div class="card mb-3">
                     <div class="card-header bg-white">
-                        <strong>Default Account Mapping</strong>
-                        {{-- <div class="text-muted small">Wallet dipakai sebagai sumber dana untuk cash-in/out & pembayaran.
+                        <strong>Pemetaan Akun Otomatis</strong>
+                        {{-- <div class="text-muted small mt-1">
+                            Atur akun default yang akan dipakai sistem saat membuat <b>jurnal otomatis</b>
+                            untuk <b>Invoice</b>, <b>Kwitansi</b>, dan <b>FPU</b>.
                         </div> --}}
                     </div>
 
                     <div class="card-body">
 
-                        {{-- ✅ WALLET MULTI-SELECT (list COA yang dianggap wallet) --}}
+                        {{-- SUMBER DANA (multi select) --}}
                         <div class="form-group">
-                            <label class="font-weight-semibold">Wallet (Sumber Dana)</label>
+                            <label class="font-weight-semibold">Sumber Dana (Kas/Bank)</label>
                             <select class="form-control" id="wallet_coa_ids" multiple>
                                 @foreach ($coaSelectable as $coa)
                                     <option value="{{ $coa->id }}"
@@ -38,15 +40,15 @@
                             </select>
 
                             <small class="text-muted">
-                                Pilih <b>lebih dari satu</b> COA untuk menjadi Wallet.
-                                List ini akan muncul di menu cash-in/out, pembayaran invoice, dan FPU sebagai sumber dana.
+                                Pilih akun yang dianggap sebagai <b>Kas/Bank</b>. Daftar ini akan muncul saat:
+                                <b>pembayaran invoice</b>, <b>cash in/out</b>, dan <b>realisasi FPU</b>.
                             </small>
                         </div>
 
                         <hr>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Default Accounts Receivable (AR)</label>
+                            <label class="font-weight-semibold">Akun Piutang Usaha (Default)</label>
                             <select class="form-control" id="default_ar_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -56,14 +58,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Dipakai untuk auto-journal Invoice/Kwitansi sebagai akun
-                                Piutang.</small>
+                            <small class="text-muted">
+                                Dipakai saat invoice terbit untuk mencatat <b>piutang</b> (klien belum bayar).
+                            </small>
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">
-                                Default Accounts Payable (AP)
-                            </label>
+                            <label class="font-weight-semibold">Akun Utang (Default)</label>
                             <select class="form-control" id="default_ap_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -74,12 +75,12 @@
                                 @endforeach
                             </select>
                             <small class="text-muted">
-                                Dipakai untuk FPU saat approve (utang ke vendor).
+                                Dipakai saat FPU <b>disetujui</b> untuk mencatat <b>utang biaya</b> (uang belum keluar).
                             </small>
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Default Sales / Revenue</label>
+                            <label class="font-weight-semibold">Akun Pendapatan Jasa (Default)</label>
                             <select class="form-control" id="default_sales_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -89,11 +90,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Dipakai untuk auto-journal Invoice sebagai akun Pendapatan.</small>
+                            <small class="text-muted">
+                                Dipakai untuk mencatat <b>pendapatan jasa</b> saat invoice dibuat.
+                            </small>
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Default Tax Payable</label>
+                            <label class="font-weight-semibold">Akun Utang Pajak (PPN Keluaran)</label>
                             <select class="form-control" id="default_tax_payable_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -103,11 +106,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Jika invoice punya pajak, akan otomatis credit ke akun ini.</small>
+                            <small class="text-muted">
+                                Jika invoice ada pajak, sistem akan menambahkan kredit ke akun ini.
+                            </small>
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Default Expense</label>
+                            <label class="font-weight-semibold">Akun Beban Default</label>
                             <select class="form-control" id="default_expense_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -117,13 +122,15 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Dipakai untuk FPU jika user tidak memilih akun beban.</small>
+                            <small class="text-muted">
+                                Dipakai untuk FPU jika user tidak memilih akun beban secara manual.
+                            </small>
                         </div>
 
                         <hr>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Default Suspense Account</label>
+                            <label class="font-weight-semibold">Akun Penampung Sementara</label>
                             <select class="form-control" id="default_suspense_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -133,11 +140,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Akun penampung sementara jika jurnal belum lengkap.</small>
+                            <small class="text-muted">
+                                Dipakai jika jurnal belum lengkap (misal akun belum diatur). Nanti bisa dipindahkan.
+                            </small>
                         </div>
 
                         <div class="form-group mb-0">
-                            <label class="font-weight-semibold">Default Retained Earnings</label>
+                            <label class="font-weight-semibold">Akun Laba Ditahan</label>
                             <select class="form-control" id="default_retained_earning_coa_id">
                                 <option value="">-- pilih akun --</option>
                                 @foreach ($coaSelectable as $coa)
@@ -147,54 +156,62 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <small class="text-muted">
+                                Dipakai untuk proses penutupan laba rugi (jika modul closing dipakai).
+                            </small>
                         </div>
-
-
 
                     </div>
                 </div>
             </div>
 
-            {{-- RIGHT: NUMBERING & PREVIEW --}}
+            {{-- KANAN: PENOMORAN --}}
             <div class="col-lg-5">
                 <div class="card mb-3">
                     <div class="card-header bg-white">
-                        <strong>Journal Numbering</strong>
-                        {{-- <div class="text-muted small">Atur prefix & running number jurnal.</div> --}}
+                        <strong>Penomoran Jurnal</strong>
+                        {{-- <div class="text-muted small mt-1">
+                            Atur format nomor jurnal agar rapi dan konsisten.
+                        </div> --}}
                     </div>
                     <div class="card-body">
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Journal Prefix</label>
+                            <label class="font-weight-semibold">Kode Awalan Jurnal</label>
                             <input type="text" class="form-control" id="journal_prefix"
                                 value="{{ optional($setting)->journal_prefix ?? 'JR' }}" maxlength="10">
-                            <small class="text-muted">Contoh: JR, JNL, GTR</small>
+                            <small class="text-muted">Contoh: JR, JNL, GPT</small>
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Running Number</label>
+                            <label class="font-weight-semibold">Nomor Urut Terakhir</label>
                             <input type="number" class="form-control" id="journal_running_number"
                                 value="{{ optional($setting)->journal_running_number ?? 1 }}" min="1">
-                            <small class="text-muted">Nomor terakhir (akan bertambah saat buat jurnal baru).</small>
+                            <small class="text-muted">
+                                Nomor terakhir (akan bertambah otomatis saat jurnal baru dibuat).
+                            </small>
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-semibold">Fiscal Year Start Month</label>
+                            <label class="font-weight-semibold">Bulan Awal Tahun Buku</label>
                             <select class="form-control" id="fiscal_year_start_month">
                                 @for ($m = 1; $m <= 12; $m++)
                                     <option value="{{ $m }}"
                                         {{ (optional($setting)->fiscal_year_start_month ?? 1) == $m ? 'selected' : '' }}>
-                                        {{ \Carbon\Carbon::createFromDate(null, $m, 1)->format('F') }}
+                                        {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
                                     </option>
                                 @endfor
                             </select>
+                            <small class="text-muted">
+                                Umumnya di Indonesia mulai dari Januari (1), kecuali perusahaan pakai tahun buku berbeda.
+                            </small>
                         </div>
 
                         <hr>
 
                         <div class="p-3 bg-light rounded">
-                            <div class="font-weight-semibold">Preview Journal No</div>
-                            <div class="text-muted small">Contoh hasil nomor jurnal (berdasarkan setting sekarang)</div>
+                            <div class="font-weight-semibold">Contoh Nomor Jurnal</div>
+                            <div class="text-muted small">Preview berdasarkan pengaturan saat ini</div>
                             <div class="h5 mt-1 mb-0" id="previewJournalNo"></div>
                         </div>
 
@@ -203,15 +220,16 @@
 
                 <div class="card">
                     <div class="card-header bg-white">
-                        <strong>Info</strong>
+                        <strong>Catatan</strong>
                     </div>
                     <div class="card-body">
                         <ul class="mb-0">
-                            <li>Settings ini dipakai untuk auto-journal: <b>Invoice, Kwitansi, FPU</b>.</li>
-                            <li>Isi minimal: <b>AR</b> dan <b>Sales</b> agar auto-journal invoice tidak error.</li>
-                            <li>Jika invoice punya pajak, isi juga <b>Tax Payable</b>.</li>
-                            <li>COA yang bisa dipilih hanya akun <b>non-group</b>.</li>
-                            <li>Wallet dipakai sebagai sumber dana (bisa dipilih di transaksi).</li>
+                            <li>Minimal isi: <b>Akun Piutang</b> dan <b>Akun Pendapatan</b> agar jurnal invoice tidak error.
+                            </li>
+                            <li>Jika invoice ada pajak, isi juga <b>Akun Utang Pajak</b>.</li>
+                            <li>Akun yang bisa dipilih hanya akun <b>bukan grup</b> (akun yang bisa diposting).</li>
+                            <li><b>Sumber Dana</b> akan dipilih saat transaksi pembayaran (bukan dipatok satu akun saja).
+                            </li>
                         </ul>
                     </div>
                 </div>
