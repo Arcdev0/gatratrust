@@ -51,8 +51,8 @@
                                         <th>Tanggal</th>
                                         <th>Deskripsi</th>
                                         <th>Total</th>
-                                        <th>Debit</th>
-                                        <th>Credit</th>
+                                        <th>Uang Masuk</th>
+                                        <th>Uang Keluar</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
