@@ -8,9 +8,19 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="text-primary font-weight-bold mb-0">Asset</h3>
 
-            <button type="button" id="createAsset" class="btn btn-primary" data-toggle="modal" data-target="#modalCreateAsset">
-                <i class="fas fa-plus"></i> Tambah Asset
-            </button>
+
+            <div>
+                <button type="button" id="createAsset" class="btn btn-primary" data-toggle="modal"
+                    data-target="#modalCreateAsset">
+                    <i class="fas fa-plus"></i> Tambah Asset
+                </button>
+                <button type="button" class="btn btn-success" id="btnExportExcel">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+            </div>
+
+
+
         </div>
 
         <div class="card">
@@ -754,6 +764,11 @@
                         }
                     });
                 });
+            });
+
+
+            $('#btnExportExcel').on('click', function() {
+                window.open("{{ route('assets.exportExcel') }}", '_blank');
             });
 
         });

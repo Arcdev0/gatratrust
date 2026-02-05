@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AssetsViewExport;
 
 class AssetController extends Controller
 {
@@ -357,5 +359,12 @@ class AssetController extends Controller
         $asset = Asset::where('kode_barcode', $kode_barcode)->firstOrFail();
 
         return view('assets.scan', compact('asset'));
+    }
+
+
+    public function exportExcel()
+    {
+        $fileName = 'assets-' . now()->format('Y-m-d_His') . '.xlsx';
+        return Excel::download(new AssetsViewExport(), $fileName);
     }
 }

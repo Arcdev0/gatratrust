@@ -270,12 +270,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('assets')->name('assets.')->group(function () {
         Route::get('/', [AssetController::class, 'index'])->name('index');
         Route::get('/datatable', [AssetController::class, 'datatable'])->name('datatable');
+
+        Route::get('/exportExcel', [AssetController::class, 'exportExcel'])->name('exportExcel');
         Route::post('/', [AssetController::class, 'store'])->name('store');
         Route::get('/next-no', [AssetController::class, 'nextNo'])->name('nextNo');
         Route::get('/{id}', [AssetController::class, 'show'])->name('show');
         Route::put('/{id}', [AssetController::class, 'update'])->name('update');
         Route::delete('/{id}', [AssetController::class, 'destroy'])->name('destroy');
     });
+
+
+
 
 
     Route::prefix('coa')->group(function () {
