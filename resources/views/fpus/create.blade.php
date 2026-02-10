@@ -197,14 +197,13 @@
             });
 
             // =========================
-            // SELECT2: PROJECT (AJAX)
+            // SELECT2: PROJECT
             // =========================
             $('#project_id').select2({
                 width: '100%',
                 placeholder: 'Pilih No Project',
                 allowClear: true
             });
-
 
             // =========================
             // HELPERS
@@ -233,24 +232,46 @@
                 return total;
             }
 
-            function addLineRow(desc = '', amt = '') {
+            function escapeHtml(str) {
+                if (str === null || str === undefined) return '';
+                return String(str)
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            /**
+             * ✅ Row sekarang punya hidden category_id
+             * categoryId akan diisi otomatis saat tarik dari PAK
+             * line manual (Tambah Baris) categoryId kosong
+             */
+            function addLineRow(desc = '', amt = '', categoryId = '') {
                 const row = `
-            <tr>
-                <td class="text-center align-middle line-no">1</td>
-                <td>
-                    <input type="text" class="form-control line-desc" placeholder="contoh: VENDOR - LAB HI-TEST" value="${escapeHtml(desc)}">
-                    <div class="text-danger small d-none err-line-desc">Description wajib diisi</div>
-                </td>
-                <td>
-                    <input type="number" step="0.01" min="0" class="form-control text-right line-amount" placeholder="0.00" value="${amt}">
-                    <div class="text-danger small d-none err-line-amount">Amount wajib &gt; 0</div>
-                </td>
-                <td class="text-center align-middle">
-                    <button type="button" class="btn btn-sm btn-danger btnRemoveLine">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
+        <tr>
+            <td class="text-center align-middle line-no">1</td>
+            <td>
+                <input type="text" class="form-control line-desc"
+                    placeholder="contoh: VENDOR - LAB HI-TEST"
+                    value="${escapeHtml(desc)}">
+
+                <input type="hidden" class="line-category-id" value="${categoryId ?? ''}">
+
+                <div class="text-danger small d-none err-line-desc">Description wajib diisi</div>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0"
+                    class="form-control text-right line-amount"
+                    placeholder="0.00" value="${amt}">
+                <div class="text-danger small d-none err-line-amount">Amount wajib &gt; 0</div>
+            </td>
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-sm btn-danger btnRemoveLine">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
         `;
                 $('#linesBody').append(row);
                 renumberLines();
@@ -263,21 +284,17 @@
                     addLineRow();
                     return;
                 }
+
                 lines.forEach(function(l) {
-                    addLineRow(l.description || '', l.amount || '');
+                    addLineRow(
+                        l.description || '',
+                        l.amount || '',
+                        l.category_id || '' // ✅ bawa category_id dari API
+                    );
                 });
+
                 renumberLines();
                 calcTotal();
-            }
-
-            function escapeHtml(str) {
-                if (str === null || str === undefined) return '';
-                return String(str)
-                    .replaceAll('&', '&amp;')
-                    .replaceAll('<', '&lt;')
-                    .replaceAll('>', '&gt;')
-                    .replaceAll('"', '&quot;')
-                    .replaceAll("'", '&#039;');
             }
 
             // init 1 line
@@ -285,7 +302,7 @@
 
             // add line
             $('#btnAddLine').on('click', function() {
-                addLineRow();
+                addLineRow(); // manual line -> category kosong
             });
 
             // remove line
@@ -308,7 +325,7 @@
             });
 
             // =========================
-            // ON PROJECT SELECTED -> LOAD PAK ITEMS
+            // ON CHANGE: PROJECT
             // =========================
             $('#project_id').on('change', function() {
                 const projectId = $(this).val();
@@ -346,7 +363,6 @@
                             return;
                         }
 
-                        // Replace ALL lines from PAK items
                         replaceLines(res.items);
 
                         $('#pakInfoHint').text(
@@ -390,9 +406,12 @@
                     return false;
                 }
 
+                const projectId = $('#project_id').val();
+
                 rows.each(function() {
                     const desc = $(this).find('.line-desc').val().trim();
                     const amt = parseFloat($(this).find('.line-amount').val() || 0);
+                    const cat = $(this).find('.line-category-id').val();
 
                     if (!desc) {
                         $(this).find('.err-line-desc').removeClass('d-none');
@@ -402,6 +421,16 @@
                         $(this).find('.err-line-amount').removeClass('d-none');
                         ok = false;
                     }
+
+                    if (projectId && (!cat || cat === '')) {
+                        ok = false;
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kategori item kosong',
+                            text: 'Ada baris tanpa kategori. Jika baris ini dari PAK harusnya punya category_id. Jika manual, silakan tentukan aturan (wajib kategori / fallback).'
+                        });
+                        return false; // break each
+                    }
                 });
 
                 return ok;
@@ -410,12 +439,6 @@
             // =========================
             // SAVE (AJAX)
             // =========================
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-
             $('#btnSaveDraft').on('click', function() {
                 submitFpu('draft');
             });
@@ -431,11 +454,12 @@
                 $('#linesBody tr').each(function() {
                     lines.push({
                         description: ($(this).find('.line-desc').val() || '').trim(),
-                        amount: $(this).find('.line-amount').val()
+                        amount: $(this).find('.line-amount').val(),
+                        category_id: $(this).find('.line-category-id').val() ||
+                            null // ✅ kirim category
                     });
                 });
 
-                // teks konfirmasi dinamis
                 const isSubmit = action === 'submit';
                 const confirmTitle = isSubmit ? 'Submit FPU?' : 'Simpan Draft FPU?';
                 const confirmText = isSubmit ?

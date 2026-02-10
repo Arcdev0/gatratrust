@@ -18,7 +18,7 @@ class FpuLine extends Model
         'proof_count',
         'has_proof',
 
-        // ✅ NEW
+        'category_id',
         'paid_journal_id',
         'paid_at',
     ];
@@ -46,6 +46,11 @@ class FpuLine extends Model
     public function paidJournal(): BelongsTo
     {
         return $this->belongsTo(Journal::class, 'paid_journal_id');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     /**

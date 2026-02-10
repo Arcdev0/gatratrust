@@ -165,10 +165,12 @@ trait JournalTrait
             'tax'    => $s?->default_tax_payable_coa_id,
             'expense' => $s?->default_expense_coa_id,
             'suspense' => $s?->default_suspense_coa_id,
-
-            'exp_honorarium' => $s->default_expense_honorarium_coa_id,
-            'exp_operational' => $s->default_expense_operational_coa_id,
-            'exp_consumable' => $s->default_expense_consumable_coa_id,
+            'retained' => $s->default_retained_earning_coa_id,
+            'expense_honorarium' => $s->default_expense_honorarium_coa_id,
+            'expense_operational' => $s->default_expense_operational_coa_id,
+            'expense_consumable' => $s->default_expense_consumable_coa_id,
+            'expense_building' => $s->default_expense_building_coa_id,
+            'expense_other' => $s->default_expense_other_coa_id,
         ];
     }
 }

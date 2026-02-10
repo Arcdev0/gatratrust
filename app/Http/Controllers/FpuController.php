@@ -172,18 +172,18 @@ class FpuController extends Controller
 
                 $name = trim((string) $item->name);
                 $desc = trim((string) $item->description);
-
-                // anggap '-' atau kosong sebagai tidak ada deskripsi
                 $hasDesc = $desc !== '' && $desc !== '-';
 
                 return [
-                    'description' => $hasDesc
-                        ? "{$name} - {$desc}"
-                        : $name,
-                    'amount' => (float) $item->total_cost,
+                    'description' => $hasDesc ? "{$name} - {$desc}" : $name,
+                    'amount'      => (float) $item->total_cost,
+
+                    // ✅ tambah ini
+                    'category_id'   => (int) $item->category_id,
+                    'category_code' => optional($item->category)->code, // A/B/C (optional)
+                    'category_name' => optional($item->category)->name, // (optional)
                 ];
             });
-
 
         return response()->json([
             'success' => true,
@@ -209,6 +209,7 @@ class FpuController extends Controller
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.description' => ['required', 'string'],
             'lines.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'lines.*.category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'action' => ['required', Rule::in(['draft', 'submit'])],
         ]);
 
@@ -228,8 +229,8 @@ class FpuController extends Controller
                 'request_date' => $validated['request_date'],
                 'requester_id' => auth()->id(),
                 'requester_name' => $validated['requester_name'] ?? auth()->user()->name,
-                'purpose' => $validated['purpose'],
-                'notes' => $validated['notes'],
+                'purpose' => $validated['purpose'] ?? null,
+                'notes' => $validated['notes'] ?? null,
                 'status' => $status,
                 'submitted_at' => $status === Fpu::STATUS_SUBMITTED ? now() : null,
                 'submitted_by' => $status === Fpu::STATUS_SUBMITTED ? auth()->id() : null,
@@ -237,6 +238,7 @@ class FpuController extends Controller
             ]);
 
             $total = 0;
+
             foreach ($validated['lines'] as $i => $line) {
                 $amount = (float) $line['amount'];
 
@@ -244,6 +246,7 @@ class FpuController extends Controller
                     'line_no' => $i + 1,
                     'description' => $line['description'],
                     'amount' => $amount,
+                    'category_id' => $line['category_id'] ?? null,
                     'has_proof' => false,
                     'proof_count' => 0,
                 ]);
@@ -255,10 +258,10 @@ class FpuController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $status === 'submitted'
+                'message' => $status === Fpu::STATUS_SUBMITTED
                     ? 'FPU berhasil disubmit'
                     : 'FPU berhasil disimpan sebagai draft',
-                'data' => $fpu,
+                'data' => $fpu->fresh(['lines']),
             ], 201);
         });
     }
@@ -427,25 +430,33 @@ class FpuController extends Controller
 
         return DB::transaction(function () use ($fpu, $validated) {
 
-            // ambil default mapping
             $d = $this->journalDefaults();
 
             $ap = $d['ap'] ?? null;
-            $expense = $d['expense'] ?? null;
             $suspense = $d['suspense'] ?? null;
+            $expenseFallback = $d['expense'] ?? null;
+            $expenseOther = $d['expense_other'] ?? null;
+
+            // akun beban per kategori
+            $expHon = $d['expense_honorarium'] ?? null;
+            $expOpr = $d['expense_operational'] ?? null;
+            $expCon = $d['expense_consumable'] ?? null;
 
             if (!$ap) {
                 throw new \Exception('Accounting Settings belum lengkap. Isi default AP terlebih dahulu.');
             }
 
-            // debit ke expense jika ada, kalau kosong fallback ke suspense
-            $debitCoa = $expense ?: $suspense;
-            if (!$debitCoa) {
-                throw new \Exception('Accounting Settings belum lengkap. Isi default Expense atau Suspense terlebih dahulu.');
-            }
+            // ✅ mapping category_id -> coa_id
+            // berdasarkan data categories kamu: id 1=A Honorarium, id 2=B Operational, id 3=C Consumable
+            $expenseMap = [
+                1 => $expHon,
+                2 => $expOpr,
+                3 => $expCon,
+            ];
 
-            $total = (float) $fpu->lines->sum('amount');
-            if ($total <= 0) {
+            // total keseluruhan
+            $totalAll = (float) $fpu->lines->sum('amount');
+            if ($totalAll <= 0) {
                 throw new \Exception('Total FPU harus lebih dari 0.');
             }
 
@@ -458,42 +469,98 @@ class FpuController extends Controller
             ]);
 
             // kalau sudah pernah dibuat approve journal, jangan buat lagi
-            if (!$fpu->approve_journal_id) {
-                $journal = $this->createJournal(
-                    [
-                        'journal_date' => $fpu->request_date,
-                        'type' => 'general',
-                        'category' => 'fpu_approve',
-                        'reference_no' => $fpu->fpu_no,
-                        'memo' => "Accrual FPU Approved {$fpu->fpu_no}",
-                        'status' => 'posted',
-                    ],
-                    [
-                        [
-                            'coa_id' => $debitCoa,
-                            'debit' => $total,
-                            'credit' => 0,
-                            'description' => 'FPU Expense (Accrual)',
-                        ],
-                        [
-                            'coa_id' => $ap,
-                            'debit' => 0,
-                            'credit' => $total,
-                            'description' => 'Accounts Payable (Accrual)',
-                        ],
-                    ]
-                );
-
-                $fpu->update(['approve_journal_id' => $journal->id]);
+            if ($fpu->approve_journal_id) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'FPU sudah di-approve sebelumnya (jurnal approve sudah ada)',
+                    'data' => $fpu->fresh(['walletCoa']),
+                ]);
             }
+
+            // ✅ total per kategori dari line FPU (ambil dari DB)
+            $groupTotals = $fpu->lines
+                ->groupBy('category_id')
+                ->map(fn($rows) => (float) $rows->sum('amount'));
+
+            $journalLines = [];
+
+            foreach ($groupTotals as $categoryId => $sum) {
+                if ($sum <= 0) continue;
+
+                // kalau category_id kosong (manual line), masuk fallback
+                if (!$categoryId) {
+                    $fallback = $expenseOther ?: $expenseFallback ?: $suspense;
+                    if (!$fallback) {
+                        throw new \Exception('Tidak ada akun fallback (Other/Expense/Suspense) untuk line tanpa kategori.');
+                    }
+
+                    $journalLines[] = [
+                        'coa_id' => $fallback,
+                        'debit' => $sum,
+                        'credit' => 0,
+                        'description' => 'FPU Expense (No Category) - Fallback',
+                    ];
+                    continue;
+                }
+
+                // kategori A/B/C harus ada mapping
+                $coaExpense = $expenseMap[(int)$categoryId] ?? null;
+                if (!$coaExpense) {
+                    throw new \Exception("Mapping akun beban untuk category_id={$categoryId} belum diatur di Accounting Settings.");
+                }
+
+                $label = match ((int)$categoryId) {
+                    1 => 'Honorarium',
+                    2 => 'Operational',
+                    3 => 'Consumable',
+                    default => "Category {$categoryId}",
+                };
+
+                $journalLines[] = [
+                    'coa_id' => $coaExpense,
+                    'debit' => $sum,
+                    'credit' => 0,
+                    'description' => "FPU Expense - {$label}",
+                ];
+            }
+
+            // credit AP total
+            $journalLines[] = [
+                'coa_id' => $ap,
+                'debit' => 0,
+                'credit' => $totalAll,
+                'description' => 'Accounts Payable (Accrual)',
+            ];
+
+            // safety: pastikan balance
+            $debitSum = array_sum(array_map(fn($l) => (float) $l['debit'], $journalLines));
+            $creditSum = array_sum(array_map(fn($l) => (float) $l['credit'], $journalLines));
+            if (round($debitSum, 2) !== round($creditSum, 2)) {
+                throw new \Exception("Jurnal tidak balance. Debit={$debitSum} Credit={$creditSum}");
+            }
+
+            $journal = $this->createJournal(
+                [
+                    'journal_date' => $fpu->request_date,
+                    'type' => 'general',
+                    'category' => 'fpu_approve',
+                    'reference_no' => $fpu->fpu_no,
+                    'memo' => "Accrual FPU Approved {$fpu->fpu_no}",
+                    'status' => 'posted',
+                ],
+                $journalLines
+            );
+
+            $fpu->update(['approve_journal_id' => $journal->id]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'FPU berhasil di-approve + jurnal accrual dibuat',
+                'message' => 'FPU berhasil di-approve + jurnal accrual (split kategori) dibuat',
                 'data' => $fpu->fresh(['walletCoa']),
             ]);
         });
     }
+
 
 
     public function payment($id)
@@ -640,7 +707,7 @@ class FpuController extends Controller
     public function deleteLineAttachment($attachmentId)
     {
         if (!auth()->user()?->isFinance()) abort(403);
-        
+
         $att = FpuLineAttachment::with('line.fpu')->findOrFail($attachmentId);
         $line = $att->line;
         $fpu  = $line->fpu;
