@@ -17,7 +17,16 @@ class AccountingSetting extends Model
         'default_ap_coa_id',
         'default_sales_coa_id',
         'default_tax_payable_coa_id',
+
+
         'default_expense_coa_id',
+        'default_expense_honorarium_coa_id',
+        'default_expense_operational_coa_id',
+        'default_expense_consumable_coa_id',
+        'default_expense_building_coa_id',
+        'default_expense_other_coa_id',
+
+
         'default_suspense_coa_id',
         'default_retained_earning_coa_id',
 
@@ -65,5 +74,26 @@ class AccountingSetting extends Model
     public function retainedEarning(): BelongsTo
     {
         return $this->belongsTo(Coa::class, 'default_retained_earning_coa_id');
+    }
+
+    public function defaultExpenseHonorarium(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_expense_honorarium_coa_id');
+    }
+    public function defaultExpenseOperational(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_expense_operational_coa_id');
+    }
+    public function defaultExpenseConsumable(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_expense_consumable_coa_id');
+    }
+    public function defaultExpenseBuilding(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_expense_building_coa_id');
+    }
+    public function defaultExpenseOther(): BelongsTo
+    {
+        return $this->belongsTo(Coa::class, 'default_expense_other_coa_id');
     }
 }

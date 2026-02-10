@@ -165,6 +165,10 @@ trait JournalTrait
             'tax'    => $s?->default_tax_payable_coa_id,
             'expense' => $s?->default_expense_coa_id,
             'suspense' => $s?->default_suspense_coa_id,
+
+            'exp_honorarium' => $s->default_expense_honorarium_coa_id,
+            'exp_operational' => $s->default_expense_operational_coa_id,
+            'exp_consumable' => $s->default_expense_consumable_coa_id,
         ];
     }
 }

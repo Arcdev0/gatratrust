@@ -40,9 +40,10 @@ class AccountingSettingController extends Controller
             $validated = $request->validate([
                 // wallets: array of coa ids (multi select)
                 'wallet_coa_ids' => ['nullable', 'array'],
-                'wallet_coa_ids.*' => ['integer', Rule::exists('coa', 'id')],
+                'wallet_coa_ids.*' => ['nullable', 'integer', Rule::exists('coa', 'id')],
 
-                // COA mapping
+
+                // COA mapping (basic)
                 'default_ar_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
                 'default_ap_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
                 'default_sales_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
@@ -51,6 +52,14 @@ class AccountingSettingController extends Controller
                 'default_suspense_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
                 'default_retained_earning_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
 
+                // ✅ expense category defaults (baru)
+                'default_expense_honorarium_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
+                'default_expense_operational_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
+                'default_expense_consumable_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
+                'default_expense_building_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
+                'default_expense_other_coa_id' => ['nullable', 'integer', Rule::exists('coa', 'id')],
+
+                // numbering
                 'journal_prefix' => ['required', 'string', 'max:10'],
                 'journal_running_number' => ['required', 'integer', 'min:1'],
                 'fiscal_year_start_month' => ['required', 'integer', 'min:1', 'max:12'],

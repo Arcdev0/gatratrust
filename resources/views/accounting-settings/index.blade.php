@@ -129,6 +129,73 @@
 
                         <hr>
 
+                        <div class="mb-2 fw-semibold text-muted">Default Beban per Kategori</div>
+
+                        <div class="form-group">
+                            <label class="font-weight-semibold">Beban Honorarium (Default)</label>
+                            <select class="form-control" id="default_expense_honorarium_coa_id">
+                                <option value="">-- pilih akun --</option>
+                                @foreach ($coaSelectable as $coa)
+                                    <option value="{{ $coa->id }}"
+                                        {{ optional($setting)->default_expense_honorarium_coa_id == $coa->id ? 'selected' : '' }}>
+                                        {{ $coa->code_account_id }} - {{ $coa->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-weight-semibold">Beban Operasional (Default)</label>
+                            <select class="form-control" id="default_expense_operational_coa_id">
+                                <option value="">-- pilih akun --</option>
+                                @foreach ($coaSelectable as $coa)
+                                    <option value="{{ $coa->id }}"
+                                        {{ optional($setting)->default_expense_operational_coa_id == $coa->id ? 'selected' : '' }}>
+                                        {{ $coa->code_account_id }} - {{ $coa->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-weight-semibold">Beban Consumable (Default)</label>
+                            <select class="form-control" id="default_expense_consumable_coa_id">
+                                <option value="">-- pilih akun --</option>
+                                @foreach ($coaSelectable as $coa)
+                                    <option value="{{ $coa->id }}"
+                                        {{ optional($setting)->default_expense_consumable_coa_id == $coa->id ? 'selected' : '' }}>
+                                        {{ $coa->code_account_id }} - {{ $coa->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-weight-semibold">Beban Building (Default)</label>
+                            <select class="form-control" id="default_expense_building_coa_id">
+                                <option value="">-- pilih akun --</option>
+                                @foreach ($coaSelectable as $coa)
+                                    <option value="{{ $coa->id }}"
+                                        {{ optional($setting)->default_expense_building_coa_id == $coa->id ? 'selected' : '' }}>
+                                        {{ $coa->code_account_id }} - {{ $coa->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-weight-semibold">Beban Lain-lain (Default)</label>
+                            <select class="form-control" id="default_expense_other_coa_id">
+                                <option value="">-- pilih akun --</option>
+                                @foreach ($coaSelectable as $coa)
+                                    <option value="{{ $coa->id }}"
+                                        {{ optional($setting)->default_expense_other_coa_id == $coa->id ? 'selected' : '' }}>
+                                        {{ $coa->code_account_id }} - {{ $coa->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label class="font-weight-semibold">Akun Penampung Sementara</label>
                             <select class="form-control" id="default_suspense_coa_id">
@@ -251,7 +318,7 @@
             });
 
             // Select2
-            $('#wallet_coa_ids, #default_ar_coa_id, #default_sales_coa_id, #default_tax_payable_coa_id, #default_expense_coa_id, #default_suspense_coa_id, #default_retained_earning_coa_id, #fiscal_year_start_month, #default_ap_coa_id')
+            $('#wallet_coa_ids, #default_ar_coa_id, #default_sales_coa_id, #default_tax_payable_coa_id, #default_expense_coa_id, #default_suspense_coa_id, #default_retained_earning_coa_id, #fiscal_year_start_month, #default_ap_coa_id, #default_expense_honorarium_coa_id, #default_expense_operational_coa_id, #default_expense_consumable_coa_id, #default_expense_building_coa_id, #default_expense_other_coa_id')
                 .select2({
                     width: '100%',
                     placeholder: 'Pilih...',
@@ -326,6 +393,17 @@
                             journal_prefix: $('#journal_prefix').val(),
                             journal_running_number: $('#journal_running_number').val(),
                             fiscal_year_start_month: $('#fiscal_year_start_month').val(),
+                            
+                            default_expense_honorarium_coa_id: $(
+                                '#default_expense_honorarium_coa_id').val(),
+                            default_expense_operational_coa_id: $(
+                                '#default_expense_operational_coa_id').val(),
+                            default_expense_consumable_coa_id: $(
+                                '#default_expense_consumable_coa_id').val(),
+                            default_expense_building_coa_id: $(
+                                '#default_expense_building_coa_id').val(),
+                            default_expense_other_coa_id: $('#default_expense_other_coa_id')
+                                .val(),
                             default_ap_coa_id: $('#default_ap_coa_id').val(),
 
                         },
