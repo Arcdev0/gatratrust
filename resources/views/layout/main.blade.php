@@ -189,14 +189,19 @@
                                 <i class="ik ik-file-text"></i><span>Invoice</span>
                             </a>
                         </div>
-                        <div class="nav-item {{ request()->routeIs('fpus.index') || request()->routeIs('fpus.create') ? 'active' : '' }}">
-                            <a href="{{ route('fpus.index') }}">
-                               <i class="fas fa-hand-holding-usd"></i><span>FPU</span>
-                            </a>
-                        </div>
+
+                        {{-- Kwitansi --}}
                         <div class="nav-item {{ request()->routeIs('kwitansi.index') ? 'active' : '' }}">
                             <a href="{{ route('kwitansi.index') }}">
                                 <i class="fas fa-file-invoice"></i><span>Kwitansi</span>
+                            </a>
+                        </div>
+
+                        {{-- FPU --}}
+                        <div
+                            class="nav-item {{ request()->routeIs('fpus.index') || request()->routeIs('fpus.create') ? 'active' : '' }}">
+                            <a href="{{ route('fpus.index') }}">
+                                <i class="fas fa-hand-holding-usd"></i><span>FPU</span>
                             </a>
                         </div>
                         <div
@@ -252,7 +257,7 @@
                         </div> --}}
 
                         <div
-                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') || request()->routeIs('accounting-settings.index') || request()->routeIs('journals.index')? 'active open' : '' }}">
+                            class="nav-item has-sub {{ request()->routeIs('coa.index') || request()->routeIs('accounting.index') || request()->routeIs('accounting-settings.index') || request()->routeIs('journals.index') ? 'active open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fas fa-coins"></i><span>Accounting</span>
                             </a>
@@ -260,11 +265,13 @@
                                 <a href="{{ route('coa.index') }}"
                                     class="menu-item {{ request()->routeIs('coa.index') ? 'active' : '' }}">COA</a>
                                 <a href="{{ route('accounting-settings.index') }}"
-                                    class="menu-item {{ request()->routeIs('accounting-settings.index') ? 'active' : '' }}">Accounting Settings</a>
+                                    class="menu-item {{ request()->routeIs('accounting-settings.index') ? 'active' : '' }}">Accounting
+                                    Settings</a>
                                 <a href="{{ route('journals.index') }}"
                                     class="menu-item {{ request()->routeIs('journals.index') ? 'active' : '' }}">Jurnal</a>
                                 <a href="{{ route('accounting.index') }}"
-                                    class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Petty Cash</a>
+                                    class="menu-item {{ request()->routeIs('accounting.index') ? 'active' : '' }}">Petty
+                                    Cash</a>
 
                             </div>
                         </div>
