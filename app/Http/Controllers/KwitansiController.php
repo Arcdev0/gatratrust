@@ -51,7 +51,10 @@ class KwitansiController extends Controller
 
     public function create()
     {
-        $invoices = Invoice::all();
+        $invoices = Invoice::where('status', '!=', 'close')
+            ->orderByDesc('id')
+            ->get();
+
         return view('kwitansi.create', compact('invoices'));
     }
 

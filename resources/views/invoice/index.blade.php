@@ -339,8 +339,23 @@
 
                         $('#invoiceModalBody').html(html);
 
-                        $('#convertToKwitansiBtn').attr('href',
+                        let convertBtn = $('#convertToKwitansiBtn');
+
+                        // Set default link dulu
+                        convertBtn.attr('href',
                             "{{ route('kwitansi.create') }}?invoice_id=" + inv.id);
+
+                        // 🔥 LOGIC DISABLE
+                        if (inv.status.toLowerCase() === 'close') {
+                            convertBtn.addClass('disabled');
+                            convertBtn.removeAttr('href');
+                            convertBtn.text('Sudah Lunas');
+                        } else {
+                            convertBtn.removeClass('disabled');
+                            convertBtn.text('Convert to Kwitansi');
+                        }
+
+
                         $('#invoiceModal').modal('show');
                     }
                 });
