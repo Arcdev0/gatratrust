@@ -14,6 +14,8 @@ use App\Http\Controllers\JournalController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KerjaanController;
 use App\Http\Controllers\KwitansiController;
+use App\Http\Controllers\Laporan\BukuBesarController;
+use App\Http\Controllers\Laporan\LabaRugiController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MpiTestController;
 use App\Http\Controllers\PakController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\VendorController;
 use App\Models\KaryawanData;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Laporan\NeracaController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -382,6 +385,26 @@ Route::middleware('auth')->group(function () {
     });
 
 
+    Route::prefix('laporan')->group(function () {
+        
+        Route::get('/buku-besar', [BukuBesarController::class, 'index'])
+            ->name('laporan.buku-besar.index');
+
+        Route::get('/buku-besar/data', [BukuBesarController::class, 'data'])
+            ->name('laporan.buku-besar.data');
+
+        Route::get('/neraca', [NeracaController::class, 'index'])
+            ->name('laporan.neraca.index');
+
+        Route::get('/neraca/data', [NeracaController::class, 'data'])
+            ->name('laporan.neraca.data');
+
+        Route::get('/laba-rugi', [LabaRugiController::class, 'index'])
+            ->name('laporan.laba-rugi.index');
+
+        Route::get('/laba-rugi/data', [LabaRugiController::class, 'data'])
+            ->name('laporan.laba-rugi.data');
+    });
 
     // export using maatwebsite
     Route::get('/mpi-tests/{id}/export', [MpiTestController::class, 'exportExcel'])->name('mpi.tests.export');

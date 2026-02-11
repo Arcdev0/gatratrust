@@ -276,6 +276,22 @@
                             </div>
                         </div>
 
+                        <div class="nav-item has-sub {{ request()->routeIs('laporan.*') ? 'active open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="fas fa-file-signature"></i><span>Laporan</span>
+                            </a>
+                            <div class="submenu-content">
+                                <a href="{{ route('laporan.buku-besar.index') }}"
+                                    class="menu-item {{ request()->routeIs('laporan.buku-besar.index') ? 'active' : '' }}">Buku
+                                    Besar</a>
+                                <a href="{{ route('laporan.neraca.index') }}"
+                                    class="menu-item {{ request()->routeIs('laporan.neraca.index') ? 'active' : '' }}">Neraca</a>
+                                <a href="{{ route('laporan.laba-rugi.index') }}"
+                                    class="menu-item {{ request()->routeIs('laporan.laba-rugi.index') ? 'active' : '' }}">Laba
+                                    Rugi</a>
+                            </div>
+                        </div>
+
                         {{-- Data Karyawan --}}
                         <div class="nav-item {{ request()->routeIs('karyawan.index') ? 'active' : '' }}">
                             <a href="{{ route('karyawan.index') }}">
