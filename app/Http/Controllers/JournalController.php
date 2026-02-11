@@ -30,9 +30,11 @@ class JournalController extends Controller
                 'journals.reference_no',
                 'journals.status',
                 'journals.created_at',
-            ]);
+            ])
+            ->orderBy('journals.id', 'desc');
 
         return DataTables::of($query)
+            ->addIndexColumn()
             ->editColumn('journal_date', function ($row) {
                 return \Carbon\Carbon::parse($row->journal_date)->format('d-m-Y');
             })

@@ -146,12 +146,11 @@
                 processing: true,
                 serverSide: true,
                 ajax: "{{ route('journals.datatable') }}",
-                order: [
-                    [2, 'desc']
-                ],
                 columns: [{
-                        data: 'id',
-                        name: 'id'
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'journal_no',
