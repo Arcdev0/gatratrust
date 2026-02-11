@@ -11,11 +11,33 @@ class BukuBesarController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil COA untuk dropdown (non-group biasanya lebih dipilih)
+        // ambil semua COA non-group
         $coas = Coa::query()
-            ->select(['id', 'code_account_id', 'name', 'set_as_group'])
+            ->where('set_as_group', 0)
             ->orderBy('code_account_id')
             ->get();
+
+        // ambil saldo masing-masing akun
+        $balances = JournalLine::query()
+            ->join('journals', 'journals.id', '=', 'journal_lines.journal_id')
+            ->selectRaw("
+            journal_lines.coa_id,
+            SUM(journal_lines.debit) as total_debit,
+            SUM(journal_lines.credit) as total_credit
+        ")
+            ->groupBy('journal_lines.coa_id')
+            ->get()
+            ->keyBy('coa_id');
+
+        // inject saldo ke masing-masing coa
+        foreach ($coas as $coa) {
+
+            $totalDebit  = $balances[$coa->id]->total_debit ?? 0;
+            $totalCredit = $balances[$coa->id]->total_credit ?? 0;
+
+            // karena ini buku besar umum, pakai rumus saldo:
+            $coa->ending_balance = $totalDebit - $totalCredit;
+        }
 
         return view('laporan.BukuBesar.index', compact('coas'));
     }

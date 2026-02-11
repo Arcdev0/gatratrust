@@ -98,7 +98,7 @@
             font-size: 13px;
         }
     </style>
-    
+
     <div class="container-fluid">
 
         <div class="row mb-3">
@@ -136,7 +136,7 @@
                                 </div>
 
                                 <div class="account-saldo text-right mt-1">
-                                    Rp 0
+                                    Rp {{ number_format($c->ending_balance ?? 0, 2, ',', '.') }}
                                 </div>
 
                             </div>
@@ -267,6 +267,9 @@
                         });
 
                     } else {
+                        $("#kpiDebit").text(formatRupiah(0));
+                        $("#kpiCredit").text(formatRupiah(0));
+                        $("#kpiSaldo").text(formatRupiah(0));
                         tbody = `<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>`;
                     }
 
