@@ -27,6 +27,20 @@
                             <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}"
                                 required>
                         </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Wallet (Kas / Bank)</label>
+                            <select name="wallet_coa_id" id="wallet_coa_id" class="form-control" required>
+                                <option value="">-- Pilih Wallet --</option>
+                                @foreach (\App\Models\Wallet::with('coa')->get() as $w)
+                                    @if ($w->coa)
+                                        <option value="{{ $w->coa_id }}">
+                                            {{ $w->coa->code_account_id }} - {{ $w->coa->name }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="col-md-4">
                             <label class="form-label">Jumlah Dibayarkan</label>
                             <input type="text" id="amountPaidDisplay" class="form-control text-end" value="Rp. 0">
@@ -70,6 +84,12 @@
                 $('#amountPaidDisplay').val(formatRupiah(remaining));
             }
 
+
+            $('#wallet_coa_id').select2({
+                placeholder: "-- Pilih Wallet --",
+                width: '100%'
+            });
+
             $('#invoice_id').select2({
                 placeholder: "-- Pilih Invoice --",
                 width: '100%'
@@ -99,6 +119,15 @@
                 e.preventDefault();
                 let form = $(this);
                 let formData = form.serialize();
+
+                if (!$('#wallet_coa_id').val()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Wallet belum dipilih',
+                        text: 'Silakan pilih wallet terlebih dahulu.'
+                    });
+                    return;
+                }
 
                 Swal.fire({
                     title: 'Apakah kamu yakin?',

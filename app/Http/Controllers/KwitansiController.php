@@ -9,11 +9,13 @@ use App\Models\InvoicePayment;
 use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Traits\JournalTrait;
 
 class KwitansiController extends Controller
 {
 
-     use LogsActivity;
+    use LogsActivity;
+    use JournalTrait;
     public function index()
     {
         $kwitansi = InvoicePayment::with('invoice')->latest()->get();
@@ -50,23 +52,33 @@ class KwitansiController extends Controller
     public function create()
     {
         $invoices = Invoice::all();
-
-        // dd($invoices);
         return view('kwitansi.create', compact('invoices'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'invoice_id'   => 'required|exists:invoices,id',
-            'payment_date' => 'required|date',
-            'amount_paid'  => 'required|numeric|min:1',
-            'note'         => 'nullable|string',
+            'invoice_id'    => 'required|exists:invoices,id',
+            'payment_date'  => 'required|date',
+            'amount_paid'   => 'required|numeric|min:1',
+            'wallet_coa_id' => 'required|integer|exists:coa,id', // ✅ pilih wallet saat bayar
+            'note'          => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
-            // Generate nomor kwitansi otomatis
+            // 1) Load invoice dulu (buat validasi sisa tagihan, dll)
+            $invoice = Invoice::with('payments')->lockForUpdate()->findOrFail($request->invoice_id);
+            $invoice->refresh();
+
+            $amount = (float) $request->amount_paid;
+
+            // (opsional tapi sangat disarankan) cegah bayar > sisa
+            if ((float) $invoice->remaining > 0 && $amount > (float) $invoice->remaining) {
+                throw new \Exception("Jumlah bayar melebihi sisa tagihan invoice.");
+            }
+
+            // 2) Generate nomor kwitansi otomatis
             $now = Carbon::now();
             $monthYear = $now->format('m-Y');
 
@@ -81,19 +93,64 @@ class KwitansiController extends Controller
 
             $newPaymentNo = $newNumber . '/KW/GPT/' . $monthYear;
 
-            // Simpan kwitansi baru
+            // 3) Simpan kwitansi baru
             $kwitansi = InvoicePayment::create([
-                'invoice_id'   => $request->invoice_id,
-                'payment_date' => $request->payment_date,
-                'amount_paid'  => $request->amount_paid,
-                'note'         => $request->note,
-                'no_payment'   => $newPaymentNo,
+                'invoice_id'    => $request->invoice_id,
+                'payment_date'  => $request->payment_date,
+                'amount_paid'   => $amount,
+                'wallet_coa_id' => (int) $request->wallet_coa_id, // ✅ simpan wallet yang dipilih
+                'note'          => $request->note,
+                'no_payment'    => $newPaymentNo,
             ]);
 
-            // Update status invoice terkait
-            $invoice = Invoice::with('payments')->findOrFail($request->invoice_id);
-            $invoice->refresh();
+            // 4) Buat jurnal penerimaan pembayaran (cash_in)
+            $d = $this->journalDefaults();
 
+            if (empty($d['ar'])) {
+                throw new \Exception("Accounting Settings belum lengkap. Isi default AR terlebih dahulu.");
+            }
+
+            // OPTIONAL: Batasi wallet yang boleh dipilih.
+            // Kalau kamu punya table settings berisi wallet_coa_ids (multi select),
+            // kamu bisa validasi di sini. Kalau belum ada, lewati saja.
+            //
+            // $allowedWallets = AccountingSetting::first()?->wallet_coa_ids ?? [];
+            // if (!in_array((int)$request->wallet_coa_id, $allowedWallets)) {
+            //     throw new \Exception("Wallet yang dipilih tidak termasuk daftar wallet yang diizinkan.");
+            // }
+
+            $journal = $this->createJournal(
+                [
+                    'journal_date' => $request->payment_date,
+                    'type'         => 'cash_in', // atau 'general' jika sistemmu pakai itu
+                    'category'     => 'invoice_payment',
+                    'reference_no' => $kwitansi->no_payment,
+                    'memo'         => "Penerimaan pembayaran Invoice {$invoice->invoice_no} ({$kwitansi->no_payment})",
+                    'status'       => 'posted',
+                ],
+                [
+                    [
+                        'coa_id'      => (int) $request->wallet_coa_id,
+                        'debit'       => $amount,
+                        'credit'      => 0,
+                        'description' => 'Kas/Bank - Penerimaan',
+                    ],
+                    [
+                        'coa_id'      => (int) $d['ar'],
+                        'debit'       => 0,
+                        'credit'      => $amount,
+                        'description' => 'Piutang Usaha - Pelunasan',
+                    ],
+                ]
+            );
+
+            // OPTIONAL: kalau kamu mau link journal ke kwitansi biar audit trail rapi
+            // pastikan kolomnya ada di table invoice_payments
+            // $kwitansi->journal_id = $journal->id;
+            // $kwitansi->save();
+
+            // 5) Update status invoice
+            $invoice->refresh(); // biar remaining/total_paid up-to-date
             if ($invoice->remaining <= 0) {
                 $invoice->status = 'close';
             } elseif ($invoice->total_paid > 0) {
@@ -101,22 +158,21 @@ class KwitansiController extends Controller
             } else {
                 $invoice->status = 'open';
             }
-
             $invoice->save();
 
-            // Simpan log aktivitas (new_data berisi detail kwitansi)
+            // 6) Log aktivitas
             $this->logActivity(
-                "Membuat Kwitansi {$kwitansi->no_payment} untuk Invoice {$invoice->invoice_no} sebesar " . number_format($request->amount_paid, 0, ',', '.'),
+                "Membuat Kwitansi {$kwitansi->no_payment} untuk Invoice {$invoice->invoice_no} sebesar " . number_format($amount, 0, ',', '.'),
                 $kwitansi->no_payment,
-                null, // old_data
-                $kwitansi->toArray() // new_data
+                null,
+                $kwitansi->toArray()
             );
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Kwitansi berhasil disimpan.',
+                'message' => 'Kwitansi berhasil disimpan & jurnal penerimaan otomatis dibuat.',
                 'data'    => $kwitansi
             ]);
         } catch (\Exception $e) {

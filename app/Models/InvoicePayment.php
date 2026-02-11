@@ -14,11 +14,17 @@ class InvoicePayment extends Model
         'invoice_id',
         'payment_date',
         'amount_paid',
+        'wallet_coa_id',
         'note',
     ];
 
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function walletCoa()
+    {
+        return $this->belongsTo(Coa::class, 'wallet_coa_id');
     }
 }
