@@ -340,7 +340,7 @@
                     let attHtml = '-';
                     if (l.attachments.length > 0) {
                         attHtml = l.attachments.map(a =>
-                            `<a href="${a.file_url}" target="_blank" class="d-block">📎 ${a.original_name}</a>`
+                            `<a href="${a.file_url}" target="_blank" class="d-block">📎 ${a.file_name}</a>`
                         ).join('');
                     }
 

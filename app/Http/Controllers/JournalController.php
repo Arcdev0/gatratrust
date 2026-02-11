@@ -30,11 +30,17 @@ class JournalController extends Controller
                 'journals.reference_no',
                 'journals.status',
                 'journals.created_at',
-            ])
-            ->orderBy('journals.id', 'desc');
+            ]);
 
         return DataTables::of($query)
             ->addIndexColumn()
+
+            // ✅ Default order hanya saat pertama load (saat tidak ada order dari DataTables)
+            ->order(function ($q) use ($request) {
+                if (!$request->has('order')) {
+                    $q->orderBy('journals.id', 'desc');
+                }
+            })
             ->editColumn('journal_date', function ($row) {
                 return \Carbon\Carbon::parse($row->journal_date)->format('d-m-Y');
             })
