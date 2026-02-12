@@ -34,7 +34,7 @@ class InvoiceController extends Controller
     {
         $user = Auth::user();
 
-        $query = Invoice::select([
+        $query = Invoice::query()->select([
             'id',
             'invoice_no',
             'date',
@@ -46,79 +46,69 @@ class InvoiceController extends Controller
             'approval_status',
         ]);
 
-        return DataTables::of($query)
-            ->addColumn('tanggal', function ($inv) {
-                return Carbon::parse($inv->date)->format('d-m-Y');
-            })
-            ->addColumn('down_payment', function ($inv) {
-                return number_format($inv->down_payment ?? 0, 0, ',', '.');
-            })
-            ->addColumn('net_total', function ($inv) {
-                return number_format($inv->net_total ?? 0, 0, ',', '.');
-            })
-            ->addColumn('remaining', function ($inv) {
-                return number_format($inv->remaining ?? 0, 0, ',', '.');
-            })
+        // ✅ DEFAULT ORDER (hanya saat belum ada sorting dari DataTables)
+        // DataTables serverSide biasanya SELALU kirim order, jadi kita akalin di JS (lihat bagian 2)
+        if (!$request->has('order')) {
+            $query->orderByRaw("FIELD(status, 'open', 'partial', 'close', 'cancel')")
+                ->orderByDesc('id');
+        }
 
-            // ✅ Kolom status approval (badge)
+        return DataTables::of($query)
+            ->addColumn('tanggal', fn($inv) => \Carbon\Carbon::parse($inv->date)->format('d-m-Y'))
+
+            // pakai editColumn lebih pas karena fieldnya sudah ada
+            ->editColumn('down_payment', fn($inv) => number_format($inv->down_payment ?? 0, 0, ',', '.'))
+            ->editColumn('net_total', fn($inv) => number_format($inv->net_total ?? 0, 0, ',', '.'))
+
             ->addColumn('approval_status_badge', function ($inv) {
-                switch ($inv->approval_status) {
-                    case 'approved':
-                        return '<span class="badge bg-success text-white">Approved</span>';
-                    case 'rejected':
-                        return '<span class="badge bg-danger text-white">Rejected</span>';
-                    default:
-                        return '<span class="badge bg-yellow text-white">Pending</span>';
-                }
+                return match ($inv->approval_status) {
+                    'approved' => '<span class="badge bg-success text-white">Approved</span>',
+                    'rejected' => '<span class="badge bg-danger text-white">Rejected</span>',
+                    default    => '<span class="badge bg-yellow text-white">Pending</span>',
+                };
             })
 
             ->addColumn('aksi', function ($inv) use ($user) {
                 $html = '
-            <div class="dropdown-action">
-                <button class="dropbtn">Aksi ⮟</button>
-                <div class="dropdown-content">
-
-                    <a href="javascript:void(0)" class="btn-view" data-id="' . $inv->id . '">
-                        <i class="fas fa-eye"></i> Lihat
-                    </a>
-
-                    <a href="javascript:void(0)" class="btn-edit" data-id="' . $inv->id . '">
-                        <i class="fas fa-edit"></i> Edit
-                    </a>
-
-                    <a href="javascript:void(0)" class="btn-delete" data-id="' . $inv->id . '">
-                        <i class="fas fa-trash"></i> Hapus
-                    </a>
-
-                    <a href="' . route('invoice.print', $inv->id) . '" target="_blank">
-                        <i class="fas fa-print"></i> Print
-                    </a>
-
-                    <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank">
-                        <i class="fas fa-file-pdf"></i> PDF
-                    </a>
+                <div class="dropdown-action">
+                    <button class="dropbtn">Aksi ⮟</button>
+                    <div class="dropdown-content">
+                        <a href="javascript:void(0)" class="btn-view" data-id="' . $inv->id . '">
+                            <i class="fas fa-eye"></i> Lihat
+                        </a>
+                        <a href="javascript:void(0)" class="btn-edit" data-id="' . $inv->id . '">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="javascript:void(0)" class="btn-delete" data-id="' . $inv->id . '">
+                            <i class="fas fa-trash"></i> Hapus
+                        </a>
+                        <a href="' . route('invoice.print', $inv->id) . '" target="_blank">
+                            <i class="fas fa-print"></i> Print
+                        </a>
+                        <a href="' . route('invoice.pdf', $inv->id) . '" target="_blank">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
             ';
 
                 if ($user && $user->role_id == 4 && $inv->approval_status === 'pending') {
-
                     $html .= '
-                        <a href="javascript:void(0)" class="btn-approve" data-id="' . $inv->id . '">
-                            <i class="fas fa-check"></i> Approve
-                        </a>
-
-                        <a href="javascript:void(0)" class="btn-reject" data-id="' . $inv->id . '">
-                            <i class="fas fa-times"></i> Reject
-                        </a>
-                    ';
+                    <a href="javascript:void(0)" class="btn-approve" data-id="' . $inv->id . '">
+                        <i class="fas fa-check"></i> Approve
+                    </a>
+                    <a href="javascript:void(0)" class="btn-reject" data-id="' . $inv->id . '">
+                        <i class="fas fa-times"></i> Reject
+                    </a>
+                ';
                 }
 
                 $html .= '
+                    </div>
                 </div>
-            </div>
             ';
 
                 return $html;
             })
+
             ->rawColumns(['aksi', 'approval_status_badge'])
             ->make(true);
     }
@@ -299,7 +289,7 @@ class InvoiceController extends Controller
 
 
             $d = $this->journalDefaults();
-            
+
             if (empty($d['ar']) || empty($d['sales'])) {
                 throw new \Exception("Accounting Settings belum lengkap. Isi default AR & Sales terlebih dahulu.");
             }

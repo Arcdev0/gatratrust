@@ -146,75 +146,81 @@
                 serverSide: true,
                 responsive: true,
                 ajax: '{{ route('invoice.data') }}',
+
+                // ✅ penting: jangan kirim order default dari DataTables
+                order: [],
+
                 columns: [{
                         data: 'invoice_no',
                         name: 'invoice_no'
                     },
+
+                    // ✅ ini kolom tampilan "tanggal", tapi sorting harus pakai kolom DB "date"
                     {
                         data: 'tanggal',
-                        name: 'tanggal'
+                        name: 'date'
                     },
+
                     {
                         data: 'customer_name',
                         name: 'customer_name'
                     },
+
+                    // ✅ sorting tetap berdasarkan down_payment (DB), render hanya tampilan
                     {
                         data: 'down_payment',
                         name: 'down_payment',
                         render: function(data) {
-                            return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
+                            return data ? 'Rp ' + parseFloat(String(data).replace(/\./g, ''))
                                 .toLocaleString('id-ID') : 'Rp 0';
                         }
                     },
+
                     {
                         data: 'net_total',
                         name: 'net_total',
                         render: function(data) {
-                            return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
+                            return data ? 'Rp ' + parseFloat(String(data).replace(/\./g, ''))
                                 .toLocaleString('id-ID') : 'Rp 0';
                         }
                     },
+
                     {
                         data: 'approval_status_badge',
                         name: 'approval_status',
-                        orderable: false,
+                        orderable: true, // kalau mau bisa sort berdasarkan approval_status
                         searchable: false,
                         className: 'text-center'
                     },
-                    // {
-                    //     data: 'remaining',
-                    //     name: 'remaining',
-                    //     render: function(data) {
-                    //         return data ? 'Rp ' + parseFloat(data.replace(/\./g, ''))
-                    //             .toLocaleString('id-ID') : 'Rp 0';
-                    //     }
-                    // },
+
+                    // ✅ status bisa tetap sortable
                     {
                         data: 'status',
                         name: 'status',
                         render: function(data) {
                             let badgeClass = '';
-                            let label = data.toLowerCase();
+                            let label = String(data || '').toLowerCase();
 
                             switch (label) {
                                 case 'open':
-                                    badgeClass = 'yellow'; // kuning
+                                    badgeClass = 'yellow';
                                     break;
                                 case 'partial':
-                                    badgeClass = 'danger'; // merah
+                                    badgeClass = 'danger';
                                     break;
                                 case 'close':
-                                    badgeClass = 'secondary'; // abu-abu
+                                    badgeClass = 'secondary';
                                     break;
                                 case 'cancel':
-                                    badgeClass = 'info'; // biru
+                                    badgeClass = 'info';
                                     break;
                                 default:
-                                    badgeClass = 'secondary'; // default abu-abu
+                                    badgeClass = 'secondary';
                             }
                             return `<span class="badge bg-${badgeClass} text-white">${label.toUpperCase()}</span>`;
                         }
                     },
+
                     {
                         data: 'aksi',
                         name: 'aksi',
@@ -222,10 +228,8 @@
                         searchable: false
                     }
                 ],
-                order: [
-                    [1, 'desc']
-                ]
             });
+
 
             // Event delete dummy
             $(document).on('click', '.btn-delete', function() {
