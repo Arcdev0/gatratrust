@@ -16,12 +16,9 @@
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="mb-3">Daftar Account</h5>
-                <div class="table-responsive">
-                    <div class="container" id="containerListCOA">
-                        {{-- AJAX will render here --}}
-                    </div>
+                <div id="containerListCOA">
+                    {{-- AJAX will render here --}}
                 </div>
-
             </div>
         </div>
 
@@ -223,17 +220,20 @@
                     success: function(res) {
                         $('#containerListCOA').html(res.html);
 
+                        $('#tableCOA').addClass(
+                            'table table-bordered table-striped table-hover w-100 mx-auto');
+
                         // destroy bila sebelumnya sudah ada
                         if ($.fn.DataTable.isDataTable('#tableCOA')) {
                             $('#tableCOA').DataTable().destroy();
                         }
 
                         $('#tableCOA').DataTable({
-                            paging: true,
+                            paging: false,
                             searching: true,
                             ordering: true,
                             info: true,
-                            lengthChange: true
+                            lengthChange: false
                         });
                     },
                     error: function(xhr) {

@@ -14,25 +14,21 @@
 
         <div class="card">
             <div class="card-body">
-                <div class="table-responsive">
-                    <div class="container">
-                        <table class="table table-bordered table-hover" id="fpuTable">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>FPU No</th>
-                                    <th>Tanggal</th>
-                                    <th>Requester</th>
-                                    <th>Wallet</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Approved</th>
-                                    <th width="180">Action</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
+                <table class="table table-bordered table-striped table-hover w-100 mx-auto" id="fpuTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <th>FPU No</th>
+                            <th>Tanggal</th>
+                            <th>Requester</th>
+                            <th>Wallet</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Approved</th>
+                            <th width="180">Action</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
         </div>
 
@@ -307,15 +303,15 @@
                 $('#v_project').text(fpu.project?.no_project || '-');
 
 
-                  const dateText = fpu.request_date ?
-                        new Date(fpu.request_date).toLocaleString('id-ID', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }) :
-                        '-';
+                const dateText = fpu.request_date ?
+                    new Date(fpu.request_date).toLocaleString('id-ID', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) :
+                    '-';
 
                 $('#v_date').text(dateText);
 

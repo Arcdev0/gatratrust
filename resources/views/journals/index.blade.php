@@ -114,24 +114,20 @@
 
         <div class="card">
             <div class="card-body">
-                <div class="table-responsive">
-                    <div class="container">
-                        <table class="table" id="journalTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Journal No</th>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Category</th>
-                                    <th>Reference</th>
-                                    <th>Status</th>
-                                    <th width="120">Action</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
+                <table class="table table-bordered table-striped table-hover w-100 mx-auto" id="journalTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>Journal No</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
         </div>
 
