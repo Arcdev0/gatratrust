@@ -499,6 +499,7 @@ class FpuController extends Controller
                         'debit' => $sum,
                         'credit' => 0,
                         'description' => 'FPU Expense (No Category) - Fallback',
+                        'project_id' => $fpu->project_id, // ✅ boleh null
                     ];
                     continue;
                 }
@@ -521,6 +522,7 @@ class FpuController extends Controller
                     'debit' => $sum,
                     'credit' => 0,
                     'description' => "FPU Expense - {$label}",
+                    'project_id' => $fpu->project_id, // ✅ boleh null
                 ];
             }
 
@@ -530,6 +532,7 @@ class FpuController extends Controller
                 'debit' => 0,
                 'credit' => $totalAll,
                 'description' => 'Accounts Payable (Accrual)',
+                'project_id' => $fpu->project_id, // ✅ boleh null
             ];
 
             // safety: pastikan balance
@@ -667,12 +670,14 @@ class FpuController extends Controller
                             'debit' => $amt,
                             'credit' => 0,
                             'description' => 'Reduce Accounts Payable',
+                            'project_id' => $fpu->project_id, // ✅ boleh null
                         ],
                         [
                             'coa_id' => $fpu->wallet_coa_id,
                             'debit' => 0,
                             'credit' => $amt,
                             'description' => 'Wallet Cash/Bank Out',
+                            'project_id' => $fpu->project_id, // ✅ boleh null
                         ],
                     ]
                 );

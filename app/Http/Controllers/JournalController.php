@@ -21,6 +21,8 @@ class JournalController extends Controller
     public function datatable(Request $request)
     {
         $query = Journal::query()
+            ->withSum('lines as total_debit', 'debit')
+            ->withSum('lines as total_credit', 'credit')
             ->select([
                 'journals.id',
                 'journals.journal_no',
@@ -31,6 +33,7 @@ class JournalController extends Controller
                 'journals.status',
                 'journals.created_at',
             ]);
+
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -46,6 +49,25 @@ class JournalController extends Controller
             })
             ->editColumn('type', function ($row) {
                 return strtoupper(str_replace('_', ' ', $row->type));
+            })
+
+            ->addColumn('total_debit', function ($row) {
+                $class = round($row->total_debit, 2) === round($row->total_credit, 2)
+                    ? ''
+                    : 'text-danger fw-bold';
+
+                return '<span class="' . $class . '">' .
+                    number_format($row->total_debit ?? 0, 2) .
+                    '</span>';
+            })
+            ->addColumn('total_credit', function ($row) {
+                $class = round($row->total_debit, 2) === round($row->total_credit, 2)
+                    ? ''
+                    : 'text-danger fw-bold';
+
+                return '<span class="' . $class . '">' .
+                    number_format($row->total_credit ?? 0, 2) .
+                    '</span>';
             })
             ->editColumn('status', function ($row) {
                 $badge = match ($row->status) {
@@ -69,7 +91,7 @@ class JournalController extends Controller
                 </button>
             ';
             })
-            ->rawColumns(['status', 'action'])
+           ->rawColumns(['status', 'action', 'total_debit', 'total_credit'])
             ->make(true);
     }
 

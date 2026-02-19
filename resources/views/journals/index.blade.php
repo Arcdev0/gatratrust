@@ -123,6 +123,8 @@
                             <th>Type</th>
                             <th>Category</th>
                             <th>Reference</th>
+                            <th>Nominal</th>
+                            {{-- <th>Total Credit</th> --}}
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -168,6 +170,16 @@
                         data: 'reference_no',
                         name: 'reference_no'
                     },
+                    {
+                        data: 'total_debit',
+                        name: 'total_debit',
+                        className: 'text-end'
+                    },
+                    // {
+                    //     data: 'total_credit',
+                    //     name: 'total_credit',
+                    //     className: 'text-end'
+                    // },
                     {
                         data: 'status',
                         name: 'status',

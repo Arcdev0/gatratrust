@@ -317,18 +317,22 @@ class InvoiceController extends Controller
                         'debit' => $net,
                         'credit' => 0,
                         'description' => 'Accounts Receivable',
+                        'project_id' => $invoice->project_id,
+
                     ],
                     [
                         'coa_id' => $d['sales'],
                         'debit' => 0,
                         'credit' => $sales,
                         'description' => 'Sales Revenue',
+                        'project_id' => $invoice->project_id,
                     ],
                     $tax > 0 ? [
                         'coa_id' => $d['tax'],
                         'debit' => 0,
                         'credit' => $tax,
                         'description' => 'Tax Payable',
+                        'project_id' => $invoice->project_id,
                     ] : null
                 ])
             );

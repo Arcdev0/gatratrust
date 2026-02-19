@@ -116,6 +116,7 @@
                                     <tr>
                                         <th style="width:60px;">No</th>
                                         <th>Description *</th>
+                                        <th style="width:220px;">Category</th>
                                         <th style="width:180px;" class="text-right">Amount *</th>
                                         <th style="width:90px;">Action</th>
                                     </tr>
@@ -125,7 +126,7 @@
                                 </tbody>
                                 <tfoot class="thead-light">
                                     <tr>
-                                        <th colspan="2" class="text-right">TOTAL</th>
+                                        <th colspan="3" class="text-right">TOTAL</th>
                                         <th class="text-right" id="grandTotal">0.00</th>
                                         <th></th>
                                     </tr>
@@ -251,21 +252,29 @@
                 const row = `
         <tr>
             <td class="text-center align-middle line-no">1</td>
+
             <td>
                 <input type="text" class="form-control line-desc"
                     placeholder="contoh: VENDOR - LAB HI-TEST"
                     value="${escapeHtml(desc)}">
-
-                <input type="hidden" class="line-category-id" value="${categoryId ?? ''}">
-
-                <div class="text-danger small d-none err-line-desc">Description wajib diisi</div>
+                <div class="text-danger small d-none err-line-desc">
+                    Description wajib diisi
+                </div>
+            </td>
+            <td>
+                <select class="form-control line-category-id">
+                    ${buildCategoryOptions(categoryId)}
+                </select>
             </td>
             <td>
                 <input type="number" step="0.01" min="0"
                     class="form-control text-right line-amount"
                     placeholder="0.00" value="${amt}">
-                <div class="text-danger small d-none err-line-amount">Amount wajib &gt; 0</div>
+                <div class="text-danger small d-none err-line-amount">
+                    Amount wajib &gt; 0
+                </div>
             </td>
+           
             <td class="text-center align-middle">
                 <button type="button" class="btn btn-sm btn-danger btnRemoveLine">
                     <i class="fas fa-trash"></i>
@@ -278,24 +287,71 @@
                 calcTotal();
             }
 
+
+
+            // simpan category global dari API
+            let categories = [];
+
+            // dipanggil saat ambil project PAK
+            function setCategoriesFromLines(lines) {
+                categories = [];
+
+                lines.forEach(l => {
+                    if (l.category_id && l.category_code && l.category_name) {
+                        categories.push({
+                            id: l.category_id,
+                            code: l.category_code,
+                            name: l.category_name
+                        });
+                    }
+                });
+
+                // remove duplicate
+                categories = categories.filter(
+                    (v, i, a) => a.findIndex(t => t.id === v.id) === i
+                );
+            }
+
+            function buildCategoryOptions(selectedId = '') {
+                let options = `<option value="">-- Pilih Category --</option>`;
+
+                categories.forEach(cat => {
+                    const selected = cat.id == selectedId ? 'selected' : '';
+                    options += `
+            <option value="${cat.id}" ${selected}>
+                ${cat.code} - ${cat.name}
+            </option>
+        `;
+                });
+
+                return options;
+            }
+
+
             function replaceLines(lines) {
                 $('#linesBody').html('');
+
                 if (!lines || lines.length === 0) {
                     addLineRow();
                     return;
                 }
 
+                // ✅ ISI CATEGORY DULU
+                setCategoriesFromLines(lines);
+
+                // ✅ BARU BUAT ROW
                 lines.forEach(function(l) {
                     addLineRow(
                         l.description || '',
                         l.amount || '',
-                        l.category_id || '' // ✅ bawa category_id dari API
+                        l.category_id || ''
                     );
                 });
 
                 renumberLines();
                 calcTotal();
             }
+
 
             // init 1 line
             addLineRow();
