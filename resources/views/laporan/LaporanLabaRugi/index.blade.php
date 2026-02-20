@@ -127,12 +127,12 @@
 
                     {{-- BIAYA OPERASIONAL --}}
                     <tr class="lr-section">
-                        <td colspan="2">BIAYA OPERASIONAL</td>
+                        <td colspan="2">BIAYA TETAP</td>
                     </tr>
                     <tbody id="tbodyOperational"></tbody>
 
                     <tr class="lr-total">
-                        <td>Jumlah Biaya Operasional</td>
+                        <td>Jumlah Biaya Tetap</td>
                         <td class="text-right" id="totalOperational">0</td>
                     </tr>
 
