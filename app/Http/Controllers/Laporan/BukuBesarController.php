@@ -79,38 +79,71 @@ class BukuBesarController extends Controller
             return (int) $v;
         }, $coaIds), fn($v) => $v !== null));
 
+        // kalau user tidak kirim filter akun, tampilkan semua akun
+        if (empty($coaIds)) {
+            $coaIds = Coa::query()->pluck('id')->toArray();
+        }
+
+        // master akun (biar akun tanpa transaksi tetap ada)
+        $coaMaster = Coa::query()
+            ->select(['id', 'code_account_id', 'name'])
+            ->whereIn('id', $coaIds)
+            ->orderBy('code_account_id')
+            ->get();
+
+        // -----------------------------
+        // 1) BEGINNING BALANCE (saldo sebelum start)
+        // SUM(debit - credit) untuk journal_date < start
+        // -----------------------------
+        $beginMap = collect();
+
+        if ($start) {
+            $beginRows = JournalLine::query()
+                ->join('journals', 'journals.id', '=', 'journal_lines.journal_id')
+                ->whereIn('journal_lines.coa_id', $coaIds)
+                ->whereDate('journals.journal_date', '<', $start)
+                ->when($status, fn($q) => $q->where('journals.status', $status))
+                ->groupBy('journal_lines.coa_id')
+                ->selectRaw('journal_lines.coa_id as coa_id, SUM(journal_lines.debit - journal_lines.credit) as saldo')
+                ->get();
+
+            $beginMap = $beginRows->keyBy('coa_id')->map(fn($r) => (float) $r->saldo);
+        } else {
+            // kalau start tidak diisi, beginning balance = 0 (atau kamu bisa ubah sesuai kebutuhan)
+            $beginMap = collect();
+        }
+
+        // -----------------------------
+        // 2) MUTASI PERIODE (start..end)
+        // -----------------------------
         $q = JournalLine::query()
             ->with([
                 'coa:id,code_account_id,name',
                 'journal:id,journal_no,journal_date,status',
             ])
-            ->whereHas('journal', function ($jq) use ($start, $end, $status) {
-                if ($start)  $jq->whereDate('journal_date', '>=', $start);
-                if ($end)    $jq->whereDate('journal_date', '<=', $end);
-                if ($status) $jq->where('status', $status);
-            });
-
-        if (!empty($coaIds)) {
-            $q->whereIn('coa_id', $coaIds);
-        }
-
-        $lines = $q->join('journals', 'journals.id', '=', 'journal_lines.journal_id')
+            ->join('journals', 'journals.id', '=', 'journal_lines.journal_id')
+            ->whereIn('journal_lines.coa_id', $coaIds)
+            ->when($start, fn($qq) => $qq->whereDate('journals.journal_date', '>=', $start))
+            ->when($end, fn($qq) => $qq->whereDate('journals.journal_date', '<=', $end))
+            ->when($status, fn($qq) => $qq->where('journals.status', $status))
             ->orderBy('journal_lines.coa_id')
             ->orderBy('journals.journal_date')
             ->orderBy('journals.journal_no')
             ->orderBy('journal_lines.line_no')
-            ->get(['journal_lines.*']);
+            ->get(['journal_lines.*']); // tetap ambil journal_lines.* agar relation jalan
 
-        $grouped = $lines->groupBy('coa_id');
+        $grouped = $q->groupBy('coa_id');
 
         $accounts = [];
         $grandDebit  = 0.0;
         $grandCredit = 0.0;
 
-        foreach ($grouped as $coaIdKey => $rows) {
-            $coa = $rows->first()->coa;
+        foreach ($coaMaster as $coa) {
+            $rows = $grouped->get($coa->id, collect());
 
-            $running = 0.0;
+            $beginning = (float) ($beginMap->get($coa->id, 0.0));
+            $running   = $beginning;
+
             $totalDebit  = 0.0;
             $totalCredit = 0.0;
 
@@ -135,17 +168,34 @@ class BukuBesarController extends Controller
                 ];
             }
 
+            // kalau tidak ada transaksi, tetap tampil 1 baris angka 0
+            if (count($entries) === 0) {
+                $entries[] = [
+                    'date'       => null,
+                    'journal_no'  => null,
+                    'status'      => null,
+                    'description' => 'Tidak ada transaksi',
+                    'debit'       => 0.00,
+                    'credit'      => 0.00,
+                    'balance'     => round($running, 2), // tetap saldo awal
+                ];
+            }
+
             $grandDebit  += $totalDebit;
             $grandCredit += $totalCredit;
 
             $accounts[] = [
-                'coa_id'       => (int) $coaIdKey,
-                'coa_code'     => $coa?->code_account_id ?? '-',
-                'coa_name'     => $coa?->name ?? '-',
-                'total_debit'  => round($totalDebit, 2),
-                'total_credit' => round($totalCredit, 2),
-                'ending'       => round($running, 2),
-                'entries'      => $entries,
+                'coa_id'            => (int) $coa->id,
+                'coa_code'          => $coa->code_account_id ?? '-',
+                'coa_name'          => $coa->name ?? '-',
+
+                'beginning_balance' => round($beginning, 2),
+
+                'total_debit'       => round($totalDebit, 2),
+                'total_credit'      => round($totalCredit, 2),
+
+                'ending_balance'    => round($running, 2), // saldo akhir = saldo berjalan terakhir
+                'entries'           => $entries,
             ];
         }
 
