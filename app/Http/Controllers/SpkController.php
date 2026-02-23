@@ -131,7 +131,12 @@ class SpkController extends Controller
             'spk' => $spk,
         ])->setPaper('a4', 'portrait');
 
-        return $pdf->stream("SPK-{$spk->nomor}.pdf");
+        $safeNomor = str_replace(['/', '\\'], '-', $spk->nomor);
+        $safeNomor = preg_replace('/[^A-Za-z0-9._-]/', '-', $safeNomor ?? 'SPK');
+        $safeNomor = trim((string) $safeNomor, '-');
+        $safeNomor = $safeNomor !== '' ? $safeNomor : 'SPK';
+
+        return $pdf->stream("SPK-{$safeNomor}.pdf");
     }
 
     private function generateSpkNumber(): string

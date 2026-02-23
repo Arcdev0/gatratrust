@@ -110,7 +110,7 @@
         <label>Lama Perjalanan (hari)</label>
         <input type="number" min="1" max="365" name="lama_perjalanan"
             class="form-control @error('lama_perjalanan') is-invalid @enderror"
-            value="{{ old('lama_perjalanan', $spk?->lama_perjalanan ?? 1) }}" required>
+            value="{{ old('lama_perjalanan', $spk?->lama_perjalanan ?? 1) }}" required readonly>
         @error('lama_perjalanan')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -172,3 +172,50 @@
         @enderror
     </div>
 </div>
+
+
+<script>
+    (function() {
+        function hitungLamaPerjalanan() {
+            const berangkat = document.querySelector('input[name="tanggal_berangkat"]');
+            const kembali = document.querySelector('input[name="tanggal_kembali"]');
+            const lama = document.querySelector('input[name="lama_perjalanan"]');
+
+            if (!berangkat || !kembali || !lama) {
+                return;
+            }
+
+            if (!berangkat.value || !kembali.value) {
+                return;
+            }
+
+            const tglBerangkat = new Date(berangkat.value);
+            const tglKembali = new Date(kembali.value);
+
+            if (Number.isNaN(tglBerangkat.getTime()) || Number.isNaN(tglKembali.getTime())) {
+                return;
+            }
+
+            const selisih = Math.floor((tglKembali - tglBerangkat) / (1000 * 60 * 60 * 24)) + 1;
+
+            if (selisih > 0) {
+                lama.value = selisih;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const berangkat = document.querySelector('input[name="tanggal_berangkat"]');
+            const kembali = document.querySelector('input[name="tanggal_kembali"]');
+
+            if (berangkat) {
+                berangkat.addEventListener('change', hitungLamaPerjalanan);
+            }
+
+            if (kembali) {
+                kembali.addEventListener('change', hitungLamaPerjalanan);
+            }
+
+            hitungLamaPerjalanan();
+        });
+    })();
+</script>
