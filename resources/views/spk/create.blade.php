@@ -19,10 +19,21 @@
                     </div>
                 </div>
 
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <strong>Gagal menyimpan data:</strong>
+                        <ul class="mb-0">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="card">
                     <div class="card-body">
                         <form action="{{ route('spk.store') }}" method="POST">
-                            @include('spk._form')
+                            @include('spk._form', ['spk' => null])
                             <button type="submit" class="btn btn-primary">Simpan</button>
                         </form>
                     </div>
@@ -30,4 +41,16 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('script')
+    <script>
+        @if ($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi gagal',
+                html: `{!! implode('<br>', $errors->all()) !!}`
+            });
+        @endif
+    </script>
 @endsection

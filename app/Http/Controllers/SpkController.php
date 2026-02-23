@@ -4,67 +4,125 @@ namespace App\Http\Controllers;
 
 use App\Models\Spk;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Throwable;
+use Yajra\DataTables\Facades\DataTables;
 
 class SpkController extends Controller
 {
-    public function index(Request $request)
+    public function index(): View
     {
-        $search = $request->string('search')->toString();
+        return view('spk.index');
+    }
 
-        $spks = Spk::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($innerQuery) use ($search) {
-                    $innerQuery->where('nomor', 'like', "%{$search}%")
-                        ->orWhere('pegawai_nama', 'like', "%{$search}%")
-                        ->orWhere('tujuan_dinas', 'like', "%{$search}%");
-                });
+    public function datatable(Request $request): JsonResponse
+    {
+        if (! $request->ajax()) {
+            abort(404);
+        }
+
+        $query = Spk::query()
+            ->select(['id', 'nomor', 'tanggal', 'pegawai_nama', 'tujuan_dinas'])
+            ->orderByDesc('id');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('tanggal', function (Spk $spk) {
+                return optional($spk->tanggal)->format('d-m-Y') ?: '-';
             })
-            ->orderByDesc('id')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('spk.index', compact('spks', 'search'));
+            ->addColumn('action', function (Spk $spk) {
+                return '
+                    <a href="'.route('spk.show', $spk).'" class="btn btn-sm btn-info" title="Detail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="'.route('spk.edit', $spk).'" class="btn btn-sm btn-warning" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="'.route('spk.exportPdf', $spk).'" target="_blank" class="btn btn-sm btn-secondary" title="Export PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger deleteBtn" data-id="'.$spk->id.'" data-nomor="'.e($spk->nomor).'" title="Hapus">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
-    public function create()
+    public function create(): View
     {
-        return view('spk.create');
+        $newSpkNo = $this->generateSpkNumber();
+
+        return view('spk.create', compact('newSpkNo'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateData($request);
 
-        Spk::create($validated);
+        try {
+            if (empty($validated['nomor'])) {
+                $validated['nomor'] = $this->generateSpkNumber();
+            }
 
-        return redirect()->route('spk.index')->with('success', 'Data SPK berhasil ditambahkan.');
+            Spk::create($validated);
+
+            return redirect()->route('spk.index')->with('success', 'Data SPK berhasil ditambahkan.');
+        } catch (Throwable $e) {
+            return back()->withInput()->with('error', 'Gagal menambahkan data SPK: '.$e->getMessage());
+        }
     }
 
-    public function show(Spk $spk)
+    public function show(Spk $spk): View
     {
         return view('spk.show', compact('spk'));
     }
 
-    public function edit(Spk $spk)
+    public function edit(Spk $spk): View
     {
         return view('spk.edit', compact('spk'));
     }
 
-    public function update(Request $request, Spk $spk)
+    public function update(Request $request, Spk $spk): RedirectResponse
     {
         $validated = $this->validateData($request, $spk->id);
 
-        $spk->update($validated);
+        try {
+            $spk->update($validated);
 
-        return redirect()->route('spk.show', $spk)->with('success', 'Data SPK berhasil diperbarui.');
+            return redirect()->route('spk.show', $spk)->with('success', 'Data SPK berhasil diperbarui.');
+        } catch (Throwable $e) {
+            return back()->withInput()->with('error', 'Gagal memperbarui data SPK: '.$e->getMessage());
+        }
     }
 
-    public function destroy(Spk $spk)
+    public function destroy(Request $request, Spk $spk)
     {
-        $spk->delete();
+        try {
+            $spk->delete();
 
-        return redirect()->route('spk.index')->with('success', 'Data SPK berhasil dihapus.');
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data SPK berhasil dihapus.',
+                ]);
+            }
+
+            return redirect()->route('spk.index')->with('success', 'Data SPK berhasil dihapus.');
+        } catch (Throwable $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menghapus data SPK: '.$e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->route('spk.index')->with('error', 'Gagal menghapus data SPK: '.$e->getMessage());
+        }
     }
 
     public function exportPdf(Spk $spk)
@@ -76,10 +134,32 @@ class SpkController extends Controller
         return $pdf->stream("SPK-{$spk->nomor}.pdf");
     }
 
+    private function generateSpkNumber(): string
+    {
+        $year = date('Y');
+        $month = date('m');
+        $monthYear = "{$month}-{$year}";
+
+        $lastSpkThisYear = Spk::where('nomor', 'like', "%/GPT-SPK/%-{$year}")
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lastSpkThisYear) {
+            $lastNumber = (int) explode('/', $lastSpkThisYear->nomor)[0];
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        $runningNumber = str_pad((string) $newNumber, 3, '0', STR_PAD_LEFT);
+
+        return "{$runningNumber}/GPT-SPK/{$monthYear}";
+    }
+
     private function validateData(Request $request, ?int $spkId = null): array
     {
         return $request->validate([
-            'nomor' => ['required', 'string', 'max:100', 'unique:spks,nomor,'.$spkId],
+            'nomor' => ['nullable', 'string', 'max:100', 'unique:spks,nomor,'.$spkId],
             'tanggal' => ['required', 'date'],
 
             'pegawai_nama' => ['required', 'string', 'max:255'],
@@ -102,6 +182,11 @@ class SpkController extends Controller
 
             'ditugaskan_oleh_nama' => ['required', 'string', 'max:255'],
             'ditugaskan_oleh_jabatan' => ['required', 'string', 'max:255'],
+        ], [
+            'tanggal_kembali.after_or_equal' => 'Tanggal kembali harus sama atau setelah tanggal berangkat.',
+            'nomor.unique' => 'Nomor SPK sudah digunakan.',
+            'pegawai_nama.required' => 'Nama pegawai wajib diisi.',
+            'tujuan_dinas.required' => 'Tujuan dinas wajib diisi.',
         ]);
     }
 }

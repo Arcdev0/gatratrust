@@ -230,6 +230,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('spk')->name('spk.')->group(function () {
         Route::get('/', [SpkController::class, 'index'])->name('index');
+        Route::get('/datatable', [SpkController::class, 'datatable'])->name('datatable');
         Route::get('/create', [SpkController::class, 'create'])->name('create');
         Route::post('/', [SpkController::class, 'store'])->name('store');
         Route::get('/{spk}', [SpkController::class, 'show'])->name('show');

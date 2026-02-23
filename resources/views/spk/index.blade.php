@@ -1,87 +1,153 @@
 @extends('layout.app')
 
-@section('title', 'SPK')
+@section('title', 'Daftar SPK')
 
 @section('content')
-    <div class="page-wrap">
-        <div class="main-content">
-            <div class="container-fluid">
-                <div class="page-header">
-                    <div class="row align-items-end">
-                        <div class="col-lg-8">
-                            <div class="page-header-title">
-                                <h5>SPK</h5>
-                                <span>Surat Perintah Kerja / Dinas</span>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 text-right">
-                            <a href="{{ route('spk.create') }}" class="btn btn-primary">Tambah SPK</a>
-                        </div>
-                    </div>
-                </div>
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="text-primary font-weight-bold">Daftar SPK</h3>
+            <a href="{{ route('spk.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Tambah SPK
+            </a>
+        </div>
 
-                @if (session('success'))
-                    <div class="alert alert-success">{{ session('success') }}</div>
-                @endif
-
-                <div class="card">
-                    <div class="card-body">
-                        <form method="GET" class="form-inline mb-3">
-                            <input type="text" name="search" class="form-control mr-2" placeholder="Cari nomor / nama / tujuan"
-                                value="{{ $search }}">
-                            <button type="submit" class="btn btn-outline-primary">Search</button>
-                        </form>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Nomor</th>
-                                        <th>Tanggal</th>
-                                        <th>Pegawai</th>
-                                        <th>Tujuan Dinas</th>
-                                        <th style="width: 220px;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($spks as $item)
-                                        <tr>
-                                            <td>{{ $loop->iteration + ($spks->currentPage() - 1) * $spks->perPage() }}</td>
-                                            <td>{{ $item->nomor }}</td>
-                                            <td>{{ optional($item->tanggal)->format('d-m-Y') }}</td>
-                                            <td>{{ $item->pegawai_nama }}</td>
-                                            <td>{{ $item->tujuan_dinas }}</td>
-                                            <td>
-                                                <a href="{{ route('spk.show', $item) }}" class="btn btn-sm btn-info"><i
-                                                        class="fas fa-eye"></i></a>
-                                                <a href="{{ route('spk.edit', $item) }}" class="btn btn-sm btn-warning"><i
-                                                        class="fas fa-edit"></i></a>
-                                                <a href="{{ route('spk.exportPdf', $item) }}" target="_blank"
-                                                    class="btn btn-sm btn-secondary"><i class="fas fa-file-pdf"></i></a>
-                                                <form action="{{ route('spk.destroy', $item) }}" method="POST"
-                                                    style="display:inline-block"
-                                                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus SPK ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger"><i
-                                                            class="fas fa-trash"></i></button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" class="text-center">Data SPK belum tersedia.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {{ $spks->links() }}
-                    </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="spkTable" class="table table-bordered table-striped w-100">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nomor SPK</th>
+                                <th>Tanggal</th>
+                                <th>Nama Pegawai</th>
+                                <th>Tujuan Dinas</th>
+                                <th style="width: 180px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+@endsection
+
+@section('script')
+    <script>
+        $(document).ready(function() {
+            const table = $('#spkTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: "{{ route('spk.datatable') }}",
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'nomor',
+                        name: 'nomor'
+                    },
+                    {
+                        data: 'tanggal',
+                        name: 'tanggal'
+                    },
+                    {
+                        data: 'pegawai_nama',
+                        name: 'pegawai_nama'
+                    },
+                    {
+                        data: 'tujuan_dinas',
+                        name: 'tujuan_dinas'
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false
+                    }
+                ],
+                language: {
+                    processing: 'Memuat data...',
+                    search: 'Cari:',
+                    lengthMenu: 'Tampilkan _MENU_ data per halaman',
+                    info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                    infoEmpty: 'Menampilkan 0 sampai 0 dari 0 data',
+                    infoFiltered: '(disaring dari _MAX_ total data)',
+                    loadingRecords: 'Memuat...',
+                    zeroRecords: 'Tidak ada data yang ditemukan',
+                    emptyTable: 'Tidak ada data tersedia',
+                    paginate: {
+                        first: 'Pertama',
+                        last: 'Terakhir',
+                        next: 'Selanjutnya',
+                        previous: 'Sebelumnya'
+                    }
+                }
+            });
+
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: @json(session('success')),
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: @json(session('error')),
+                });
+            @endif
+
+            $(document).on('click', '.deleteBtn', function() {
+                const id = $(this).data('id');
+                const nomor = $(this).data('nomor');
+
+                Swal.fire({
+                    title: 'Hapus SPK?',
+                    text: `Data ${nomor} akan dihapus permanen.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "{{ url('/spk') }}/" + id,
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                _method: 'DELETE'
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire('Berhasil!', response.message, 'success');
+                                    table.ajax.reload(null, false);
+                                } else {
+                                    Swal.fire('Error!', response.message || 'Gagal menghapus data.',
+                                        'error');
+                                }
+                            },
+                            error: function(xhr) {
+                                let message = 'Terjadi kesalahan saat menghapus data.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    message = xhr.responseJSON.message;
+                                }
+                                Swal.fire('Error!', message, 'error');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 @endsection
