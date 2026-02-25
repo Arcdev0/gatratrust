@@ -144,7 +144,7 @@ class SpkController extends Controller
     {
         $spk->load('project.kerjaan', 'project.client');
 
-        $pdf = Pdf::loadView('pdf.spk', [
+        $pdf = Pdf::loadView('spk.pdf', [
             'spk' => $spk,
             'dataProyekOptions' => Spk::DATA_PROYEK_OPTIONS,
         ])->setPaper('a4', 'portrait');
