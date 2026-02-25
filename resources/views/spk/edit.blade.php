@@ -18,3 +18,15 @@
         </div>
     </div>
 @endsection
+
+@section('script')
+    <script>
+        $(function() {
+            $('.js-project-select').select2({
+                placeholder: '-- Pilih Project --',
+                width: '100%',
+                allowClear: true
+            });
+        });
+    </script>
+@endsection

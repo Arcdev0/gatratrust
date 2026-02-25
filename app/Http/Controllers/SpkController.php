@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -34,6 +35,7 @@ class SpkController extends Controller
                     $inner->where('nomor', 'like', "%{$search}%")
                         ->orWhereHas('project', function ($projectQuery) use ($search) {
                             $projectQuery->where('nama_project', 'like', "%{$search}%")
+                                ->orWhere('no_project', 'like', "%{$search}%")
                                 ->orWhereHas('kerjaan', function ($kerjaanQuery) use ($search) {
                                     $kerjaanQuery->where('nama_kerjaan', 'like', "%{$search}%");
                                 });
@@ -83,11 +85,12 @@ class SpkController extends Controller
 
     public function create(): View
     {
-        $projects = ProjectTbl::query()->with('kerjaan')->orderBy('nama_project')->get();
+        $projects = ProjectTbl::query()->with('kerjaan')->orderBy('no_project')->get();
 
         return view('spk.create', [
             'projects' => $projects,
             'dataProyekOptions' => Spk::DATA_PROYEK_OPTIONS,
+            'newSpkNo' => $this->generateSpkNumber(),
         ]);
     }
 
@@ -112,7 +115,7 @@ class SpkController extends Controller
 
     public function edit(Spk $spk): View
     {
-        $projects = ProjectTbl::query()->with('kerjaan')->orderBy('nama_project')->get();
+        $projects = ProjectTbl::query()->with('kerjaan')->orderBy('no_project')->get();
 
         return view('spk.edit', [
             'spk' => $spk,
@@ -147,6 +150,27 @@ class SpkController extends Controller
         ])->setPaper('a4', 'portrait');
 
         return $pdf->stream('spk-'.$spk->id.'.pdf');
+    }
+
+    private function generateSpkNumber(): string
+    {
+        $year = date('Y');
+        $month = date('m');
+        $monthYear = "{$month}-{$year}";
+
+        $lastSpkThisYear = Spk::query()
+            ->where('nomor', 'like', "%/GPT-SPK/%-{$year}")
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $lastSpkThisYear) {
+            return '001/GPT-SPK/'.$monthYear;
+        }
+
+        $lastNumber = (int) Str::before($lastSpkThisYear->nomor, '/');
+        $newNumber = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
+
+        return $newNumber.'/GPT-SPK/'.$monthYear;
     }
 
     /**

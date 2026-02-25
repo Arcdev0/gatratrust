@@ -2,7 +2,8 @@
 
 <div class="form-group">
     <label for="nomor">Nomor SPK</label>
-    <input type="text" name="nomor" id="nomor" class="form-control" value="{{ old('nomor', $spk->nomor ?? '') }}" required>
+    <input type="text" name="nomor" id="nomor" class="form-control"
+        value="{{ old('nomor', $spk->nomor ?? ($newSpkNo ?? '')) }}" readonly required>
 </div>
 
 <div class="form-group">
@@ -13,11 +14,14 @@
 
 <div class="form-group">
     <label for="project_id">Project</label>
-    <select name="project_id" id="project_id" class="form-control" required>
+    <select name="project_id" id="project_id" class="form-control js-project-select" required>
         <option value="">-- Pilih Project --</option>
         @foreach ($projects as $project)
             <option value="{{ $project->id }}" @selected(old('project_id', $spk->project_id ?? '') == $project->id)>
-                {{ $project->nama_project }} @if ($project->kerjaan) ({{ $project->kerjaan->nama_kerjaan }}) @endif
+                {{ $project->no_project }} - {{ $project->nama_project }}
+                @if ($project->kerjaan)
+                    ({{ $project->kerjaan->nama_kerjaan }})
+                @endif
             </option>
         @endforeach
     </select>
