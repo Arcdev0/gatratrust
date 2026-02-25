@@ -70,10 +70,10 @@ class SpkController extends Controller
                 $pdfUrl = route('spk.exportPdf', $spk);
 
                 return "
-                    <a href=\"{$showUrl}\" class=\"btn btn-sm btn-info\">Detail</a>
-                    <a href=\"{$editUrl}\" class=\"btn btn-sm btn-primary\">Edit</a>
-                    <button type=\"button\" class=\"btn btn-sm btn-danger btn-delete-spk\" data-url=\"{$deleteUrl}\" data-nomor=\"{$spk->nomor}\">Delete</button>
-                    <a href=\"{$pdfUrl}\" class=\"btn btn-sm btn-secondary\" target=\"_blank\">Export PDF</a>
+                    <a href=\"{$showUrl}\" class=\"btn btn-sm btn-info\" title=\"Detail\"><i class=\"fas fa-eye\"></i></a>
+                    <a href=\"{$editUrl}\" class=\"btn btn-sm btn-primary\" title=\"Edit\"><i class=\"fas fa-edit\"></i></a>
+                    <button type=\"button\" class=\"btn btn-sm btn-danger btn-delete-spk\" data-url=\"{$deleteUrl}\" data-nomor=\"{$spk->nomor}\" title=\"Delete\"><i class=\"fas fa-trash\"></i></button>
+                    <a href=\"{$pdfUrl}\" class=\"btn btn-sm btn-secondary\" target=\"_blank\" title=\"Export PDF\"><i class=\"fas fa-file-pdf\"></i></a>
                 ";
             })
             ->editColumn('tanggal', function (Spk $spk) {
