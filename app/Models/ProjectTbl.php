@@ -21,14 +21,14 @@ class ProjectTbl extends Model
         'total_biaya_project',
         'start',
         'end',
-        'created_by'
+        'created_by',
     ];
 
     protected $casts = [
         'start' => 'datetime',
         'end' => 'datetime',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function pak()
@@ -40,6 +40,7 @@ class ProjectTbl extends Model
     {
         return $this->belongsTo(User::class, 'client_id');
     }
+
     public function administrasiFiles()
     {
         return $this->hasMany(AdministrasiFile::class);
@@ -83,5 +84,10 @@ class ProjectTbl extends Model
     public function dailyItems()
     {
         return $this->hasMany(DailyItem::class, 'project_id');
+    }
+
+    public function spks()
+    {
+        return $this->hasMany(Spk::class, 'project_id');
     }
 }
