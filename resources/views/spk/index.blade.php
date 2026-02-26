@@ -7,7 +7,7 @@
         <div class="page-header">
             <div class="row align-items-end">
                 <div class="col-lg-8">
-                    <h3>SPK</h3>
+                    <h3 class="text-primary font-weight-bold">SPK</h3>
                 </div>
                 <div class="col-lg-4 text-right">
                     <a href="{{ route('spk.create') }}" class="btn btn-primary">Tambah SPK</a>
@@ -18,17 +18,19 @@
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered" id="spkTable">
-                        <thead>
-                            <tr>
-                                <th>Nomor</th>
-                                <th>Tanggal</th>
-                                <th>Project</th>
-                                <th>Data Proyek</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                    </table>
+                    <div class="container">
+                        <table class="table table-bordered" id="spkTable">
+                            <thead>
+                                <tr>
+                                    <th>Nomor</th>
+                                    <th>Tanggal</th>
+                                    <th>Project</th>
+                                    <th>Data Proyek</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
