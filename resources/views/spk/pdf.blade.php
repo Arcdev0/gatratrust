@@ -13,7 +13,7 @@
         }
 
         @page {
-            margin-top: 190px;
+            margin-top: 145px;
             margin-bottom: 80px;
             margin-left: 20px;
             margin-right: 20px;
@@ -21,18 +21,18 @@
 
         .header-page {
             position: fixed;
-            top: -190px;
+            top: -145px;
             left: 0;
             right: 0;
-            height: 160px;
+            height: 145px;
             background: white;
             z-index: 100;
         }
 
         .header {
             width: 100%;
-            border-bottom: 2px solid #080808;
-            padding-bottom: 5px;
+            /* border-bottom: 2px solid #080808; */
+            /* padding-bottom: 5px; */
         }
 
         .header-table {
@@ -145,24 +145,30 @@
                         @php
                             $path = public_path('template/img/LOGO_Gatra1.png');
                             $type = pathinfo($path, PATHINFO_EXTENSION);
-                            $base64 = file_exists($path) ? 'data:image/'.$type.';base64,'.base64_encode(file_get_contents($path)) : '';
+                            $base64 = file_exists($path)
+                                ? 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($path))
+                                : '';
                         @endphp
                         <img src="{{ $base64 }}" alt="logo" class="logo" />
                     </td>
                     <td>
                         <div class="header-text">
                             <h1>PT. GATRA PERDANA TRUSTRUE</h1>
-                            <p>Calibration Test, Consultant, General Supplier, &amp; Digital Agency for your Business</p>
-                            <p>Kawasan Komplek Ruko Golden BCI Blok T3 No. 12 Bengkong Laut, Kec. Bengkong, Kota Batam</p>
+                            <p>Calibration Test, Consultant, General Supplier, &amp; Digital Agency for your Business
+                            </p>
+                            <p>Kawasan Komplek Ruko Golden BCI Blok T3 No. 12 Bengkong Laut, Kec. Bengkong, Kota Batam
+                            </p>
                         </div>
                     </td>
                 </tr>
             </table>
 
             <hr style="border: 1px solid #0C6401; margin: 4px 0 6px 0;">
-            <div class="title">SURAT PERINTAH KERJA (SPK)</div>
+
         </div>
     </div>
+
+    <div class="title">SURAT PERINTAH KERJA (SPK)</div>
 
     <div class="footer">
         <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">

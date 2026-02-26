@@ -185,11 +185,11 @@
                     </div>
 
 
-                    <div class="nav-item {{ request()->routeIs('spk.*') ? 'active' : '' }}">
+                    {{-- <div class="nav-item {{ request()->routeIs('spk.*') ? 'active' : '' }}">
                         <a href="{{ route('spk.index') }}">
                             <i class="ik ik-file"></i><span>SPK</span>
                         </a>
-                    </div>
+                    </div> --}}
 
                     @if (in_array(Auth::user()->role_id, [1, 3, 4]))
                         {{-- Invoice --}}
