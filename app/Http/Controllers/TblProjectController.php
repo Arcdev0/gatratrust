@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProjectTbl;
-use App\Models\User;
 use App\Models\Kerjaan;
 use App\Models\Pak;
+use App\Models\ProjectTbl;
+use App\Models\User;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,12 +15,11 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
-use App\Traits\LogsActivity;
 
 class TblProjectController extends Controller
 {
-
     use LogsActivity;
+
     public function index()
     {
         $projects = ProjectTbl::with(['client', 'kerjaan', 'creator'])
@@ -41,7 +41,7 @@ class TblProjectController extends Controller
 
     public function getListProject(Request $request)
     {
-        if (!$request->ajax()) {
+        if (! $request->ajax()) {
             abort(404);
         }
 
@@ -50,7 +50,7 @@ class TblProjectController extends Controller
             'kerjaan',
             'pics',
             'pak',
-            'invoices.payments', 
+            'invoices.payments',
         ])
             ->select('projects.*')
             ->orderBy('id', 'desc');
@@ -59,23 +59,22 @@ class TblProjectController extends Controller
             $query->where('client_id', auth()->id());
         }
 
-       
         $yearNow = Carbon::now()->year;
 
-        $years = $request->input('tahun'); 
+        $years = $request->input('tahun');
 
         // Normalisasi jadi array
         if (is_string($years)) {
             // bisa "2024,2025" atau "2025"
             $years = explode(',', $years);
-        } elseif (!is_array($years)) {
+        } elseif (! is_array($years)) {
             $years = [];
         }
 
         // Bersihkan: trim, cast int, buang yang tidak valid
         $years = collect($years)
-            ->map(fn($y) => (int) trim($y))
-            ->filter(fn($y) => $y >= 2000 && $y <= ($yearNow + 5)) // batas aman, silakan ubah
+            ->map(fn ($y) => (int) trim($y))
+            ->filter(fn ($y) => $y >= 2000 && $y <= ($yearNow + 5)) // batas aman, silakan ubah
             ->unique()
             ->values()
             ->all();
@@ -94,19 +93,21 @@ class TblProjectController extends Controller
             ->addColumn('client', function ($project) {
                 $name = $project->client->name ?? '-';
                 $company = $project->client->company ?? null;
+
                 return $company ? "{$name} ({$company})" : $name;
             })
             ->addColumn('total_biaya_project', function ($project) {
                 if (auth()->user()->role_id == 1) {
                     return $project->total_biaya_project;
                 }
+
                 return null;
             })
             ->addColumn('status', function ($project) {
                 $totalInvoice = (float) $project->total_biaya_project;
 
                 $totalPaid = $project->invoices
-                    ->flatMap(fn($inv) => $inv->payments)
+                    ->flatMap(fn ($inv) => $inv->payments)
                     ->sum('amount_paid');
 
                 $remaining = $totalInvoice - $totalPaid;
@@ -119,7 +120,7 @@ class TblProjectController extends Controller
                     return '<span class="badge badge-success">Lunas</span>';
                 }
 
-                return '<span class="badge badge-warning">Sisa: ' . number_format($remaining, 0, ',', '.') . '</span>';
+                return '<span class="badge badge-warning">Sisa: '.number_format($remaining, 0, ',', '.').'</span>';
             })
             ->addColumn('selesai', function ($project) {
                 $listProses = DB::table('kerjaan_list_proses')
@@ -150,15 +151,16 @@ class TblProjectController extends Controller
             ->addColumn('periode', function ($project) {
                 if ($project->start && $project->end) {
                     return '
-                    <small class="d-block">Mulai: ' . $project->start->format('d M Y') . '</small>
-                    <small class="d-block">Selesai: ' . $project->end->format('d M Y') . '</small>
+                    <small class="d-block">Mulai: '.$project->start->format('d M Y').'</small>
+                    <small class="d-block">Selesai: '.$project->end->format('d M Y').'</small>
                 ';
                 }
+
                 return '<span class="text-muted">Belum ditentukan</span>';
             })
             ->addColumn('aksi', function ($project) {
                 $viewBtn = '
-                <a class="btn btn-sm btn-info" href="' . route('projects.show', $project->id) . '">
+                <a class="btn btn-sm btn-info" href="'.route('projects.show', $project->id).'">
                     <i class="fas fa-eye"></i>
                 </a>';
 
@@ -166,28 +168,28 @@ class TblProjectController extends Controller
                     $editBtn = '
                     <button type="button" class="btn btn-sm btn-secondary btn-edit-project"
                         data-toggle="modal" data-target="#EditProjectModal"
-                        data-id="' . $project->id . '"
-                        data-no="' . $project->no_project . '"
-                        data-nama="' . $project->nama_project . '"
-                        data-client="' . $project->client_id . '"
-                        data-kerjaan="' . $project->kerjaan_id . '"
-                        data-deskripsi="' . $project->deskripsi . '"
-                        data-biaya="' . $project->total_biaya_project . '"
-                        data-start="' . optional($project->start)->format('Y-m-d') . '"
-                        data-end="' . optional($project->end)->format('Y-m-d') . '"
-                        data-pics="' . $project->pics->pluck('id')->implode(';') . '"
-                        data-pak="' . ($project->pak_id ?? '') . '"
+                        data-id="'.$project->id.'"
+                        data-no="'.$project->no_project.'"
+                        data-nama="'.$project->nama_project.'"
+                        data-client="'.$project->client_id.'"
+                        data-kerjaan="'.$project->kerjaan_id.'"
+                        data-deskripsi="'.$project->deskripsi.'"
+                        data-biaya="'.$project->total_biaya_project.'"
+                        data-start="'.optional($project->start)->format('Y-m-d').'"
+                        data-end="'.optional($project->end)->format('Y-m-d').'"
+                        data-pics="'.$project->pics->pluck('id')->implode(';').'"
+                        data-pak="'.($project->pak_id ?? '').'"
                     >
                         <i class="fas fa-edit"></i>
                     </button>';
 
                     $deleteBtn = '
                     <button type="button" class="btn btn-sm btn-danger btnDeletProject"
-                        data-id="' . $project->id . '">
+                        data-id="'.$project->id.'">
                         <i class="fas fa-trash"></i>
                     </button>';
 
-                    return $viewBtn . ' ' . $editBtn . ' ' . $deleteBtn;
+                    return $viewBtn.' '.$editBtn.' '.$deleteBtn;
                 }
 
                 return $viewBtn;
@@ -196,9 +198,10 @@ class TblProjectController extends Controller
                 return $project->pak->pak_number ?? '-';
             })
             ->addColumn('pic', function ($project) {
-                if (!$project->pics || $project->pics->isEmpty()) {
+                if (! $project->pics || $project->pics->isEmpty()) {
                     return '-';
                 }
+
                 return $project->pics->pluck('name')->implode(';');
             })
             ->rawColumns(['periode', 'aksi', 'selesai', 'status', 'pic'])
@@ -207,7 +210,7 @@ class TblProjectController extends Controller
 
     public function generateNoProject()
     {
-        $year  = date('Y');
+        $year = date('Y');
         $month = date('m');
 
         $lastProjectThisYear = DB::table('projects')
@@ -217,7 +220,7 @@ class TblProjectController extends Controller
 
         if ($lastProjectThisYear) {
             $lastNumber = (int) explode('/', $lastProjectThisYear->no_project)[0];
-            $newNumber  = $lastNumber + 1;
+            $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
@@ -228,7 +231,7 @@ class TblProjectController extends Controller
         $noProject = "{$formattedNumber}/GPT/{$month}-{$year}";
 
         return response()->json([
-            'no_project' => $noProject
+            'no_project' => $noProject,
         ]);
     }
 
@@ -250,7 +253,7 @@ class TblProjectController extends Controller
                 'start' => 'required|date',
                 'end' => 'required|date|after_or_equal:start',
                 'pic_id' => 'required|array|min:1',
-                'pic_id.*' => 'exists:users,id'
+                'pic_id.*' => 'exists:users,id',
             ]);
 
             $validated['created_by'] = Auth::id();
@@ -277,7 +280,7 @@ class TblProjectController extends Controller
                     'start_action' => null,
                     'end_action' => null,
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
                 $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
@@ -288,7 +291,7 @@ class TblProjectController extends Controller
                 return [
                     'project_id' => $project->id,
                     'user_id' => $userId,
-                    'created_at' => now()
+                    'created_at' => now(),
                 ];
             })->toArray();
 
@@ -314,15 +317,16 @@ class TblProjectController extends Controller
             DB::rollBack();
 
             if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: '.$e->getMessage()], 500);
             }
 
-            return back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Terjadi kesalahan: '.$e->getMessage());
         }
     }
 
     public function show(ProjectTbl $project)
     {
+        $project->load(['pak']);
         $kerjaanId = $project->kerjaan_id;
         $projectId = $project->id;
 
@@ -349,7 +353,7 @@ class TblProjectController extends Controller
         $stepUrutan = [];
 
         foreach ($processes as $process) {
-            $key = $process->list_proses_id . '-' . $process->urutan;
+            $key = $process->list_proses_id.'-'.$process->urutan;
             $steps[$key] = $process->nama_proses;
             $stepStatuses[$key] = $process->status ?? 'pending';
             $stepProcessIds[$key] = $process->list_proses_id;
@@ -394,13 +398,12 @@ class TblProjectController extends Controller
         ));
     }
 
-
     public function update(Request $request, ProjectTbl $project)
     {
         // dd($request->all());
         $validated = $request->validate([
             'nama_project' => 'required|string|max:100',
-            'no_project' => 'required|string|unique:projects,no_project,' . $project->id,
+            'no_project' => 'required|string|unique:projects,no_project,'.$project->id,
             'client_id' => 'required|exists:users,id',
             'kerjaan_id' => 'required|exists:kerjaans,id',
             'pak_id' => 'nullable|exists:paks,id',
@@ -409,11 +412,11 @@ class TblProjectController extends Controller
             'start_project' => 'nullable|date',
             'end_project' => 'nullable|date|after_or_equal:start_project',
             'pics' => 'required|array|min:1',
-            'pics.*' => 'exists:users,id'
+            'pics.*' => 'exists:users,id',
         ]);
 
         $validated['start'] = $validated['start_project'] ?? null;
-        $validated['end']   = $validated['end_project'] ?? null;
+        $validated['end'] = $validated['end_project'] ?? null;
 
         unset($validated['start_project'], $validated['end_project']);
 
@@ -460,7 +463,7 @@ class TblProjectController extends Controller
                     'start_action' => null,
                     'end_action' => null,
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
                 $startPlan = $currentStartPlan->copy()->addDays($proses->hari);
@@ -474,7 +477,6 @@ class TblProjectController extends Controller
             $project->toArray()
         );
 
-
         if ($request->ajax()) {
             return response()->json(['success' => true]);
         }
@@ -482,7 +484,6 @@ class TblProjectController extends Controller
         return redirect()->route('projects.tampilan')
             ->with('success', 'Project berhasil diperbarui');
     }
-
 
     public function destroy(ProjectTbl $project, Request $request)
     {
@@ -503,14 +504,15 @@ class TblProjectController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Project berhasil dihapus.'
+                'message' => 'Project berhasil dihapus.',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus project.',
-                'error'   => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -518,29 +520,28 @@ class TblProjectController extends Controller
     public function uploadFiles(Request $request)
     {
 
-
         // dd($request->all());
         $request->validate([
-            'project_id'     => 'required|exists:projects,id',
+            'project_id' => 'required|exists:projects,id',
             'list_proses_id' => 'required|exists:list_proses,id',
-            'fileLabel'      => 'nullable|array',
-            'fileLabel.*'    => [
+            'fileLabel' => 'nullable|array',
+            'fileLabel.*' => [
                 Rule::requiredIf(function () use ($request) {
-                    return !empty($request->fileLabel);
+                    return ! empty($request->fileLabel);
                 }),
-                'string'
+                'string',
             ],
-            'fileInput'      => 'nullable|array',
-            'fileInput.*'    => [
+            'fileInput' => 'nullable|array',
+            'fileInput.*' => [
                 Rule::requiredIf(function () use ($request) {
-                    return !empty($request->fileLabel);
+                    return ! empty($request->fileLabel);
                 }),
                 'file',
                 'mimes:pdf,jpg,png,doc,docx,xls,xlsx',
-                'max:102400'
+                'max:102400',
             ],
-            'start_action'   => 'required|date',
-            'end_action'     => 'required|date|after_or_equal:start_action',
+            'start_action' => 'required|date',
+            'end_action' => 'required|date|after_or_equal:start_action',
         ]);
 
         $listProsesId = $request->input('list_proses_id');
@@ -556,7 +557,7 @@ class TblProjectController extends Controller
                 ->where('urutan_id', $urutanId)
                 ->first();
 
-            if (!$projectDetail) {
+            if (! $projectDetail) {
                 $projectDetailId = DB::table('project_details')->insertGetId([
                     'project_id' => $request->project_id,
                     'kerjaan_list_proses_id' => $listProsesId,
@@ -589,7 +590,7 @@ class TblProjectController extends Controller
                         ->where('nama_file', $namaFile)
                         ->first();
 
-                    if (!$listProsesFile) {
+                    if (! $listProsesFile) {
                         $listProsesFileId = DB::table('list_proses_files')->insertGetId([
                             'list_proses_id' => $listProsesId,
                             'nama_file' => $namaFile,
@@ -601,10 +602,10 @@ class TblProjectController extends Controller
                     }
 
                     // 2b. Simpan file ke storage
-                    $directory = 'uploads/projects/' . $request->project_id;
-                    $fileName = time() . '_' . $file->getClientOriginalName();
+                    $directory = 'uploads/projects/'.$request->project_id;
+                    $fileName = time().'_'.$file->getClientOriginalName();
                     $file->move(public_path($directory), $fileName);
-                    $publicPath = $directory . '/' . $fileName;
+                    $publicPath = $directory.'/'.$fileName;
 
                     // 2c. Simpan data ke project_progress_files
                     DB::table('project_progress_files')->insert([
@@ -619,16 +620,16 @@ class TblProjectController extends Controller
                 }
             }
 
-
             DB::commit();
 
             return response()->json(['success' => true, 'message' => 'File berhasil diunggah.']);
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menyimpan.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -661,7 +662,7 @@ class TblProjectController extends Controller
             'project_progress_files.created_at',
             'project_progress_files.uploaded_by',
             'project_details.start_action',
-            'project_details.end_action'
+            'project_details.end_action',
         ])
             ->get()
             ->map(function ($file) {
@@ -673,20 +674,19 @@ class TblProjectController extends Controller
                     'uploaded_at' => $file->created_at,
                     'uploaded_by' => $file->uploaded_by,
                     'start_action' => $file->start_action,
-                    'end_action' => $file->end_action
+                    'end_action' => $file->end_action,
                 ];
             });
 
         return response()->json($files);
     }
 
-
     public function deleteFile($id)
     {
         // Ambil data file
         $file = DB::table('project_progress_files')->where('id', $id)->first();
 
-        if (!$file) {
+        if (! $file) {
             return response()->json(['message' => 'File tidak ditemukan.'], 404);
         }
 
@@ -701,14 +701,12 @@ class TblProjectController extends Controller
         return response()->json(['message' => 'File berhasil dihapus.']);
     }
 
-
-
     public function markStepDone($id, Request $request)
     {
         $project_id = $id;
         $validated = $request->validate([
             'list_proses_id' => 'required',
-            'urutan_id' => 'required'
+            'urutan_id' => 'required',
         ]);
 
         try {
@@ -719,21 +717,20 @@ class TblProjectController extends Controller
                 ->where('urutan_id', $validated['urutan_id'])
                 ->update([
                     'status' => 'done',
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Status berhasil diubah menjadi selesai'
+                'message' => 'Status berhasil diubah menjadi selesai',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengupdate status: ' . $e->getMessage()
+                'message' => 'Gagal mengupdate status: '.$e->getMessage(),
             ], 500);
         }
     }
-
 
     public function unmarkStepDone($id, Request $request)
     {
@@ -742,7 +739,7 @@ class TblProjectController extends Controller
         // Validasi input kerjaan_list_proses_id
         $validated = $request->validate([
             'kerjaan_list_proses_id' => 'required|integer',
-            'urutan_id' => 'required'
+            'urutan_id' => 'required',
         ]);
 
         try {
@@ -753,21 +750,20 @@ class TblProjectController extends Controller
                 ->where('urutan_id', $validated['urutan_id'])
                 ->update([
                     'status' => 'in_progress',
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Status berhasil dibatalkan dari selesai'
+                'message' => 'Status berhasil dibatalkan dari selesai',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membatalkan status: ' . $e->getMessage()
+                'message' => 'Gagal membatalkan status: '.$e->getMessage(),
             ], 500);
         }
     }
-
 
     public function getListKomentar(Request $request)
     {
@@ -786,7 +782,7 @@ class TblProjectController extends Controller
 
         // dd($projectDetail);
 
-        if (!$projectDetail) {
+        if (! $projectDetail) {
             return response()->json([]); // Tidak ada komentar karena belum ada project_detail
         }
 
@@ -809,7 +805,6 @@ class TblProjectController extends Controller
 
         return response()->json($komentar);
     }
-
 
     public function storeKomentar(Request $request)
     {
@@ -835,7 +830,7 @@ class TblProjectController extends Controller
                 ->first();
 
             // 2. Kalau belum ada, insert dulu
-            if (!$projectDetail) {
+            if (! $projectDetail) {
                 $projectDetailId = DB::table('project_details')->insertGetId([
                     'project_id' => $projectId,
                     'kerjaan_list_proses_id' => $listProsesId,
@@ -856,14 +851,16 @@ class TblProjectController extends Controller
                 'updated_at' => now(),
             ]);
 
-            if (!$inserted) {
+            if (! $inserted) {
                 throw new \Exception('Gagal menambahkan komentar.');
             }
 
             DB::commit();
+
             return response()->json(['message' => 'Komentar berhasil ditambahkan']);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'message' => 'Gagal menambahkan komentar',
                 'error' => $e->getMessage(),
@@ -881,7 +878,6 @@ class TblProjectController extends Controller
             return response()->json(['message' => 'Gagal menghapus komentar'], 500);
         }
     }
-
 
     public function uploadFileAdministrasi(Request $request)
     {
@@ -908,6 +904,7 @@ class TblProjectController extends Controller
 
         return response()->json(['success' => true, 'message' => 'File berhasil diupload']);
     }
+
     public function getDataAdministrasi($id)
     {
         $files = DB::table('administrasi_files')
@@ -917,7 +914,7 @@ class TblProjectController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $files
+            'data' => $files,
         ]);
     }
 
@@ -925,7 +922,7 @@ class TblProjectController extends Controller
     {
         $file = DB::table('administrasi_files')->where('id', $id)->first();
 
-        if (!$file) {
+        if (! $file) {
             return response()->json(['success' => false, 'message' => 'File tidak ditemukan.'], 404);
         }
 

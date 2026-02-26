@@ -231,23 +231,23 @@
                         <table style="width:100%;">
                             <tr>
                                 <td style="width:35%; font-weight:bold;">Customer</td>
-                                <td style="width:65%;">: {{ $quotation->customer_name }}</td>
+                                <td style="width:65%;">: {{ $customerName }}</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Address</td>
-                                <td>: {{ $quotation->customer_address }}</td>
+                                <td>: {{ $customerAddress }}</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Attn</td>
-                                <td>: {{ $quotation->attention }}</td>
+                                <td>: {{ $attention }}</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Your Reference</td>
-                                <td>: {{ $quotation->your_reference ?? '-' }}</td>
+                                <td>: {{ $yourReference ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Terms</td>
-                                <td>: {{ $quotation->terms ?? '-' }}</td>
+                                <td>: {{ $termsText ?? '-' }}</td>
                             </tr>
                         </table>
                     </td>
@@ -284,6 +284,18 @@
 
     <!-- Konten -->
     <div class="content">
+
+        @php
+            $pak = $quotation->pak;
+            $customerName = $pak?->customer_name ?? $quotation->customer_name;
+            $customerAddress = $pak?->customer_address ?? $quotation->customer_address;
+            $attention = $pak?->attention ?? $quotation->attention;
+            $yourReference = $pak?->your_reference ?? $quotation->your_reference;
+            $termsText = $pak?->terms_text ?? $quotation->terms;
+            $scopesList = $pak ? $pak->scopesMaster : $quotation->scopes;
+            $termsList = $pak ? $pak->termsMaster : $quotation->terms;
+        @endphp
+
         <table class="info-table2" style="margin-bottom:20px;">
             <thead>
                 <tr>
@@ -333,7 +345,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($quotation->scopes as $i => $scope)
+                @foreach ($scopesList as $i => $scope)
                     <tr>
                         <td>{{ $i + 1 }}</td>
                         <td>{{ $scope->description }}</td>
@@ -344,9 +356,6 @@
             </tbody>
         </table>
 
-        @php
-            $termsList = $quotation->terms()->get();
-        @endphp
         <p><b>Terms and Conditions:</b></p>
         @if ($termsList && $termsList->count() > 0)
             <ol style="padding-left:20px; margin:0 0 20px 0;">

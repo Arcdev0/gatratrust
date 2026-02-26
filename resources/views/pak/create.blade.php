@@ -146,6 +146,40 @@
                         </div>
                     </div>
 
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="customer_name">Customer Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ old('customer_name') }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="attention">Attention</label>
+                                <input type="text" class="form-control" id="attention" name="attention" value="{{ old('attention') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="your_reference">Your Reference</label>
+                                <input type="text" class="form-control" id="your_reference" name="your_reference" value="{{ old('your_reference') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="customer_address">Customer Address</label>
+                                <textarea class="form-control" id="customer_address" name="customer_address">{{ old('customer_address') }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="terms_text">Terms Text</label>
+                                <textarea class="form-control" id="terms_text" name="terms_text">{{ old('terms_text') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">

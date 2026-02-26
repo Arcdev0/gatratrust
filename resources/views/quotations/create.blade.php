@@ -26,6 +26,17 @@
                 <form id="quotationForm" method="POST" action="{{ route('quotations.store') }}">
                     @csrf
                     <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label class="form-label">PAK</label>
+                            <select name="pak_id" id="pak_id" class="form-control">
+                                <option value="">-- Pilih PAK --</option>
+                                @foreach ($paks as $pak)
+                                    <option value="{{ $pak->id }}">{{ $pak->pak_number }} - {{ $pak->pak_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="col-md-4">
                             <label class="form-label">Quotation No</label>
                             <input type="text" name="quo_no" value="{{ $newQuotationNo }}" class="form-control" readonly
@@ -188,6 +199,20 @@
                 width: '100%'
             });
 
+
+
+            $('#pak_id').on('change', function() {
+                const hasPak = !!$(this).val();
+                $('input[name="customer_name"]').prop('readonly', hasPak).prop('required', !hasPak);
+                $('textarea[name="customer_address"]').prop('readonly', hasPak);
+                $('input[name="attention"]').prop('readonly', hasPak);
+                $('input[name="your_reference"]').prop('readonly', hasPak);
+                $('input[name="terms"]').prop('readonly', hasPak);
+                if (hasPak) {
+                    $('#scopeTable tbody').empty();
+                    $('#termsTable tbody').empty();
+                }
+            });
 
             $('#copyFrom').on('change', function() {
                 let id = $(this).val();
