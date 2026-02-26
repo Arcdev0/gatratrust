@@ -142,7 +142,9 @@ class SpkController extends Controller
 
     public function exportPdf(Spk $spk)
     {
-        $spk->load('project.kerjaan', 'project.client');
+        $spk->load('project.kerjaan', 'project.client', 'project.pak', 'project.pics', 'project.pak.karyawans', 'project.pak.karyawans.jabatan');
+
+        // dd($spk->project->pak->karyawans);
 
         $pdf = Pdf::loadView('spk.pdf', [
             'spk' => $spk,

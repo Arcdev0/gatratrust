@@ -13,7 +13,7 @@
         }
 
         @page {
-            margin-top: 145px;
+            margin-top: 110px;
             margin-bottom: 80px;
             margin-left: 20px;
             margin-right: 20px;
@@ -21,10 +21,10 @@
 
         .header-page {
             position: fixed;
-            top: -145px;
+            top: -110px;
             left: 0;
             right: 0;
-            height: 145px;
+            height: 110px;
             background: white;
             z-index: 100;
         }
@@ -86,6 +86,12 @@
 
         .pagenum:before {
             content: counter(page);
+        }
+
+        .no-border,
+        .no-border td,
+        .no-border th {
+            border: none !important;
         }
 
         .title {
@@ -168,7 +174,8 @@
         </div>
     </div>
 
-    <div class="title">SURAT PERINTAH KERJA (SPK)</div>
+    <div class="title">SURAT PERINTAH KERJA</div>
+    <div class="title">METAL LOGAM & TEST LABORATORY</div>
 
     <div class="footer">
         <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">
@@ -176,19 +183,71 @@
     </div>
 
     <div class="content">
-        <div class="section-title">I. INFORMASI SPK</div>
-        <table>
+        <table class="no-border">
             <tr>
-                <td class="label-col">Nomor SPK</td>
-                <td>{{ $spk->nomor }}</td>
-            </tr>
-            <tr>
-                <td class="label-col">Tanggal</td>
-                <td>{{ optional($spk->tanggal)->format('d-m-Y') }}</td>
+                <td style="width:50%; vertical-align: top;">
+                    <table class="no-border">
+                        <tr>
+                            <td style="width: 30%; font-weight: bold;">Nomor SPK</td>
+                            <td>: {{ $spk->nomor }}</td>
+                        </tr>
+                        <tr>
+                            <td style="width: 30%; font-weight: bold;">Tanggal</td>
+                            <td>: {{ optional($spk->tanggal)->format('d-m-Y') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="width: 30%; font-weight: bold;">Lokasi</td>
+                            <td>:
+                                @php
+                                    $lokasi = $spk->project?->pak?->location;
+                                @endphp
+
+                                {{ match ($lokasi) {
+                                    'luar_kota' => 'Luar Kota',
+                                    'dalam_kota' => 'Dalam Kota',
+                                    default => '-',
+                                } }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+
+                <td style="width:50%; vertical-align: top;">
+                    <table class="no-border">
+                        <tr>
+                            <td style="width: 30%; font-weight: bold;">Tanggal Mulai</td>
+                            <td>: {{ optional($spk->project?->start)->format('d/m/Y') ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td style="width: 30%; font-weight: bold;">Tanggal Selesai</td>
+                            <td>: {{ optional($spk->project?->end)->format('d/m/Y') ?? '-' }}</td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
         </table>
 
-        <div class="section-title">II. DATA PROJECT</div>
+
+        <div class="section-title">I. PENUGASAN</div>
+        <table>
+            <tr>
+                <td class="label-col">Nama</td>
+                <td>{{ $spk->project?->pak?->karyawans->pluck('nama_lengkap')->implode(', ') ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">Jabatan</td>
+                <td>{{ $spk->project?->pak?->karyawans->pluck('jabatan.nama_jabatan')->implode(', ') ?? '-' }}</td>
+            </tr>
+            {{-- <tr>
+                <td class="label-col">Lokasi</td>
+                <td>{{ $spk->project?->pak?->location ?? '-' }}</td>
+            </tr> --}}
+        </table>
+
+
+
+
+        <div class="section-title">II. DATA CLIENT</div>
         <table>
             <tr>
                 <td class="label-col">Nama Project</td>
@@ -212,7 +271,7 @@
             </tr>
         </table>
 
-        <div class="section-title">III. CAKUPAN DATA PROYEK</div>
+        <div class="section-title">III. DATA PROYEK</div>
         <table class="check-table">
             @php
                 $selected = $spk->data_proyek ?? [];
@@ -233,17 +292,22 @@
             @endforeach
         </table>
 
-        <div class="section-title">IV. PENGESAHAN</div>
-        <table>
+        <div class="section-title">IV. KETENTUAN UMUM</div>
+
+
+
+
+        <div class="section-title">V. PENGESAHAN</div>
+
+        <table class="no-border" style="margin-top:40px;">
             <tr>
-                <th class="text-center">Dibuat Oleh</th>
-                <th class="text-center">Diketahui Oleh</th>
-                <th class="text-center">Disetujui Oleh</th>
-            </tr>
-            <tr>
-                <td style="height:80px;"></td>
-                <td></td>
-                <td></td>
+                <td style="width:60%; border:none;"></td>
+
+                <td style="width:40%; text-align:center; border:none;">
+                    <span style="font-weight: bold;">Supervisor Consultant</span>
+                    <br><br><br><br><br><br>
+                    <p>__________________</p>
+                </td>
             </tr>
         </table>
     </div>
