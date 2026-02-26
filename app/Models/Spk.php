@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Spk extends Model
 {
@@ -12,30 +13,25 @@ class Spk extends Model
     protected $fillable = [
         'nomor',
         'tanggal',
-        'pegawai_nama',
-        'pegawai_jabatan',
-        'pegawai_divisi',
-        'pegawai_nik_id',
-        'tujuan_dinas',
-        'lokasi_perusahaan_tujuan',
-        'alamat_lokasi',
-        'maksud_ruang_lingkup',
-        'tanggal_berangkat',
-        'tanggal_kembali',
-        'lama_perjalanan',
-        'sumber_biaya',
-        'moda_transportasi',
-        'sumber_biaya_opsi',
-        'ditugaskan_oleh_nama',
-        'ditugaskan_oleh_jabatan',
+        'project_id',
+        'data_proyek',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'tanggal' => 'date',
+        'data_proyek' => 'array',
+    ];
+
+    public const DATA_PROYEK_OPTIONS = [
+        'pembuatan_wps' => 'Pembuatan WPS',
+        'running_pqr' => 'Running PQR',
+        'running_wqt' => 'Running WQT',
+        'pengujian_material' => 'Pengujian Material',
+        'koordinasi_ndt' => 'Koordinasi NDT',
+    ];
+
+    public function project(): BelongsTo
     {
-        return [
-            'tanggal' => 'date',
-            'tanggal_berangkat' => 'date',
-            'tanggal_kembali' => 'date',
-        ];
+        return $this->belongsTo(ProjectTbl::class, 'project_id');
     }
 }

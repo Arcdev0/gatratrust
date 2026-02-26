@@ -6,37 +6,33 @@
     <title>SPK {{ $spk->nomor }}</title>
     <style>
         body {
-            font-family: DejaVu Sans, sans-serif;
+            font-family: "DejaVu Sans", "Times New Roman", Times, serif;
+            font-size: 12px;
             margin: 0;
-            font-size: 11px;
-            color: #000;
+            padding: 0;
         }
 
         @page {
-            margin-top: 200px;
-            margin-bottom: 95px;
-            margin-left: 28px;
-            margin-right: 28px;
+            margin-top: 190px;
+            margin-bottom: 80px;
+            margin-left: 20px;
+            margin-right: 20px;
         }
 
         .header-page {
             position: fixed;
-            top: -185px;
+            top: -190px;
             left: 0;
             right: 0;
-            height: 165px;
-            border-bottom: 1px solid #2f2f2f;
+            height: 160px;
+            background: white;
+            z-index: 100;
         }
 
-        .footer-page {
-            position: fixed;
-            bottom: -85px;
-            left: 0;
-            right: 0;
-            height: 75px;
-            border-top: 1px solid #2f2f2f;
-            font-size: 9.5px;
-            color: #333;
+        .header {
+            width: 100%;
+            border-bottom: 2px solid #080808;
+            padding-bottom: 5px;
         }
 
         .header-table {
@@ -46,208 +42,205 @@
 
         .header-table td {
             border: none;
-            vertical-align: top;
+            vertical-align: middle;
+            padding: 2px;
+        }
+
+        .logo {
+            width: 80px;
+            height: auto;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            font-size: 16px;
+            color: #0C6401;
+        }
+
+        .header-text p {
+            margin: 1px 0;
+            font-size: 9px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: -100px;
+            left: 0;
+            right: 0;
+            height: 80px;
+            text-align: center;
+            font-size: 10px;
+            color: #555;
+            border-top: 1px solid #ccc;
+            padding: 5px 0;
+            background-color: white;
+            z-index: 100;
+        }
+
+        .footer img {
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+            padding-top: 7px;
+        }
+
+        .pagenum:before {
+            content: counter(page);
         }
 
         .title {
-            margin-top: 8px;
-            border: 1px solid #1f1f1f;
             text-align: center;
+            font-size: 18px;
             font-weight: bold;
-            padding: 8px 6px;
-            font-size: 13px;
-            letter-spacing: .3px;
-        }
-
-        .meta {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 6px;
-        }
-
-        .meta td {
-            border: 1px solid #1f1f1f;
-            padding: 4px 6px;
-            font-size: 10px;
-        }
-
-        .content-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .content-table td,
-        .content-table th {
-            border: 1px solid #000;
-            padding: 6px;
-            vertical-align: top;
-        }
-
-        .content-table th {
-            background: #f2f2f2;
-            text-align: left;
-            width: 34%;
+            margin: 4px 0;
         }
 
         .section-title {
-            margin: 14px 0 8px;
-            font-size: 12px;
             font-weight: bold;
-            border-bottom: 1px solid #222;
-            padding-bottom: 2px;
+            margin: 10px 0 8px 0;
+            font-size: 13px;
         }
 
-        .check-row {
-            margin-top: 6px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0;
         }
 
-        .check-item {
-            display: inline-block;
-            margin-right: 16px;
+        td,
+        th {
+            border: 1px solid #000;
+            padding: 6px;
+            vertical-align: top;
+            font-size: 11px;
         }
 
-        .checked {
+        .label-col {
+            width: 30%;
             font-weight: bold;
+            background: #f5f5f5;
         }
 
-        .page:before {
-            content: counter(page);
+        .check-table td {
+            width: 50%;
+        }
+
+        .check {
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        .text-center {
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
     <div class="header-page">
-        <table class="header-table">
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td style="width:130px;">
+                        @php
+                            $path = public_path('template/img/LOGO_Gatra1.png');
+                            $type = pathinfo($path, PATHINFO_EXTENSION);
+                            $base64 = file_exists($path) ? 'data:image/'.$type.';base64,'.base64_encode(file_get_contents($path)) : '';
+                        @endphp
+                        <img src="{{ $base64 }}" alt="logo" class="logo" />
+                    </td>
+                    <td>
+                        <div class="header-text">
+                            <h1>PT. GATRA PERDANA TRUSTRUE</h1>
+                            <p>Calibration Test, Consultant, General Supplier, &amp; Digital Agency for your Business</p>
+                            <p>Kawasan Komplek Ruko Golden BCI Blok T3 No. 12 Bengkong Laut, Kec. Bengkong, Kota Batam</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <hr style="border: 1px solid #0C6401; margin: 4px 0 6px 0;">
+            <div class="title">SURAT PERINTAH KERJA (SPK)</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <img src="{{ public_path('template/img/LOGO_Gatra1.png') }}" alt="Logo">
+        PT. GATRA PERDANA TRUSTRUE | www.gatraperdanatrustrue.com | Page <span class="pagenum"></span>
+    </div>
+
+    <div class="content">
+        <div class="section-title">I. INFORMASI SPK</div>
+        <table>
             <tr>
-                <td style="width: 86px;">
-                    @php
-                        $path = public_path('template/img/LOGO_Gatra1.png');
-                        $type = pathinfo($path, PATHINFO_EXTENSION);
-                        $base64 = file_exists($path)
-                            ? 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($path))
-                            : '';
-                    @endphp
-                    <img src="{{ $base64 }}" alt="Logo" style="width: 76px;">
-                </td>
-                <td>
-                    <div style="font-size: 16px; font-weight: bold; color:#0c6401;">PT. GATRA PERDANA TRUSTRUE</div>
-                    <div style="font-size: 10px;">Calibration Test, Consultant, General Supplier, &amp; IT Consultant</div>
-                    <div style="font-size: 10px;">Komp. Ruko Golden BCI Blok T3 No.12 Bengkong Laut, Kota Batam</div>
-                </td>
+                <td class="label-col">Nomor SPK</td>
+                <td>{{ $spk->nomor }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">Tanggal</td>
+                <td>{{ optional($spk->tanggal)->format('d-m-Y') }}</td>
             </tr>
         </table>
 
-        <div class="title">SURAT PERINTAH KERJA / SURAT PERJALANAN DINAS</div>
-
-        <table class="meta">
+        <div class="section-title">II. DATA PROJECT</div>
+        <table>
             <tr>
-                <td style="width: 50%;"><strong>Nomor</strong>: {{ $spk->nomor }}</td>
-                <td style="width: 50%;"><strong>Tanggal</strong>: {{ optional($spk->tanggal)->format('d-m-Y') }}</td>
+                <td class="label-col">Nama Project</td>
+                <td>{{ $spk->project?->nama_project ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">No. Project</td>
+                <td>{{ $spk->project?->no_project ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">Pekerjaan</td>
+                <td>{{ $spk->project?->kerjaan?->nama_kerjaan ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">Client</td>
+                <td>{{ $spk->project?->client?->name ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">Deskripsi</td>
+                <td>{{ $spk->project?->deskripsi ?? '-' }}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">III. CAKUPAN DATA PROYEK</div>
+        <table class="check-table">
+            @php
+                $selected = $spk->data_proyek ?? [];
+                $chunks = array_chunk($dataProyekOptions, 2, true);
+            @endphp
+            @foreach ($chunks as $chunk)
+                <tr>
+                    @foreach ($chunk as $key => $label)
+                        <td>
+                            <span class="check">{{ in_array($key, $selected, true) ? '✓' : '□' }}</span>
+                            {{ $label }}
+                        </td>
+                    @endforeach
+                    @if (count($chunk) === 1)
+                        <td></td>
+                    @endif
+                </tr>
+            @endforeach
+        </table>
+
+        <div class="section-title">IV. PENGESAHAN</div>
+        <table>
+            <tr>
+                <th class="text-center">Dibuat Oleh</th>
+                <th class="text-center">Diketahui Oleh</th>
+                <th class="text-center">Disetujui Oleh</th>
+            </tr>
+            <tr>
+                <td style="height:80px;"></td>
+                <td></td>
+                <td></td>
             </tr>
         </table>
     </div>
-
-    <div class="footer-page">
-        <table style="width:100%; border-collapse: collapse; margin-top: 5px;">
-            <tr>
-                <td style="border:none; width:60%;">Dokumen SPK/SPD - PT. Gatra Perdana Trustrue</td>
-                <td style="border:none; width:40%; text-align:right;">Halaman <span class="page"></span></td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="section-title">I. Data Pegawai</div>
-    <table class="content-table">
-        <tr>
-            <th>Nama</th>
-            <td>{{ $spk->pegawai_nama }}</td>
-        </tr>
-        <tr>
-            <th>Jabatan</th>
-            <td>{{ $spk->pegawai_jabatan }}</td>
-        </tr>
-        <tr>
-            <th>Divisi</th>
-            <td>{{ $spk->pegawai_divisi ?: '-' }}</td>
-        </tr>
-        <tr>
-            <th>NIK / ID Pegawai</th>
-            <td>{{ $spk->pegawai_nik_id ?: '-' }}</td>
-        </tr>
-    </table>
-
-    <div class="section-title">II. Data Perjalanan Dinas</div>
-    <table class="content-table">
-        <tr>
-            <th>Tujuan Dinas</th>
-            <td>{{ $spk->tujuan_dinas }}</td>
-        </tr>
-        <tr>
-            <th>Perusahaan Tujuan</th>
-            <td>{{ $spk->lokasi_perusahaan_tujuan ?: '-' }}</td>
-        </tr>
-        <tr>
-            <th>Alamat Lokasi</th>
-            <td>{{ $spk->alamat_lokasi ?: '-' }}</td>
-        </tr>
-        <tr>
-            <th>Maksud / Ruang Lingkup</th>
-            <td>{{ $spk->maksud_ruang_lingkup ?: '-' }}</td>
-        </tr>
-        <tr>
-            <th>Tanggal Berangkat</th>
-            <td>{{ optional($spk->tanggal_berangkat)->format('d-m-Y') }}</td>
-        </tr>
-        <tr>
-            <th>Tanggal Kembali</th>
-            <td>{{ optional($spk->tanggal_kembali)->format('d-m-Y') }}</td>
-        </tr>
-        <tr>
-            <th>Lama Perjalanan</th>
-            <td>{{ $spk->lama_perjalanan }} hari</td>
-        </tr>
-        <tr>
-            <th>Moda Transportasi</th>
-            <td>
-                <div class="check-row">
-                    <span class="check-item {{ $spk->moda_transportasi === 'darat' ? 'checked' : '' }}">{{ $spk->moda_transportasi === 'darat' ? '☑' : '☐' }} Darat</span>
-                    <span class="check-item {{ $spk->moda_transportasi === 'laut' ? 'checked' : '' }}">{{ $spk->moda_transportasi === 'laut' ? '☑' : '☐' }} Laut</span>
-                    <span class="check-item {{ $spk->moda_transportasi === 'udara' ? 'checked' : '' }}">{{ $spk->moda_transportasi === 'udara' ? '☑' : '☐' }} Udara</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <th>Sumber Biaya</th>
-            <td>{{ $spk->sumber_biaya ?: '-' }}</td>
-        </tr>
-        <tr>
-            <th>Opsi Sumber Biaya</th>
-            <td>
-                <div class="check-row">
-                    <span class="check-item {{ $spk->sumber_biaya_opsi === 'perusahaan' ? 'checked' : '' }}">{{ $spk->sumber_biaya_opsi === 'perusahaan' ? '☑' : '☐' }} Perusahaan</span>
-                    <span class="check-item {{ $spk->sumber_biaya_opsi === 'project' ? 'checked' : '' }}">{{ $spk->sumber_biaya_opsi === 'project' ? '☑' : '☐' }} Project</span>
-                    <span class="check-item {{ $spk->sumber_biaya_opsi === 'lainnya' ? 'checked' : '' }}">{{ $spk->sumber_biaya_opsi === 'lainnya' ? '☑' : '☐' }} Lainnya</span>
-                </div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="section-title">III. Persetujuan Penugasan</div>
-    <table class="content-table">
-        <tr>
-            <th>Ditugaskan Oleh</th>
-            <td>{{ $spk->ditugaskan_oleh_nama }}</td>
-        </tr>
-        <tr>
-            <th>Jabatan</th>
-            <td>{{ $spk->ditugaskan_oleh_jabatan }}</td>
-        </tr>
-        <tr>
-            <th>Tanda Tangan</th>
-            <td style="height: 70px; vertical-align: bottom;"><strong>( {{ $spk->ditugaskan_oleh_nama }} )</strong></td>
-        </tr>
-    </table>
 </body>
 
 </html>
