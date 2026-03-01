@@ -32,6 +32,12 @@
                         <th>Nomor Project</th>
                         <td>{{ $spk->project?->no_project ?? '-' }}</td>
                     </tr>
+                    
+                    <tr>
+                        <th>PAK</th>
+                        <td>{{ $spk->project?->pak?->pak_number ?? '-' }}</td>
+                    </tr>
+
                     <tr>
                         <th>Pekerjaan</th>
                         <td>{{ $spk->project?->kerjaan?->nama_kerjaan ?? '-' }}</td>
