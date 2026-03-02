@@ -37,14 +37,18 @@ return new class extends Migration
         }
 
         Schema::table('quotation', function (Blueprint $table) {
+            $table->dropForeign(['pak_id']);
             $table->foreignId('pak_id')->nullable(false)->change();
+            $table->foreign('pak_id')->references('id')->on('paks')->restrictOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::table('quotation', function (Blueprint $table) {
+            $table->dropForeign(['pak_id']);
             $table->foreignId('pak_id')->nullable()->change();
+            $table->foreign('pak_id')->references('id')->on('paks')->nullOnDelete();
         });
 
         Schema::table('paks', function (Blueprint $table) {
