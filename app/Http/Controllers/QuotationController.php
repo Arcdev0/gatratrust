@@ -135,7 +135,7 @@ class QuotationController extends Controller
 
     public function pakDetail($id)
     {
-        $pak = Pak::with(['scopesMaster', 'termsMaster'])->findOrFail($id);
+        $pak = Pak::with(['items', 'scopesMaster', 'termsMaster'])->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -171,7 +171,7 @@ class QuotationController extends Controller
             $validated = $request->validate([
                 'quo_no' => 'required|string|max:50|unique:quotation,quo_no',
                 'date' => 'required|date',
-                'pak_id' => 'nullable|exists:paks,id',
+                'pak_id' => 'required|exists:paks,id',
                 'customer_name' => 'nullable|string|max:255',
                 'customer_address' => 'nullable|string',
                 'attention' => 'nullable|string|max:255',
@@ -184,37 +184,20 @@ class QuotationController extends Controller
                 'bank_account' => 'nullable|string',
                 'tax_included' => 'nullable|boolean',
                 'items' => 'nullable|array',
-                'items.*.description' => 'required_with:items|string',
-                'items.*.qty' => 'required_with:items|numeric|min:1',
-                'items.*.unit_price' => 'required_with:items|numeric|min:0',
-                'scopes.*.description' => 'required_with:scopes|string',
-                'scopes.*.responsible_pt_gpt' => 'nullable|boolean',
-                'scopes.*.responsible_client' => 'nullable|boolean',
+                'scopes' => 'nullable|array',
                 'terms_conditions' => 'nullable|array',
-                'terms_conditions.*.description' => 'required_with:terms_conditions|string|max:500',
 
             ]);
 
-            $pak = null;
-            if (! empty($validated['pak_id'])) {
-                $pak = Pak::with(['scopesMaster', 'termsMaster'])->findOrFail($validated['pak_id']);
-            }
+            $pak = Pak::with(['items', 'scopesMaster', 'termsMaster'])->findOrFail($validated['pak_id']);
 
-            if ($pak) {
-                $total_amount = (float) $pak->pak_value;
-                $discount = 0;
-                $sub_total = (float) $pak->pak_value;
-            } else {
-                $total_amount = collect($validated['items'] ?? [])->sum(function ($item) {
-                    return $item['qty'] * $item['unit_price'];
-                });
-                $discount = $validated['discount_amount'] ?? 0;
-                $sub_total = $total_amount - $discount;
-            }
+            $total_amount = (float) $pak->pak_value;
+            $discount = 0;
+            $sub_total = (float) $pak->pak_value;
 
             // Simpan quotation utama
             $quotation = Quotation::create([
-                'pak_id' => $validated['pak_id'] ?? null,
+                'pak_id' => $validated['pak_id'],
                 'quo_no' => $validated['quo_no'],
                 'date' => $validated['date'],
                 'customer_name' => $pak->customer_name ?? ($validated['customer_name'] ?? null),
@@ -233,16 +216,16 @@ class QuotationController extends Controller
                 'status_id' => 1,
             ]);
 
-            if (! empty($validated['items'])) {
-                foreach ($validated['items'] as $item) {
+            if ($pak->items->isNotEmpty()) {
+                foreach ($pak->items as $pakItem) {
                     $quotation->items()->create([
-                        'description' => $item['description'],
-                        'qty' => $item['qty'],
-                        'unit_price' => $item['unit_price'],
-                        'total_price' => $item['qty'] * $item['unit_price'],
+                        'description' => trim(($pakItem->name ?? '').' '.($pakItem->description ?? '')),
+                        'qty' => (int) ($pakItem->quantity ?? 0),
+                        'unit_price' => (float) ($pakItem->unit_cost ?? 0),
+                        'total_price' => (float) ($pakItem->total_cost ?? 0),
                     ]);
                 }
-            } elseif ($pak) {
+            } else {
                 $quotation->items()->create([
                     'description' => $pak->pak_name,
                     'qty' => 1,
@@ -259,26 +242,12 @@ class QuotationController extends Controller
                         'responsible_client' => $scope->responsible_client ? 1 : 0,
                     ]);
                 }
-            } elseif (! empty($validated['scopes'])) {
-                foreach ($validated['scopes'] as $scope) {
-                    $quotation->scopes()->create([
-                        'description' => $scope['description'],
-                        'responsible_pt_gpt' => ! empty($scope['responsible_pt_gpt']) ? 1 : 0,
-                        'responsible_client' => ! empty($scope['responsible_client']) ? 1 : 0,
-                    ]);
-                }
             }
 
             if ($pak && $pak->termsMaster->isNotEmpty()) {
                 foreach ($pak->termsMaster as $term) {
                     $quotation->terms()->create([
                         'description' => $term->description,
-                    ]);
-                }
-            } elseif (! empty($validated['terms_conditions'])) {
-                foreach ($validated['terms_conditions'] as $term) {
-                    $quotation->terms()->create([
-                        'description' => $term['description'],
                     ]);
                 }
             }
