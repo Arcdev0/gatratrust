@@ -29,11 +29,11 @@ Target jangka panjang:
 - `ProjectTbl belongsTo User as client`
 - `ProjectTbl belongsTo Pak`
 
-## 5) Strategi backfill data lama (manual, tanpa insert otomatis)
-1. Cari `quotation` yang `pak_id` masih `NULL`.
-2. Buat/mapping PAK secara manual oleh tim bisnis (tidak dibuat otomatis oleh migration).
-3. Update semua `quotation.pak_id` yang kosong ke PAK valid.
-4. Jalankan migration enforce `NOT NULL` setelah data bersih.
+## 5) Strategi data lama (nullable pak_id dipertahankan)
+1. `quotation.pak_id` tetap nullable untuk kompatibilitas data lama.
+2. Data lama tetap bisa berjalan dengan fallback snapshot quotation.
+3. Mapping quotation lama ke PAK dilakukan bertahap/manual tanpa blokir migration.
+4. Enforce `NOT NULL` ditunda sampai semua data legacy selesai dimapping.
 
 ## 6) Catatan implementasi
 - Form create/edit quotation hanya memilih PAK dan menampilkan customer + amount readonly.
