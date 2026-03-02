@@ -31,6 +31,7 @@ class Pak extends Model
         'estimated_profit',
         'total_cost_percentage',
         'created_by',
+        'customer_user_id',
         // tambahkan kolom lain yang ingin diisi lewat create/update
     ];
 
@@ -88,5 +89,15 @@ class Pak extends Model
     public function termsMaster()
     {
         return $this->hasMany(PakTerm::class, 'pak_id')->orderBy('sort_order');
+    }
+
+    public function quotations()
+    {
+        return $this->hasMany(Quotation::class, 'pak_id');
+    }
+
+    public function customerUser()
+    {
+        return $this->belongsTo(User::class, 'customer_user_id');
     }
 }

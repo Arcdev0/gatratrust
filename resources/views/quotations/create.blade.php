@@ -48,11 +48,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Customer Name</label>
-                            <input type="text" name="customer_name" class="form-control" required>
+                            <input type="text" name="customer_name" class="form-control" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Customer Address</label>
-                            <textarea name="customer_address" class="form-control"></textarea>
+                            <textarea name="customer_address" class="form-control" readonly></textarea>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Revision</label>
@@ -61,19 +61,23 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Attention</label>
-                            <input type="text" name="attention" class="form-control">
+                            <input type="text" name="attention" class="form-control" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Your Reference</label>
-                            <input type="text" name="your_reference" class="form-control">
+                            <input type="text" name="your_reference" class="form-control" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Terms</label>
-                            <input type="text" name="terms" class="form-control">
+                            <input type="text" name="terms" class="form-control" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Job No</label>
                             <input type="text" name="job_no" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">PAK Amount</label>
+                            <input type="text" name="pak_amount" id="pak_amount" class="form-control" readonly>
                         </div>
                     </div>
             </div>
@@ -202,16 +206,49 @@
 
 
             $('#pak_id').on('change', function() {
-                const hasPak = !!$(this).val();
-                $('input[name="customer_name"]').prop('readonly', hasPak).prop('required', !hasPak);
-                $('textarea[name="customer_address"]').prop('readonly', hasPak);
-                $('input[name="attention"]').prop('readonly', hasPak);
-                $('input[name="your_reference"]').prop('readonly', hasPak);
-                $('input[name="terms"]').prop('readonly', hasPak);
-                if (hasPak) {
-                    $('#scopeTable tbody').empty();
-                    $('#termsTable tbody').empty();
+                const pakId = $(this).val();
+                if (!pakId) {
+                    $('input[name="customer_name"]').val('');
+                    $('textarea[name="customer_address"]').val('');
+                    $('input[name="attention"]').val('');
+                    $('input[name="your_reference"]').val('');
+                    $('input[name="terms"]').val('');
+                    $('#pak_amount').val('');
+                    return;
                 }
+
+                $.get("{{ url('/quotations/pak') }}/" + pakId, function(res) {
+                    const pak = res.data;
+                    $('input[name="customer_name"]').val(pak.customer_name || '');
+                    $('textarea[name="customer_address"]').val(pak.customer_address || '');
+                    $('input[name="attention"]').val(pak.attention || '');
+                    $('input[name="your_reference"]').val(pak.your_reference || '');
+                    $('input[name="terms"]').val(pak.terms_text || '');
+                    $('#pak_amount').val(formatRupiah(parseInt(pak.pak_value || 0)));
+
+                    $('#scopeTable tbody').empty();
+                    (pak.scopes_master || []).forEach((scope, i) => {
+                        $('#scopeTable tbody').append(`
+                    <tr>
+                        <td><input type="text" class="form-control" value="${scope.description}" readonly></td>
+                        <td class="text-center"><input type="checkbox" ${scope.responsible_pt_gpt ? 'checked' : ''} disabled></td>
+                        <td class="text-center"><input type="checkbox" ${scope.responsible_client ? 'checked' : ''} disabled></td>
+                        <td></td>
+                    </tr>
+                `);
+                    });
+
+                    $('#termsTable tbody').empty();
+                    (pak.terms_master || []).forEach((term, i) => {
+                        $('#termsTable tbody').append(`
+                    <tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td><input type="text" class="form-control" value="${term.description}" readonly></td>
+                        <td></td>
+                    </tr>
+                `);
+                    });
+                });
             });
 
             $('#copyFrom').on('change', function() {
@@ -400,6 +437,7 @@
 
             // Tambah baris scope
             $('#addScope').click(function() {
+                if ($('#pak_id').val()) { return; }
                 const index = $('#scopeTable tbody tr').length;
                 $('#scopeTable tbody').append(`
         <tr>
@@ -432,6 +470,7 @@
             let termIndex = 0;
 
             $('#addTerm').on('click', function() {
+                if ($('#pak_id').val()) { return; }
                 termIndex++;
                 let row = `
             <tr>
