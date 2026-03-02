@@ -14,26 +14,9 @@ return new class extends Migration
             $table->index('customer_user_id');
         });
 
-        $quotationsWithoutPak = DB::table('quotation')->whereNull('pak_id')->get();
-
-        foreach ($quotationsWithoutPak as $quotation) {
-            $pakId = DB::table('paks')->insertGetId([
-                'pak_name' => 'LEGACY QUOTATION '.$quotation->quo_no,
-                'pak_number' => 'LEGACY-PAK-'.$quotation->id,
-                'pak_value' => (int) ($quotation->sub_total ?? $quotation->total_amount ?? 0),
-                'location' => 'dalam_kota',
-                'date' => $quotation->date,
-                'customer_name' => $quotation->customer_name,
-                'customer_address' => $quotation->customer_address,
-                'attention' => $quotation->attention,
-                'your_reference' => $quotation->your_reference,
-                'terms_text' => $quotation->terms,
-                'total_pak_cost' => (int) ($quotation->sub_total ?? $quotation->total_amount ?? 0),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            DB::table('quotation')->where('id', $quotation->id)->update(['pak_id' => $pakId]);
+        $quotationsWithoutPakCount = DB::table('quotation')->whereNull('pak_id')->count();
+        if ($quotationsWithoutPakCount > 0) {
+            throw new RuntimeException("Migration dibatalkan: masih ada {$quotationsWithoutPakCount} quotation tanpa pak_id. Silakan mapping data secara manual terlebih dahulu.");
         }
 
         Schema::table('quotation', function (Blueprint $table) {
