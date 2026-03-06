@@ -6,9 +6,11 @@
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="text-primary font-weight-bold">Daftar PAK</h3>
-            <a href="{{ route('pak.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Tambah PAK
-            </a>
+            @if ($canManagePak)
+                <a href="{{ route('pak.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Tambah PAK
+                </a>
+            @endif
         </div>
 
         <div class="card">
@@ -376,6 +378,7 @@
 
 
             // Delete Button
+            @if ($canManagePak)
             $(document).on('click', '.deleteBtn', function() {
                 const id = $(this).data('id');
 
@@ -424,6 +427,7 @@
                     }
                 });
             });
+            @endif
         });
     </script>
 @endsection

@@ -485,6 +485,12 @@
                                         <th>Nama Project</th>
                                         <td>{{ $project->nama_project }}</td>
                                     </tr>
+                                    
+                                    <tr>
+                                        <th>Referensi PAK</th>
+                                        <td>{{ $project->pak?->pak_number ?? '-' }} @if($project->pak) ({{ $project->pak->pak_name }}) @endif</td>
+                                    </tr>
+
                                     <tr>
                                         <th>Deskripsi</th>
                                         <td>{{ $project->deskripsi ?? '-' }}</td>

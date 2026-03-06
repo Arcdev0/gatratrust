@@ -169,6 +169,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/data', [QuotationController::class, 'getDataTable'])->name('quotations.getDataTable');
         Route::get('/create', [QuotationController::class, 'create'])->name('quotations.create');
         Route::get('/show/{id}', [QuotationController::class, 'show'])->name('quotations.show');
+        Route::get('/pak/{id}', [QuotationController::class, 'pakDetail'])->name('quotations.pakDetail');
         Route::post('/store', [QuotationController::class, 'store'])->name('quotations.store');
         Route::get('/edit/{id}', [QuotationController::class, 'edit'])->name('quotations.edit');
         Route::post('/update/{id}', [QuotationController::class, 'update'])->name('quotations.update');

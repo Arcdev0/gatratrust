@@ -26,6 +26,17 @@
                 <form id="quotationForm" method="POST" action="{{ route('quotations.store') }}">
                     @csrf
                     <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label class="form-label">PAK</label>
+                            <select name="pak_id" id="pak_id" class="form-control">
+                                <option value="">-- Pilih PAK --</option>
+                                @foreach ($paks as $pak)
+                                    <option value="{{ $pak->id }}">{{ $pak->pak_number }} - {{ $pak->pak_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="col-md-4">
                             <label class="form-label">Quotation No</label>
                             <input type="text" name="quo_no" value="{{ $newQuotationNo }}" class="form-control" readonly
@@ -37,11 +48,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Customer Name</label>
-                            <input type="text" name="customer_name" class="form-control" required>
+                            <input type="text" name="customer_name" class="form-control" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Customer Address</label>
-                            <textarea name="customer_address" class="form-control"></textarea>
+                            <textarea name="customer_address" class="form-control" readonly></textarea>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Revision</label>
@@ -50,19 +61,23 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Attention</label>
-                            <input type="text" name="attention" class="form-control">
+                            <input type="text" name="attention" class="form-control" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Your Reference</label>
-                            <input type="text" name="your_reference" class="form-control">
+                            <input type="text" name="your_reference" class="form-control" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Terms</label>
-                            <input type="text" name="terms" class="form-control">
+                            <input type="text" name="terms" class="form-control" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Job No</label>
                             <input type="text" name="job_no" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">PAK Amount</label>
+                            <input type="text" name="pak_amount" id="pak_amount" class="form-control" readonly>
                         </div>
                     </div>
             </div>
@@ -72,7 +87,7 @@
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
                 <span>Quotation Items</span>
-                <button type="button" class="btn btn-sm btn-success" id="addItem">+ Add Item</button>
+                
             </div>
             <div class="card-body">
                 <table class="table table-bordered" id="itemsTable">
@@ -82,7 +97,7 @@
                             <th>Qty</th>
                             <th>Unit Price</th>
                             <th>Total Price</th>
-                            <th></th>
+                            <th>Source</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,7 +126,7 @@
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
                 <span>Scope of Work</span>
-                <button type="button" class="btn btn-sm btn-success" id="addScope">+ Add Scope</button>
+                
             </div>
             <div class="card-body">
                 <table class="table table-bordered" id="scopeTable">
@@ -120,7 +135,7 @@
                             <th>Description</th>
                             <th>Responsible PT GPT</th>
                             <th>Responsible Client</th>
-                            <th></th>
+                            <th>Source</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -139,7 +154,7 @@
                         <tr>
                             <th style="width: 50px;">No</th>
                             <th>Description</th>
-                            <th style="width: 100px;">Action</th>
+                            <th style="width: 100px;">Source</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -147,7 +162,7 @@
                     </tbody>
                 </table>
 
-                <button type="button" class="btn btn-sm btn-primary" id="addTerm">+ Add Term</button>
+                
             </div>
         </div>
 
@@ -189,7 +204,71 @@
             });
 
 
+
+            $('#pak_id').on('change', function() {
+                const pakId = $(this).val();
+                if (!pakId) {
+                    $('input[name="customer_name"]').val('');
+                    $('textarea[name="customer_address"]').val('');
+                    $('input[name="attention"]').val('');
+                    $('input[name="your_reference"]').val('');
+                    $('input[name="terms"]').val('');
+                    $('#pak_amount').val('');
+                    return;
+                }
+
+                $.get("{{ url('/quotations/pak') }}/" + pakId, function(res) {
+                    const pak = res.data;
+                    $('input[name="customer_name"]').val(pak.customer_name || '');
+                    $('textarea[name="customer_address"]').val(pak.customer_address || '');
+                    $('input[name="attention"]').val(pak.attention || '');
+                    $('input[name="your_reference"]').val(pak.your_reference || '');
+                    $('input[name="terms"]').val(pak.terms_text || '');
+                    $('#pak_amount').val(formatRupiah(parseInt(pak.pak_value || 0)));
+
+                    $('#itemsTable tbody').empty();
+                    (pak.items || []).forEach((item) => {
+                        const qty = parseFloat(item.quantity || 0);
+                        const unit = parseFloat(item.unit_cost || 0);
+                        const total = parseFloat(item.total_cost || (qty * unit));
+                        $('#itemsTable tbody').append(`
+                    <tr>
+                        <td><input type="text" class="form-control" value="${(item.name || '') + ' ' + (item.description || '')}" readonly></td>
+                        <td><input type="number" class="form-control" value="${qty}" readonly></td>
+                        <td><input type="text" class="form-control" value="${formatRupiah(unit)}" readonly></td>
+                        <td><input type="text" class="form-control" value="${formatRupiah(total)}" readonly></td>
+                        <td class="text-center">PAK</td>
+                    </tr>
+                `);
+                    });
+
+                    $('#scopeTable tbody').empty();
+                    (pak.scopes_master || []).forEach((scope) => {
+                        $('#scopeTable tbody').append(`
+                    <tr>
+                        <td><input type="text" class="form-control" value="${scope.description}" readonly></td>
+                        <td class="text-center"><input type="checkbox" ${scope.responsible_pt_gpt ? 'checked' : ''} disabled></td>
+                        <td class="text-center"><input type="checkbox" ${scope.responsible_client ? 'checked' : ''} disabled></td>
+                        <td class="text-center">PAK</td>
+                    </tr>
+                `);
+                    });
+
+                    $('#termsTable tbody').empty();
+                    (pak.terms_master || []).forEach((term, i) => {
+                        $('#termsTable tbody').append(`
+                    <tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td><input type="text" class="form-control" value="${term.description}" readonly></td>
+                        <td class="text-center">PAK</td>
+                    </tr>
+                `);
+                    });
+                });
+            });
+
             $('#copyFrom').on('change', function() {
+                if ($('#pak_id').val()) { return; }
                 let id = $(this).val();
                 if (!id) return;
 
@@ -278,27 +357,6 @@
                 calculateGrandTotal();
             });
 
-
-            $('#addItem').click(function() {
-                const index = $('#itemsTable tbody tr').length;
-                const itemRow = `
-        <tr>
-            <td><input type="text" name="items[${index}][description]" class="form-control" required></td>
-            <td><input type="number" name="items[${index}][qty]" class="form-control qty" min="1" required></td>
-            <td>
-                <input type="text" class="form-control unit_price" required>
-                <input type="hidden" name="items[${index}][unit_price]" class="unit_price_raw">
-            </td>
-            <td>
-                <input type="text" class="form-control total_price" readonly>
-                <input type="hidden" name="items[${index}][total_price]" class="total_price_raw">
-            </td>
-            <td><button type="button" class="btn btn-danger btn-sm removeItem">×</button></td>
-        </tr>
-        `;
-                $('#itemsTable tbody').append(itemRow);
-            });
-
             // Hapus baris item + reindex
             $(document).on('click', '.removeItem', function() {
                 $(this).closest('tr').remove();
@@ -372,20 +430,6 @@
                 }
                 calculateGrandTotal();
             });
-
-            // Tambah baris scope
-            $('#addScope').click(function() {
-                const index = $('#scopeTable tbody tr').length;
-                $('#scopeTable tbody').append(`
-        <tr>
-            <td><input type="text" name="scopes[${index}][description]" class="form-control" required></td>
-            <td class="text-center"><input type="checkbox" name="scopes[${index}][responsible_pt_gpt]" value="1"></td>
-            <td class="text-center"><input type="checkbox" name="scopes[${index}][responsible_client]" value="1"></td>
-            <td><button type="button" class="btn btn-danger btn-sm removeScope">×</button></td>
-        </tr>
-        `);
-            });
-
             // Hapus scope + reindex
             $(document).on('click', '.removeScope', function() {
                 $(this).closest('tr').remove();
@@ -403,27 +447,6 @@
                     });
                 });
             }
-
-            let termIndex = 0;
-
-            $('#addTerm').on('click', function() {
-                termIndex++;
-                let row = `
-            <tr>
-                <td class="text-center">${termIndex}</td>
-                <td>
-                    <input type="text" name="terms_conditions[${termIndex}][description]"
-                           class="form-control" required>
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-danger btn-sm remove-term">x</button>
-                </td>
-            </tr>
-        `;
-                $('#termsTable tbody').append(row);
-                updateTermNumbers();
-            });
-
             // Hapus baris
             $(document).on('click', '.remove-term', function() {
                 $(this).closest('tr').remove();
@@ -441,14 +464,10 @@
             $('#quotationForm').on('submit', function(e) {
                 e.preventDefault();
 
-                if ($('#itemsTable tbody tr').length === 0) {
-                    Swal.fire('Error!', 'Minimal tambahkan 1 item', 'error');
+                if (!$('#pak_id').val()) {
+                    Swal.fire('Error!', 'PAK wajib dipilih', 'error');
                     return;
                 }
-
-                if (typeof reindexItems === 'function') reindexItems();
-                if (typeof reindexScopes === 'function') reindexScopes();
-                if (typeof updateTermNumbers === 'function') updateTermNumbers();
 
                 const formEl = this;
                 const $form = $(formEl);

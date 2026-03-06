@@ -105,7 +105,7 @@ class SpkController extends Controller
 
     public function show(Spk $spk): View
     {
-        $spk->load('project.kerjaan', 'project.client');
+        $spk->load('project.kerjaan', 'project.client', 'project.pak');
 
         return view('spk.show', [
             'spk' => $spk,

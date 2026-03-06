@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Quotation extends Model
 {
@@ -12,6 +12,7 @@ class Quotation extends Model
     protected $table = 'quotation';
 
     protected $fillable = [
+        'pak_id',
         'quo_no',
         'date',
         'customer_name',
@@ -54,7 +55,12 @@ class Quotation extends Model
         return $this->belongsTo(Status::class, 'status_id');
     }
 
-      protected $casts = [
+    protected $casts = [
         'date' => 'date',
     ];
+
+    public function pak()
+    {
+        return $this->belongsTo(Pak::class, 'pak_id');
+    }
 }

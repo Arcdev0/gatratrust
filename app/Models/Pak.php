@@ -10,6 +10,7 @@ class Pak extends Model
     use HasFactory;
 
     protected $table = 'paks';
+
     protected $primaryKey = 'id';
 
     protected $fillable = [
@@ -18,6 +19,11 @@ class Pak extends Model
         'pak_value',
         'location',
         'date',
+        'customer_name',
+        'customer_address',
+        'attention',
+        'your_reference',
+        'terms_text',
         'po_amount',
         'pph_23',
         'ppn',
@@ -25,12 +31,16 @@ class Pak extends Model
         'estimated_profit',
         'total_cost_percentage',
         'created_by',
+        'customer_user_id',
         // tambahkan kolom lain yang ingin diisi lewat create/update
     ];
 
     protected $casts = [
         'date' => 'date',
-        'project_value' => 'decimal:2',
+        'pak_value' => 'decimal:2',
+        'pph_23' => 'decimal:2',
+        'ppn' => 'decimal:2',
+        'total_cost_percentage' => 'decimal:2',
     ];
 
     /**
@@ -57,7 +67,7 @@ class Pak extends Model
     {
         $employeeIds = json_decode($this->employee, true);
 
-        if (!$employeeIds || !is_array($employeeIds)) {
+        if (! $employeeIds || ! is_array($employeeIds)) {
             return [];
         }
 
@@ -69,5 +79,25 @@ class Pak extends Model
     public function projects()
     {
         return $this->hasMany(ProjectTbl::class, 'pak_id');
+    }
+
+    public function scopesMaster()
+    {
+        return $this->hasMany(PakScope::class, 'pak_id')->orderBy('sort_order');
+    }
+
+    public function termsMaster()
+    {
+        return $this->hasMany(PakTerm::class, 'pak_id')->orderBy('sort_order');
+    }
+
+    public function quotations()
+    {
+        return $this->hasMany(Quotation::class, 'pak_id');
+    }
+
+    public function customerUser()
+    {
+        return $this->belongsTo(User::class, 'customer_user_id');
     }
 }

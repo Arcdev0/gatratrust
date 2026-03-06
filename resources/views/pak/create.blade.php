@@ -146,6 +146,40 @@
                         </div>
                     </div>
 
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="customer_name">Customer Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ old('customer_name') }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="attention">Attention</label>
+                                <input type="text" class="form-control" id="attention" name="attention" value="{{ old('attention') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="your_reference">Your Reference</label>
+                                <input type="text" class="form-control" id="your_reference" name="your_reference" value="{{ old('your_reference') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="customer_address">Customer Address</label>
+                                <textarea class="form-control" id="customer_address" name="customer_address">{{ old('customer_address') }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="terms_text">Terms Text</label>
+                                <textarea class="form-control" id="terms_text" name="terms_text">{{ old('terms_text') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -387,6 +421,50 @@
                         </div>
                     </div>
 
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <strong>Master Scope of Work</strong>
+                                    <button type="button" class="btn btn-sm btn-success" id="addMasterScope">+ Scope</button>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table table-bordered mb-0" id="masterScopeTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Description</th>
+                                                <th class="text-center">PT GPT</th>
+                                                <th class="text-center">Client</th>
+                                                <th class="text-center" style="width: 80px;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <strong>Master Terms</strong>
+                                    <button type="button" class="btn btn-sm btn-primary" id="addMasterTerm">+ Term</button>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table table-bordered mb-0" id="masterTermTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;" class="text-center">No</th>
+                                                <th>Description</th>
+                                                <th style="width: 80px;" class="text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
 
                     <div class="form-group">
                         <button type="submit" class="btn btn-primary">
@@ -417,6 +495,68 @@
                 if (!dateStr) return '';
                 return dateStr.split('T')[0];
             }
+
+            function addMasterScopeRow() {
+                const index = $('#masterScopeTable tbody tr').length;
+                $('#masterScopeTable tbody').append(`
+                    <tr>
+                        <td><input type="text" name="scopes_master[${index}][description]" class="form-control" required></td>
+                        <td class="text-center"><input type="checkbox" name="scopes_master[${index}][responsible_pt_gpt]" value="1"></td>
+                        <td class="text-center"><input type="checkbox" name="scopes_master[${index}][responsible_client]" value="1"></td>
+                        <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-master-scope">x</button></td>
+                    </tr>
+                `);
+            }
+
+            function reindexMasterScopes() {
+                $('#masterScopeTable tbody tr').each(function(i, row) {
+                    $(row).find('input').each(function() {
+                        const name = $(this).attr('name');
+                        if (name) {
+                            $(this).attr('name', name.replace(/scopes_master\[\d+\]/, `scopes_master[${i}]`));
+                        }
+                    });
+                });
+            }
+
+            function addMasterTermRow() {
+                const index = $('#masterTermTable tbody tr').length;
+                $('#masterTermTable tbody').append(`
+                    <tr>
+                        <td class="text-center term-no">${index + 1}</td>
+                        <td><input type="text" name="terms_master[${index}][description]" class="form-control" required></td>
+                        <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-master-term">x</button></td>
+                    </tr>
+                `);
+            }
+
+            function reindexMasterTerms() {
+                $('#masterTermTable tbody tr').each(function(i, row) {
+                    $(row).find('.term-no').text(i + 1);
+                    $(row).find('input').each(function() {
+                        const name = $(this).attr('name');
+                        if (name) {
+                            $(this).attr('name', name.replace(/terms_master\[\d+\]/, `terms_master[${i}]`));
+                        }
+                    });
+                });
+            }
+
+            addMasterScopeRow();
+            addMasterTermRow();
+
+            $('#addMasterScope').on('click', addMasterScopeRow);
+            $('#addMasterTerm').on('click', addMasterTermRow);
+
+            $(document).on('click', '.remove-master-scope', function() {
+                $(this).closest('tr').remove();
+                reindexMasterScopes();
+            });
+
+            $(document).on('click', '.remove-master-term', function() {
+                $(this).closest('tr').remove();
+                reindexMasterTerms();
+            });
 
 
             // ==================================================
