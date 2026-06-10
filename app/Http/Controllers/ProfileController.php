@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -28,14 +29,14 @@ class ProfileController extends Controller
 
         // Jika ada permintaan ganti password
         if ($request->filled('new_password')) {
-            if (!\Hash::check($request->current_password, $user->password)) {
+            if (! Hash::check($request->current_password, $user->password)) {
                 return back()->withErrors(['current_password' => 'Password lama salah.']);
             }
-            $user->password = \Hash::make($request->new_password);
+            $user->password = Hash::make($request->new_password);
         }
 
         $user->save();
 
-        return redirect()->route('profile.index')->with('success', 'Profile updated successfully.');
+        return redirect()->route('profile.index')->with('success', 'Profile berhasil diperbarui.');
     }
 }
